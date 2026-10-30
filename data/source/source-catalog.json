@@ -1,0 +1,522 @@
+{
+  "version": "0.1.0",
+  "checked_date": "2026-10-30",
+  "status": "Official source catalog; 385 artwork assignments attached, 115 pending. Contextual depictions remain labeled.",
+  "sources": [
+    {
+      "id": "KH-HUB",
+      "franchise": "Kingdom Hearts",
+      "url": "https://www.square-enix.com/kingdomhearts/home/us/",
+      "scope": "Official hub/trailers; KHIII and collection material",
+      "credit": "Square Enix / Disney",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "KH-MOBILE",
+      "franchise": "Kingdom Hearts",
+      "url": "https://press.uk.square-enix.com/SQUARE-ENIX-AND-DISNEY-DEBUT-NEW-MOBILE-EXPERIENCE-KINGDOM-HEARTS-DARK",
+      "scope": "Official Dark Road announcement; mobile-era source",
+      "credit": "Square Enix / Disney",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FF7",
+      "franchise": "Final Fantasy",
+      "url": "https://www.square-enix.com/ffvii/en-us/games/rebirth/characters/",
+      "scope": "Named cast and combat weapons; links Crisis Core Reunion",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FF8",
+      "franchise": "Final Fantasy",
+      "url": "https://www.jp.square-enix.com/ffviii/character/",
+      "scope": "Squall/Rinoa/Seifer/Quistis/Selphie/Zell/Irvine/Laguna",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FF15",
+      "franchise": "Final Fantasy",
+      "url": "https://www.jp.square-enix.com/ff15/character/noctis.html",
+      "scope": "Noctis royal weapon summoning",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FF16",
+      "franchise": "Final Fantasy",
+      "url": "https://uk.finalfantasyxvi.com/characters",
+      "scope": "Dominants and Eikons; official character renders",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "P3R",
+      "franchise": "Persona",
+      "url": "https://asia.sega.com/p3r/en/",
+      "scope": "Reload cast and Personas; Aigis suppression weapon",
+      "credit": "ATLUS / SEGA",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "P4G",
+      "franchise": "Persona",
+      "url": "https://persona.atlus.com/p4g/",
+      "scope": "Official Golden site; rendered copy age gated",
+      "credit": "ATLUS / SEGA",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "P5R",
+      "franchise": "Persona",
+      "url": "https://persona.atlus.com/p5r/",
+      "scope": "Official Royal character image assets; rendered text sparse",
+      "credit": "ATLUS / SEGA",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "XC3",
+      "franchise": "Xenoblade Chronicles",
+      "url": "https://www.nintendo.com/en-gb/Games/Nintendo-Switch-games/Xenoblade-Chronicles-3-2168340.html",
+      "scope": "Interlink pair fusion, temporary Ouroboros; cast",
+      "credit": "Nintendo / MONOLITHSOFT",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "XC3-DEV",
+      "franchise": "Xenoblade Chronicles",
+      "url": "https://www.nintendo.com/en-ca/whatsnew/ask-the-developer-vol-6-xenoblade-chronicles-3-part-1/",
+      "scope": "Developers explicitly describe Ouroboros as two people fusing",
+      "credit": "Nintendo / MONOLITHSOFT",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "TA",
+      "franchise": "Tales of",
+      "url": "https://en.bandainamcoent.eu/tales-of/tales-of-arise",
+      "scope": "Alphen, Shionne, Rinwell, Law, Kisara, Dohalim; Boost Strike",
+      "credit": "Bandai Namco",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "TB",
+      "franchise": "Tales of",
+      "url": "https://en.bandainamcoent.eu/tales-of/tales-of-berseria",
+      "scope": "Official Berseria source",
+      "credit": "Bandai Namco",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "TS",
+      "franchise": "Tales of",
+      "url": "https://en.bandainamcoent.eu/tales-of/tales-of-symphonia",
+      "scope": "Lloyd/Chosen/Summon Spirits; official publisher source",
+      "credit": "Bandai Namco / Kosuke Fujishima",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FE-ENG",
+      "franchise": "Fire Emblem",
+      "url": "https://www.nintendo.com/au/games/nintendo-switch/fire-emblem-engage/",
+      "scope": "Alear, Emblems, rings, Engage",
+      "credit": "Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "FE-ALEAR",
+      "franchise": "Fire Emblem",
+      "url": "https://guide.fire-emblem-heroes.com/en-GB/14001001001068-2/",
+      "scope": "Official Engaging Fire Alear profile; empowered identity",
+      "credit": "Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "NIER",
+      "franchise": "NieR",
+      "url": "https://www.square-enix-games.com/en_US/news/nier-automata-switch-out-now",
+      "scope": "Androids/machine lifeforms; DLC outfits explicitly costumes",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "NIER-WEAPONS",
+      "franchise": "NieR",
+      "url": "https://gb.store.square-enix-games.com/nier_automata-plastic-model-kit---2b-_-9s-",
+      "scope": "Official model description names Virtuous Contract/Treaty, Cruel Oath/Blood Oath, Pods 042/153",
+      "credit": "Square Enix",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "SB",
+      "franchise": "Stellar Blade",
+      "url": "https://www.playstation.com/en-us/games/stellar-blade/",
+      "scope": "EVE/Tachy/Lily/Adam; official renders and combat guide",
+      "credit": "SHIFT UP / Sony Interactive Entertainment",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "RE",
+      "franchise": "Resident Evil",
+      "url": "https://game.capcom.com/residentevil/en/re-history.html",
+      "scope": "Official series timeline and casts",
+      "credit": "CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "RE-JILL",
+      "franchise": "Resident Evil",
+      "url": "https://game.capcom.com/residentevil/en/umbrella-20240607180000.html",
+      "scope": "Jill brainwashing/control device, Nemesis, Wesker",
+      "credit": "CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-22",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.square-enix.com/kingdomhearts/about/gb/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Disney / SQUARE ENIX",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-23",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.piggyback.com/en/wp-content/uploads/sites/7/2020/04/KH2_E_SamplePages.pdf",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Disney / SQUARE ENIX",
+      "source_type": "licensed primary guide",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-24",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.jp.square-enix.com/ff15/sp/character/noctis.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© SQUARE ENIX",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-25",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/en-gb/Games/Nintendo-Switch-games/Xenoblade-Chronicles-Definitive-Edition-1633054.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / MONOLITHSOFT",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-26",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/en-gb/News/2017/November/Meet-some-of-the-cast-of-Xenoblade-Chronicles-2-1303597.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / MONOLITHSOFT",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-27",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.smashbros.com/en_US/fighter/79-80.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / MONOLITHSOFT",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-28",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://tales-ch.jp/contents/tales-ch-icon/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© BANDAI NAMCO Entertainment Inc.",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-29",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/marth.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-30",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://guide.fire-emblem-heroes.com/en-US/category/character/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-31",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/characters/smashbros/index.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-32",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/roy.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-33",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/ike.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-34",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/micaiah.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-35",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/lucina.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-36",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/corrin.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-37",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/byleth.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-38",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/en-gb/Games/Nintendo-Switch-games/Fire-Emblem-Three-Houses-1175482.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-39",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.jp.square-enix.com/nierautomata/character/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© SQUARE ENIX",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-40",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.playstation.com/en-us/games/resident-evil-4-remake/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-41",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.playstation.com/en-us/games/resident-evil-3/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-42",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.playstation.com/en-us/games/resident-evil-village/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-43",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://blog.playstation.com/2019/01/25/resident-evil-2-out-today-capcom-offers-insight-into-the-terrifying-tyrant/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© CAPCOM",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-44",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://guide.fire-emblem-heroes.com/en-GB/weapon_en-gb/",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "id": "ART-SOURCE-45",
+      "franchise": "Artwork source; see per-card manifest",
+      "url": "https://www.nintendo.com/jp/fe/en/feature/engage/detail/lyn.html",
+      "scope": "Official artwork source page inspected and downloaded; exact subject matching recorded in artwork-manifest.json",
+      "credit": "© Nintendo / INTELLIGENT SYSTEMS",
+      "source_type": "official primary",
+      "checked": true
+    },
+    {
+      "franchise": "Resident Evil",
+      "url": "https://www.residentevil.com/requiem/",
+      "reference": "Resident Evil Requiem official site; game provenance for Grace Ashcroft.",
+      "source_type": "official publisher"
+    }
+  ],
+  "transformations": [
+    {
+      "identity": "Ouroboros",
+      "franchise": "Xenoblade Chronicles",
+      "classification": "temporary pair fusion",
+      "source_id": "XC3",
+      "verified": "primary text",
+      "notes": "Specific compatible pairs fuse; do not make arbitrary canon pairs."
+    },
+    {
+      "identity": "Engage",
+      "franchise": "Fire Emblem",
+      "classification": "temporary battle fusion",
+      "source_id": "FE-ENG",
+      "verified": "primary text",
+      "notes": "Character combines with Emblem. Distinguish this from Alear becoming an Emblem."
+    },
+    {
+      "identity": "Engaging Fire Alear",
+      "franchise": "Fire Emblem",
+      "classification": "empowered alternate identity",
+      "source_id": "FE-ALEAR",
+      "verified": "primary text",
+      "notes": "Official Heroes presentation; do not label every recolor a transformation."
+    },
+    {
+      "identity": "Shiva / Jill",
+      "franchise": "Final Fantasy",
+      "classification": "Eikon transformation",
+      "source_id": "FF16",
+      "verified": "primary text",
+      "notes": "Jill is Shiva's Dominant."
+    },
+    {
+      "identity": "Phoenix / Joshua",
+      "franchise": "Final Fantasy",
+      "classification": "Eikon transformation",
+      "source_id": "FF16",
+      "verified": "primary text",
+      "notes": "Joshua is Phoenix's Dominant."
+    },
+    {
+      "identity": "Brainwashed Jill",
+      "franchise": "Resident Evil",
+      "classification": "control / altered battle state",
+      "source_id": "RE-JILL",
+      "verified": "primary text",
+      "notes": "Control device and chemical changes; not an invented biological monster form."
+    },
+    {
+      "identity": "2B/9S/A2 DLC costumes",
+      "franchise": "NieR",
+      "classification": "cosmetic",
+      "source_id": "NIER",
+      "verified": "primary text",
+      "notes": "Exclude as mechanical transformations without separate gameplay justification."
+    },
+    {
+      "identity": "Final Form Sora / Ultimate Form Sora / Anti Form Sora / Hooded Dual-Wielding Roxas",
+      "franchise": "Kingdom Hearts",
+      "classification": "requested canon battle states",
+      "source_id": "KH-HUB",
+      "verified": "specific primary form text pending",
+      "notes": "User explicitly requests these. Primary hub alone does not verify individual form mechanics; check licensed guide/game footage before final canon signoff."
+    }
+  ],
+  "artwork_candidates": [
+    {
+      "subject": "Clive Rosfield",
+      "source_id": "FF16",
+      "image_url": "https://fyre.cdn.sewest.net/ff-xvi/6389f98d0b9c7607e75aff55/clive-present-fnp192YFFf.png?quality=85&width=3840",
+      "status": "direct image URL opened"
+    },
+    {
+      "subject": "Persona 5 Royal character slot 1 costume 1",
+      "source_id": "P5R",
+      "image_url": "https://persona.atlus.com/p5r/resources/img/p5r/chara1_costume1_1547cf3551257504f0798dc89ca1be08.png",
+      "status": "direct image URL opened; visual subject verification pending"
+    },
+    {
+      "subject": "Tachy",
+      "source_id": "SB",
+      "image_url": "https://gmedia.playstation.com/is/image/SIEPDC/stellar-blade-hub-character-desktop-tachy-en-12jan24?%24100px%24=",
+      "status": "direct image URL opened"
+    },
+    {
+      "subject": "Lily",
+      "source_id": "SB",
+      "image_url": "https://gmedia.playstation.com/is/image/SIEPDC/stellar-blade-hub-character-lily-desktop-en-12jan24?%24100px%24=",
+      "status": "direct image URL opened"
+    },
+    {
+      "subject": "Adam",
+      "source_id": "SB",
+      "image_url": "https://gmedia.playstation.com/is/image/SIEPDC/stellar-blade-hub-character-adam-desktop-en-12jan24?%24100px%24=",
+      "status": "direct image URL opened"
+    },
+    {
+      "subject": "Fire Emblem Engage key art",
+      "source_id": "FE-ENG",
+      "image_url": "https://img-eshop.cdn.nintendo.net/i/f448de04544b78316e4de639cd554d417559def0946b7965e1bee9823f939304.jpg",
+      "status": "direct image URL opened; key art is not exact individual card artwork"
+    }
+  ]
+}

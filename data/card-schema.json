@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crossover TCG card record v0.1.0",
+  "type": "object",
+  "required": ["id", "name", "franchise", "game", "type", "subtypes", "affiliations", "rarity", "cost", "statistics", "effect_text", "timing", "requirements", "targets", "archetypes", "strategic_purpose", "balance_notes", "canonical_source", "artwork", "status"],
+  "properties": {
+    "id": {"type":"string","pattern":"^CS1-[0-9]{3}$"},
+    "name":{"type":"string","minLength":1},
+    "franchise":{"type":"string"},
+    "game":{"type":"string"},
+    "type":{"enum":["Character","Equipment","Ability","Speed Ability","Finisher"]},
+    "subtypes":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "affiliations":{"type":"array","items":{"type":"string"}},
+    "rarity":{"enum":["Common","Uncommon","Rare","Mythic"]},
+    "cost":{"type":"object"},
+    "statistics":{"type":["object","null"]},
+    "effect_text":{"type":"string","minLength":1},
+    "timing":{"type":"string"},
+    "requirements":{"type":"object","description":"Explicit all/any Boolean groups; no implicit precedence."},
+    "targets":{"type":"string"},
+    "archetypes":{"type":"array","items":{"type":"string"}},
+    "strategic_purpose":{"type":"string"},
+    "balance_notes":{"type":"string"},
+    "canonical_source":{"type":"object"},
+    "artwork":{"type":"object","required":["status"],"properties":{"status":{"enum":["pending","source_verified","attached"]}}},
+    "status":{"type":"object","required":["designed","mechanically_validated","balance_reviewed","playtested"],"properties":{"designed":{"type":"boolean"},"mechanically_validated":{"type":"boolean"},"balance_reviewed":{"type":"boolean"},"playtested":{"type":"boolean"}}}
+  }
+}

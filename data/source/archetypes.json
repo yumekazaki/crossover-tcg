@@ -1,0 +1,415 @@
+[
+  {
+    "name": "Keyblade armory",
+    "core_card_ids": [
+      "CS1-001",
+      "CS1-002",
+      "CS1-003",
+      "CS1-027",
+      "CS1-028",
+      "CS1-029",
+      "CS1-030",
+      "CS1-181",
+      "CS1-182",
+      "CS1-184",
+      "CS1-290",
+      "CS1-465"
+    ],
+    "strategy": "Build broad Sword Wielder support, then spend banked Light/Darkness on one exact-base form. Final rewards dual investment; Ultimate supports a wide team; Anti abandons gear/healing for burst.",
+    "resources": "Gear exposure and multiple printed resource thresholds slow the first transformation; keep a second exact base registered for a Main form.",
+    "win_condition": "Win by sustained chain pressure and Main defeats, not by transforming alone.",
+    "counterplay": "Gear removal before entry, burst against wounded bases, forcing guards before a large attack.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Nobody memory network",
+    "core_card_ids": [
+      "CS1-004",
+      "CS1-005",
+      "CS1-006",
+      "CS1-015",
+      "CS1-016",
+      "CS1-286",
+      "CS1-295",
+      "CS1-393"
+    ],
+    "strategy": "Convert defeats, filtering and equipment transfer into resilient attack selection. Xion borrows universal combat tags to use cross-franchise armory.",
+    "resources": "Loot/filter rather than unlimited draws; no direct franchise-only victory.",
+    "win_condition": "Trade Party Members for one-life pressure while recovering hand quality.",
+    "counterplay": "Focus the support body; top-deck control does not replace lost cards.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Persona Users / Wild Cards",
+    "core_card_ids": [
+      "CS1-059",
+      "CS1-068",
+      "CS1-075",
+      "CS1-221",
+      "CS1-222",
+      "CS1-321",
+      "CS1-323",
+      "CS1-328",
+      "CS1-330",
+      "CS1-475",
+      "CS1-476"
+    ],
+    "strategy": "Use Persona Manifestation Ability cards as temporary summoned actions, Wild Card subtype adaptation and narrow card selection. Manifestations are not extra persistent Characters.",
+    "resources": "Named limits bind the Compendium/recursion loop; two-card ultimate costs matter.",
+    "win_condition": "Assemble mixed-franchise chains and finish with Myriad Truths or conditional Armageddon.",
+    "counterplay": "Pressure fragile Support, deny the needed target, answer the Finisher Menu.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Driver and Blade pairs",
+    "core_card_ids": [
+      "CS1-089",
+      "CS1-090",
+      "CS1-091",
+      "CS1-092",
+      "CS1-093",
+      "CS1-232",
+      "CS1-336",
+      "CS1-337",
+      "CS1-338",
+      "CS1-339",
+      "CS1-482",
+      "CS1-483"
+    ],
+    "strategy": "Pair a Driver with a Blade, transfer compatible gear, and support them with independent franchise bodies.",
+    "resources": "Blade Awakening deploys from hand with a discard and temporary Special restriction; the pair must be maintained.",
+    "win_condition": "Sacred Arrow splits pressure between effect damage and combat; Infinity Blade rewards three franchises.",
+    "counterplay": "Separate or negate a support body; force guarded combat before resources bank.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Ouroboros pair tactics",
+    "core_card_ids": [
+      "CS1-098",
+      "CS1-099",
+      "CS1-100",
+      "CS1-101",
+      "CS1-102",
+      "CS1-103",
+      "CS1-341",
+      "CS1-426",
+      "CS1-484"
+    ],
+    "strategy": "Interlink uses one of the three canonical pairs as an Ability-established Fusion State: one active body receives power, the partner gives up attacking, guarding and Specials.",
+    "resources": "One card and a two-body commitment; no free heal-to-full, attack reset or Transformation immunity.",
+    "win_condition": "Use class diversity, a linked active attacker and Origin Blade with two eligible Ouroboros when not linked.",
+    "counterplay": "Remove a partner before payoff; a linked inactive partner cannot help Origin Blade or guard.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "SOLDIER combat package",
+    "core_card_ids": [
+      "CS1-031",
+      "CS1-034",
+      "CS1-035",
+      "CS1-201",
+      "CS1-202",
+      "CS1-410",
+      "CS1-467"
+    ],
+    "strategy": "Zack and Sephiroth provide printed SOLDIER compatibility; Cloud uses broad Sword Wielder equipment without falsely claiming canonical SOLDIER membership.",
+    "resources": "Gear investment and self-risk are shared with crossover sword teams.",
+    "win_condition": "Omnislash converts two Equipment into one answered burst.",
+    "counterplay": "Temporarily suppress gear or make the attacking body spend its one attack inefficiently.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Eikon Dominants",
+    "core_card_ids": [
+      "CS1-053",
+      "CS1-054",
+      "CS1-055",
+      "CS1-056",
+      "CS1-057",
+      "CS1-058",
+      "CS1-314",
+      "CS1-407",
+      "CS1-473"
+    ],
+    "strategy": "Use Dominant bodies for defensive resource staging; Ifrit trades attack availability for wide separate damage.",
+    "resources": "Ifrit entry needs banked currencies and another Dominant or attrition threshold.",
+    "win_condition": "Force Party trades, then use Flames of Rebirth to preserve a Main while setting up future combat.",
+    "counterplay": "Do not feed effect-damage KOs as if they caused player damage; exploit the lost attack on control turns.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Lord / Emblem bond package",
+    "core_card_ids": [
+      "CS1-122",
+      "CS1-125",
+      "CS1-127",
+      "CS1-131",
+      "CS1-140",
+      "CS1-145",
+      "CS1-148",
+      "CS1-264",
+      "CS1-368",
+      "CS1-369",
+      "CS1-490",
+      "CS1-491"
+    ],
+    "strategy": "Multiple Lords use broadly compatible sword gear; Alear becomes the set's single Emblem Character form and shares support across franchises.",
+    "resources": "This is a Lord/Emblem package, not a claim of several different Emblem Characters in the set.",
+    "win_condition": "Pair sword leaders with another franchise for Great Aether, or commit an equipped solo attacker to Lodestar Rush.",
+    "counterplay": "Attack the partner/support structure; answer temporary subtype access before attachment.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Divine Dragons",
+    "core_card_ids": [
+      "CS1-124",
+      "CS1-135",
+      "CS1-145",
+      "CS1-147",
+      "CS1-265",
+      "CS1-363",
+      "CS1-440",
+      "CS1-493"
+    ],
+    "strategy": "Dragon classifications bridge FE identities with broad Mage/Guardian tools; class borrowing permits flexible armory.",
+    "resources": "Dragonstone asks Dragon AND Guardian-or-Mage; not every Dragon automatically qualifies.",
+    "win_condition": "Use Torrential Roar to suppress tall weapon stacks during a decisive chain.",
+    "counterplay": "Remove or negate gear, pressure low-output support before its long game.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "YoRHa machine warfare",
+    "core_card_ids": [
+      "CS1-149",
+      "CS1-150",
+      "CS1-151",
+      "CS1-152",
+      "CS1-153",
+      "CS1-157",
+      "CS1-158",
+      "CS1-266",
+      "CS1-270",
+      "CS1-371",
+      "CS1-372",
+      "CS1-373",
+      "CS1-495",
+      "CS1-496"
+    ],
+    "strategy": "Androids combine effect-damage control, repeated physical gear usage and card recovery; 9S locks a used gear ability through the next turn.",
+    "resources": "Self-risk/recoil, discard costs and explicit recovery delays prevent a free replacement engine.",
+    "win_condition": "Create a safe decisive Berserk Mode attack or pair Android and Gunner for Pod pressure.",
+    "counterplay": "Separate-damage shields, precise equipment removal, forcing A2 to expose low HP.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "B.O.W. attrition",
+    "core_card_ids": [
+      "CS1-175",
+      "CS1-176",
+      "CS1-177",
+      "CS1-178",
+      "CS1-179",
+      "CS1-180",
+      "CS1-388",
+      "CS1-390",
+      "CS1-457",
+      "CS1-500"
+    ],
+    "strategy": "Large creatures contest Party trades; injury and biological support produce resilient combat targets. G-1 is a standalone mutated identity, not a fictitious transformation chain.",
+    "resources": "No automatic resurrection loop or direct player burn. Complete Global Saturation requires two gear and another B.O.W., not an unavailable transformed B.O.W.",
+    "win_condition": "Grind one-life Party defeats and finish after guards are depleted.",
+    "counterplay": "Gunner anti-creature equipment, Anti-Tank Finale, heal reduction.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Andro-Eidos precision",
+    "core_card_ids": [
+      "CS1-159",
+      "CS1-160",
+      "CS1-161",
+      "CS1-162",
+      "CS1-163",
+      "CS1-166",
+      "CS1-271",
+      "CS1-272",
+      "CS1-273",
+      "CS1-274",
+      "CS1-450",
+      "CS1-497"
+    ],
+    "strategy": "Use parry/recovery responses to keep a gear-bearing duelist alive, then enter Tachy Mode with a real two-Equipment requirement.",
+    "resources": "Bank currencies; the form cannot guard and has delayed recoil.",
+    "win_condition": "Turn defensive survival into Burst Counteroffensive or a gear-supported Tachy attack.",
+    "counterplay": "Wide chains avoid solo-parry rewards; answer attachment or force recoil timing.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Crossover Sword Wielders",
+    "core_card_ids": [
+      "CS1-001",
+      "CS1-031",
+      "CS1-085",
+      "CS1-104",
+      "CS1-127",
+      "CS1-145",
+      "CS1-159",
+      "CS1-201",
+      "CS1-254",
+      "CS1-342",
+      "CS1-490"
+    ],
+    "strategy": "Share Buster Sword, Levin Sword and class exchange across series rather than named weapon locks.",
+    "resources": "Balance paid chain participation against an unused free Party attack.",
+    "win_condition": "Choose tall duo or wide chain pressure; gear transfer keeps sunk resources relevant.",
+    "counterplay": "Individual ATK suppression and temporary equipment negation; well-paid Allied Guard.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Gunner alliance",
+    "core_card_ids": [
+      "CS1-036",
+      "CS1-051",
+      "CS1-086",
+      "CS1-167",
+      "CS1-169",
+      "CS1-208",
+      "CS1-276",
+      "CS1-277",
+      "CS1-280",
+      "CS1-455",
+      "CS1-460",
+      "CS1-499"
+    ],
+    "strategy": "Gunners spread effect damage, suppress guard plans, then use firearm equipment for Party-focused combat.",
+    "resources": "Consumable Rocket Launcher and Last Magazine sacrifice investment or hand cards.",
+    "win_condition": "Take Party life points efficiently; Anti-Tank Finale removes a blocker but separate effect KOs themselves give no life damage.",
+    "counterplay": "Guardian mitigation, force equipment sacrifice before the real attack, protect wounded bodies.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Berserker injury pressure",
+    "core_card_ids": [
+      "CS1-007",
+      "CS1-017",
+      "CS1-067",
+      "CS1-097",
+      "CS1-110",
+      "CS1-142",
+      "CS1-151",
+      "CS1-247",
+      "CS1-349",
+      "CS1-466"
+    ],
+    "strategy": "Self-inflicted damage unlocks large ATK at a genuine survivability cost. Laphicet turns one injury event into bounded support recovery.",
+    "resources": "Named caps and nonlethal-self-damage text prevent intentionally reviving an untransformed Main for a free full heal.",
+    "win_condition": "Convert a wounded window into one heavy chain; Anti Form or B-Mode offer different terminal states.",
+    "counterplay": "Prevent a single large burst, deny healing, attack the exposed Party body.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Summoner manifestations",
+    "core_card_ids": [
+      "CS1-019",
+      "CS1-059",
+      "CS1-068",
+      "CS1-075",
+      "CS1-087",
+      "CS1-108",
+      "CS1-292",
+      "CS1-308",
+      "CS1-321",
+      "CS1-323",
+      "CS1-328"
+    ],
+    "strategy": "Summoners bridge Persona actions, protected setup and exact-card recovery. There is no unregistered token or hidden summon deck.",
+    "resources": "Manifestations are spent Ability cards; recursion uses actual cards and named restrictions.",
+    "win_condition": "Support a mixed attack team while retaining enough guard-capable bodies.",
+    "counterplay": "Pressure hand resources; graveyard-to-hand is not unrestricted immediate deployment.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Healer / Guardian sustain",
+    "core_card_ids": [
+      "CS1-003",
+      "CS1-033",
+      "CS1-064",
+      "CS1-107",
+      "CS1-120",
+      "CS1-134",
+      "CS1-187",
+      "CS1-237",
+      "CS1-248",
+      "CS1-281",
+      "CS1-346",
+      "CS1-361"
+    ],
+    "strategy": "Coordinate guards and bounded restoration; decide which ally can afford to receive the split.",
+    "resources": "Every guard costs2 Momentum; multiple healing bodies give up attack output and are vulnerable Party targets.",
+    "win_condition": "Preserve life while taking efficient Party trades; sustain alone does not win.",
+    "counterplay": "Guard taxes, anti-heal, tall decisive attacks, gear removal; stall is a release watch item.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Tactician forecast",
+    "core_card_ids": [
+      "CS1-014",
+      "CS1-049",
+      "CS1-065",
+      "CS1-073",
+      "CS1-082",
+      "CS1-101",
+      "CS1-128",
+      "CS1-140",
+      "CS1-230",
+      "CS1-299",
+      "CS1-332",
+      "CS1-344",
+      "CS1-416"
+    ],
+    "strategy": "Use top-deck/hand information to select targets and prepare narrow responses; no blanket hand destruction.",
+    "resources": "Filtering is not raw card draw; some searches require a discard.",
+    "win_condition": "Make the opponent's expensive attack or protection miss its best target, then counterattack.",
+    "counterplay": "Diverse response names and independent threats reduce prediction value.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Martial Artist duelists",
+    "core_card_ids": [
+      "CS1-032",
+      "CS1-045",
+      "CS1-063",
+      "CS1-070",
+      "CS1-225",
+      "CS1-300",
+      "CS1-403",
+      "CS1-469"
+    ],
+    "strategy": "Use hand-reveal/resource sequencing and solo attacks rather than generic seven-body chains.",
+    "resources": "Solo Finisher commits one card and4 Momentum; guards can still split the total.",
+    "win_condition": "Final Heaven concentrates pressure on a chosen battle without automatic victory.",
+    "counterplay": "Allied Guard, specific prevention, forcing defensive commitments first.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  },
+  {
+    "name": "Therion / Tales injury support",
+    "core_card_ids": [
+      "CS1-110",
+      "CS1-111",
+      "CS1-112",
+      "CS1-114",
+      "CS1-116",
+      "CS1-117",
+      "CS1-250",
+      "CS1-349",
+      "CS1-350",
+      "CS1-431",
+      "CS1-487",
+      "CS1-488"
+    ],
+    "strategy": "Turn controlled self-risk into resource-efficient attacks while Laphicet and Healers sustain the Party.",
+    "resources": "Injury is damage, not free currency; card-name caps persist across zone changes.",
+    "win_condition": "A wounded Therion threatens Lethal Pain, while Sword/Healer teams use Blazing Pillar.",
+    "counterplay": "Remove support or deny a high-value wounded target; defense before calculation matters.",
+    "status": "Designed and qualitatively reviewed; full-effect matchup viability not established."
+  }
+]

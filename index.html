@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111823">
+  <meta name="description" content="A local, rules-driven Crossover TCG prototype using the authoritative 500-card set.">
+  <title>Crossover TCG — Local Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="src/ui/card-browser.css">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="#home" aria-label="Crossover TCG home"><span class="brand-mark">C</span><span>CROSSOVER <small>TACTICAL CARD GAME</small></span></a>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <button class="nav-button is-active" data-view="library">Library &amp; Deck Lab</button>
+      <button class="nav-button" data-view="practice">Local Practice</button>
+      <button class="nav-button" data-view="status">Project Status</button>
+    </nav>
+    <span class="local-badge"><i></i> LOCAL BUILD</span>
+  </header>
+  <main>
+    <section id="library-view" class="view is-visible">
+      <div class="hero">
+        <div><p class="eyebrow">FIRST PLAYABLE SLICE · 500 CARD DATASET</p><h1>Choose your next combination.</h1><p>Browse the complete set, inspect the full card text, and validate a deck against the established limits.</p></div>
+        <div class="hero-stat"><strong id="card-count">500</strong><span>canonical cards</span><small id="implemented-effects">Loading engine coverage…</small></div>
+      </div>
+      <section class="deck-controls" aria-label="Deck management">
+        <label>Deck<select id="deck-select"></select></label>
+        <label>Deck name<input id="deck-name" maxlength="48" value="New Deck"></label>
+        <div class="deck-buttons">
+          <button id="save-deck" class="button-primary">Save</button>
+          <button id="new-deck" class="button-quiet">New</button>
+          <button id="duplicate-deck" class="button-quiet">Duplicate</button>
+          <button id="delete-deck" class="button-danger">Delete</button>
+          <button id="export-deck" class="button-quiet">Export</button>
+          <button id="import-deck" class="button-quiet">Import</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden>
+        </div>
+      </section>
+      <div id="card-browser"></div>
+    </section>
+    <section id="practice-view" class="view" hidden>
+      <div class="page-heading"><p class="eyebrow">PRACTICE · LOCAL SANDBOX</p><h1>Run a match rehearsal</h1><p>This build runs two seats on this device. It is not online multiplayer. Choose validated registered decks to start; each action is checked by the rules reducer.</p></div>
+      <div class="match-setup">
+        <label>Player One deck<select id="p1-deck"></select></label>
+        <label>Player Two deck<select id="p2-deck"></select></label>
+        <label>First player chooser<select id="chooser"><option value="p1">Player One</option><option value="p2">Player Two</option></select></label>
+        <label>First player<select id="first-player"><option value="p1">Player One</option><option value="p2">Player Two</option></select></label>
+        <button id="start-match" class="button-primary">Start local match</button>
+        <button id="reset-match" class="button-quiet" disabled>Reset match</button>
+        <p id="match-notice" class="notice" role="status"></p>
+      </div>
+      <div id="match-board" class="match-board" hidden></div>
+    </section>
+    <section id="status-view" class="view" hidden>
+      <div class="page-heading"><p class="eyebrow">BUILD STATUS</p><h1>What works in this build</h1><p>Imported source data is not the same as implemented or tested game functionality. This view lists the current boundaries.</p></div>
+      <div class="status-grid">
+        <article class="status-card status-good"><h2>Imported</h2><p>All 500 exact card records, the recovered master rules, decision history, and subtype/form registries are in this separate project.</p></article>
+        <article class="status-card status-progress"><h2>Implemented slice</h2><p>Deck checks, setup/mulligans, standard Party deployment, paid compatible Equipment attachment, response Menus, two healing effects, turn resources, basic chain combat and defeat/life handling.</p></article>
+        <article class="status-card status-open"><h2>Not complete</h2><p>Most effects, Finishers, transformations, full trigger/delay/protection system, complete effect negation, persistence, accounts, AI, and online matches are not implemented yet.</p></article>
+        <article class="status-card status-open"><h2>Artwork and hosting</h2><p>Card images show placeholders until redistribution rights are approved. This local prototype has not been deployed and has no connected backend.</p></article>
+      </div>
+    </section>
+  </main>
+  <footer><span>CROSSOVER TCG · ENGINE PREVIEW 0.1</span><span>Separate local project · No Vanguard files or services</span></footer>
+  <dialog id="card-dialog" class="card-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button></form><div id="dialog-content"></div></dialog>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

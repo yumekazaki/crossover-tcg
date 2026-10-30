@@ -1,0 +1,202 @@
+{
+  "version": "1.0.0",
+  "rule": "Exact base card IDs, not a name-only match. Main requires a second registered exact base copy reserved under D011. No form-to-form entry. Gear compatibility rechecked on transformation.",
+  "entries": [
+    {
+      "card_id": "CS1-027",
+      "name": "Sora, Final Form",
+      "base_id": "CS1-001",
+      "category": "Alternate Battle Form",
+      "entry_requirement": "Replace the exact base CS1-001 in your Main Phase with empty Menu, paying printed resources. The base must have at least two differently named Equipment attached. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 3,
+        "darkness": 2,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 8500,
+        "hp": 21000
+      },
+      "source": {
+        "url": "https://www.square-enix.com/kingdomhearts/about/gb/",
+        "reference": "Kingdom Hearts II; Sora, Final Form"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-028",
+      "name": "Sora, Ultimate Form",
+      "base_id": "CS1-001",
+      "category": "Alternate Battle Form",
+      "entry_requirement": "Replace the exact base CS1-001 in your Main Phase with empty Menu, paying printed resources. The base must have at least two differently named Equipment attached with combined printed Light plus Darkness costs of at least 6. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 5,
+        "darkness": 3,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 9000,
+        "hp": 24000
+      },
+      "source": {
+        "url": "https://www.square-enix.com/kingdomhearts/about/gb/",
+        "reference": "Kingdom Hearts III; Sora, Ultimate Form"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-029",
+      "name": "Sora, Anti Form",
+      "base_id": "CS1-001",
+      "category": "Corruption",
+      "entry_requirement": "Replace the exact base CS1-001 in your Main Phase with empty Menu, paying printed resources. The base must have no more than half its maximum HP. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 1,
+        "darkness": 4,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 10000,
+        "hp": 18000
+      },
+      "source": {
+        "url": "https://www.square-enix.com/kingdomhearts/about/gb/",
+        "reference": "Kingdom Hearts II; Sora, Anti Form"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-030",
+      "name": "Roxas, Hooded Dual Wielder",
+      "base_id": "CS1-004",
+      "category": "Recognizable Battle State",
+      "entry_requirement": "Replace the exact base CS1-004 in your Main Phase with empty Menu, paying printed resources. The base must have at least two differently named Equipment attached. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 3,
+        "darkness": 3,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 9000,
+        "hp": 20000
+      },
+      "source": {
+        "url": "https://www.square-enix.com/kingdomhearts/about/gb/",
+        "reference": "358/2 Days; Roxas, Hooded Dual Wielder"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-058",
+      "name": "Clive, Ifrit",
+      "base_id": "CS1-053",
+      "category": "Canonical Transformation",
+      "entry_requirement": "Replace the exact base CS1-053 in your Main Phase with empty Menu, paying printed resources. You must control another Dominant or have at least ten cards in your Continue? Zone. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 4,
+        "darkness": 3,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 9500,
+        "hp": 26000
+      },
+      "source": {
+        "url": "https://uk.finalfantasyxvi.com/characters",
+        "reference": "Final Fantasy XVI; Clive, Ifrit"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-148",
+      "name": "Alear, Emblem of Bonds",
+      "base_id": "CS1-145",
+      "category": "Canonical Special Identity",
+      "entry_requirement": "Replace the exact base CS1-145 in your Main Phase with empty Menu, paying printed resources. You must control Characters from at least three franchises. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 4,
+        "darkness": 2,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 7000,
+        "hp": 23000
+      },
+      "source": {
+        "url": "https://www.nintendo.com/us/store/products/fire-emblem-engage-114548/",
+        "reference": "Engage; Alear, Emblem of Bonds"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-158",
+      "name": "A2, B-Mode",
+      "base_id": "CS1-151",
+      "category": "Temporary Power-Up",
+      "entry_requirement": "Replace the exact base CS1-151 in your Main Phase with empty Menu, paying printed resources. The base must have no more than half its maximum HP. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 1,
+        "darkness": 4,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 10000,
+        "hp": 20000
+      },
+      "source": {
+        "url": "https://www.jp.square-enix.com/nierautomata/character/",
+        "reference": "NieR: Automata; A2, B-Mode"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-166",
+      "name": "EVE, Tachy Mode",
+      "base_id": "CS1-159",
+      "category": "Temporary Power-Up",
+      "entry_requirement": "Replace the exact base CS1-159 in your Main Phase with empty Menu, paying printed resources. The base must have at least two Equipment attached. If transforming in Center, reserve another registered exact base copy under D011.",
+      "cost": {
+        "light": 3,
+        "darkness": 3,
+        "momentum": 0
+      },
+      "slots": 2,
+      "statistics": {
+        "atk": 9000,
+        "hp": 22000
+      },
+      "source": {
+        "url": "https://www.playstation.com/en-us/games/stellar-blade/",
+        "reference": "Stellar Blade; EVE, Tachy Mode"
+      },
+      "artwork_status": "pending"
+    },
+    {
+      "card_id": "CS1-341",
+      "name": "Interlink",
+      "category": "Fusion State established by Ability",
+      "base_pairs": [
+        [
+          "CS1-098",
+          "CS1-099"
+        ],
+        [
+          "CS1-100",
+          "CS1-101"
+        ],
+        [
+          "CS1-102",
+          "CS1-103"
+        ]
+      ],
+      "implementation": "Linked temporary battle state. Active gains ATK/HP; partner cannot act. Does not grant Transformed protection or reset damage/attack usage."
+    }
+  ]
+}
