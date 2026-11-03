@@ -149,6 +149,7 @@ export function validateDeck({ mainIds, equipmentIds } = {}) {
   const main = Array.isArray(mainIds) ? mainIds : [];
   const equipment = Array.isArray(equipmentIds) ? equipmentIds : [];
   if (main.length < 40 || main.length > 60) errors.push('Main Deck must contain 40–60 cards.');
+  if (!main.some((id) => { const card = index.get(id); return card?.type === 'Character' && !card.transformation; })) errors.push('Main Deck must contain at least one nontransformed Character for starting Main selection.');
   let equipmentSlots = 0, finisherCount = 0;
   const copies = new Map();
   for (const [deck, ids] of [['Main', main], ['Equipment/Transformation', equipment]]) {

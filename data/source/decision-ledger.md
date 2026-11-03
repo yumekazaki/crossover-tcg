@@ -1,8 +1,10 @@
 # Designer decision ledger
 
-Version1.0.0 · 2026-10-30
+Version1.0.1 · 2026-11-02
 
 D001–D020 are fully specified in master-rulebook.md section12. They fill gaps rather than claiming historical approval. Key completions: public arsenal;0 initial Light/Darkness;2-slot forms; first player draws but cannot attack first turn; exact base reserve for Main forms; combat-only life loss; target-identity chain failure; per-combat printed Finisher limit.
+
+D001 setup clarification in v1.0.1: the first player selects/reveals their registered starting Main first, then the second player. Both starting physical copies are removed before either remaining Main Deck is shuffled or opening hands are dealt. This order was previously unspecified; it is an implementation-facing completion for a deterministic legal setup sequence.
 
 ## Smallest conflict corrections
 - Latest combined Chain model supersedes old individually resolving attacks and block assignments. No interruption between participants.

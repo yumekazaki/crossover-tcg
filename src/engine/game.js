@@ -48,6 +48,7 @@ export function validateRegistration(deck, cardIndex) {
     copies.set(id, (copies.get(id) ?? 0) + 1);
     if (card.type === 'Finisher') finishers += 1;
   }
+  if (!mainIds.some((id) => { const card = cardIndex.get(id); return card?.type === 'Character' && !card.transformation; })) errors.push('Main Deck must contain at least one nontransformed Character for starting Main selection.');
   let slots = 0;
   for (const id of equipmentIds) {
     const card = cardIndex.get(id);
@@ -79,36 +80,26 @@ export function createInitialState({ players, chooserId, seed = 1, cards }) {
   const ids = players.map((p) => p.id);
   if (new Set(ids).size !== 2 || ids.some((id) => !id)) fail('PLAYER_IDS', 'Players must have distinct nonempty IDs.');
   if (!ids.includes(chooserId)) fail('FIRST_PLAYER', 'The first-player chooser must be a registered player.');
-  const rng = makeRng(seed);
   const instances = {};
   const pstate = {};
   let nextInstance = 1;
   for (const player of players) {
     const registration = validateRegistration(player.deck, cardIndex);
     if (!registration.valid) fail('ILLEGAL_DECK', `${player.name ?? player.id}: ${registration.errors.join(' ')}`);
-    const starterCard = cardIndex.get(player.startingMainId);
-    if (!starterCard || starterCard.type !== 'Character' || starterCard.transformation || !player.deck.mainIds.includes(player.startingMainId)) fail('ILLEGAL_STARTER', 'Starting Main must be a nontransformed Character registered in the Main Deck.');
     const owned = (cardId, zone) => {
       const id = `${player.id}-C${String(nextInstance++).padStart(4, '0')}`;
       instances[id] = createInstance({ id, cardId, ownerId: player.id, zone });
       return id;
     };
-    const registeredMain = player.deck.mainIds.map((cardId) => owned(cardId, 'mainDeck'));
-    const starter = registeredMain.find((instanceId) => same(instances[instanceId].cardId, player.startingMainId));
-    instances[starter].zone = 'center';
-    const mainDeck = shuffle(registeredMain.filter((id) => id !== starter), rng);
-    const hand = mainDeck.splice(0, 5);
-    hand.forEach((id) => { instances[id].zone = 'hand'; });
+    const mainDeck = player.deck.mainIds.map((cardId) => owned(cardId, 'mainDeck'));
     const arsenal = player.deck.equipmentIds.map((cardId) => owned(cardId, 'arsenal'));
-    const starterInstance = instances[starter];
-    starterInstance.battlefield = { currentHp: maxHp(starterInstance, cardIndex, true), maxHp: maxHp(starterInstance, cardIndex, true), position: 'center' };
     pstate[player.id] = {
       id: player.id,
       name: player.name ?? player.id,
       life: 15,
       resources: { momentum: 5, light: 0, darkness: 0 },
-      zones: { mainDeck, hand, continue: [], revealed: [], arsenal, baseReserve: [] },
-      center: starter,
+      zones: { mainDeck, hand: [], continue: [], revealed: [], arsenal, baseReserve: [] },
+      center: null,
       party: Array(6).fill(null),
       registration: { mainCount: player.deck.mainIds.length, equipmentIds: [...player.deck.equipmentIds] },
       turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], suppressNextEquipmentAbilities: false, nameLimits: {} }
@@ -125,8 +116,10 @@ export function createInitialState({ players, chooserId, seed = 1, cards }) {
     phase: 'first-player-choice',
     priorityPlayerId: chooserId,
     phasePasses: 0,
-    mulliganOrder: [...ids],
+    mulliganOrder: [],
     mulliganIndex: 0,
+    startingMainOrder: [],
+    startingMainIndex: 0,
     instances,
     nextInstanceNumber: nextInstance,
     menu: null,
@@ -769,10 +762,51 @@ export function dispatch(stateInput, action, cards) {
     state.playerOrder = [action.firstPlayerId, secondPlayerId];
     state.activePlayerId = action.firstPlayerId;
     state.priorityPlayerId = action.firstPlayerId;
-    state.mulliganOrder = [...state.playerOrder];
-    state.mulliganIndex = 0;
-    state.phase = 'mulligan';
+    state.startingMainOrder = [...state.playerOrder];
+    state.startingMainIndex = 0;
+    state.activePlayerId = state.startingMainOrder[0];
+    state.priorityPlayerId = state.activePlayerId;
+    state.phase = 'starting-main-selection';
     addLog(state, { type: 'FIRST_PLAYER_CHOSEN', chooserId: action.playerId, firstPlayerId: action.firstPlayerId });
+    return state;
+  }
+
+  if (state.phase === 'starting-main-selection') {
+    if (action.type !== 'SELECT_STARTING_MAIN') fail('SETUP_ONLY', 'Both players must select a starting Main before opening hands are dealt.');
+    const expected = state.startingMainOrder[state.startingMainIndex];
+    if (action.playerId !== expected) fail('STARTING_MAIN_ORDER', 'Players select starting Mains in first-player order.');
+    const instance = state.instances[action.instanceId];
+    const card = instance && cardIndex.get(instance.cardId);
+    if (!instance || instance.ownerId !== player.id || instance.zone !== 'mainDeck' || !player.zones.mainDeck.includes(instance.instanceId)
+      || card?.type !== 'Character' || card.transformation) fail('ILLEGAL_STARTER', 'Choose one nontransformed Character physical copy from your registered Main Deck.');
+    player.zones.mainDeck = player.zones.mainDeck.filter((id) => id !== instance.instanceId);
+    instance.zone = 'center';
+    instance.battlefield = { currentHp: maxHp(instance, cardIndex, true), maxHp: maxHp(instance, cardIndex, true), position: 'center' };
+    player.center = instance.instanceId;
+    addLog(state, { type: 'STARTING_MAIN_SELECTED', playerId: player.id, instanceId: instance.instanceId, cardId: instance.cardId });
+    state.startingMainIndex += 1;
+    if (state.startingMainIndex === state.startingMainOrder.length) {
+      const rng = makeRng(state.randomSeed);
+      for (const playerId of state.playerOrder) {
+        const startingPlayer = state.players[playerId];
+        startingPlayer.zones.mainDeck = shuffle(startingPlayer.zones.mainDeck, rng);
+        for (let i = 0; i < 5; i += 1) {
+          const drawnId = startingPlayer.zones.mainDeck.shift();
+          if (!drawnId) fail('STARTING_HAND_UNAVAILABLE', 'A validated Main Deck must provide five opening cards.');
+          state.instances[drawnId].zone = 'hand';
+          startingPlayer.zones.hand.push(drawnId);
+        }
+      }
+      state.mulliganOrder = [...state.playerOrder];
+      state.mulliganIndex = 0;
+      state.activePlayerId = state.playerOrder[0];
+      state.priorityPlayerId = state.activePlayerId;
+      state.phase = 'mulligan';
+      addLog(state, { type: 'OPENING_HANDS_DEALT', playerOrder: [...state.playerOrder], handSize: 5 });
+    } else {
+      state.activePlayerId = state.startingMainOrder[state.startingMainIndex];
+      state.priorityPlayerId = state.activePlayerId;
+    }
     return state;
   }
 
@@ -1197,6 +1231,13 @@ export function getLegalActions(state, playerId, cards) {
   if (!player || state.status === 'finished') return [];
   if (state.phase === 'first-player-choice') return playerId === state.firstPlayerChooserId
     ? state.playerOrder.map((firstPlayerId) => ({ type: 'CHOOSE_FIRST_PLAYER', firstPlayerId })) : [];
+  if (state.phase === 'starting-main-selection') {
+    if (playerId !== state.startingMainOrder[state.startingMainIndex]) return [];
+    return player.zones.mainDeck.filter((id) => {
+      const card = cardIndex.get(state.instances[id]?.cardId);
+      return card?.type === 'Character' && !card.transformation;
+    }).map((instanceId) => ({ type: 'SELECT_STARTING_MAIN', instanceId }));
+  }
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
   if (state.resolutionChoice) {
     if (state.resolutionChoice.playerId !== playerId) return [];
@@ -1343,7 +1384,9 @@ export function assertStateInvariants(state, cards) {
     for (const id of allZones) { if (seen.has(id)) fail('ZONE_DUPLICATION', `${id} appears in more than one zone.`); seen.add(id); }
     for (const id of allZones) if (!state.instances[id]) fail('UNKNOWN_INSTANCE', `${id} has no card instance record.`);
     const center = player.center && state.instances[player.center];
-    if (!center?.battlefield || center.battlefield.position !== 'center' || center.controllerId !== player.id) fail('CENTER_INVARIANT', `${player.id} must control one Character in Center.`);
+    const setupAllowsMissingCenter = ['first-player-choice', 'starting-main-selection'].includes(state.phase);
+    if (!center && !setupAllowsMissingCenter) fail('CENTER_INVARIANT', `${player.id} must control one Character in Center.`);
+    if (center && (!center.battlefield || center.battlefield.position !== 'center' || center.controllerId !== player.id)) fail('CENTER_INVARIANT', `${player.id} must control one Character in Center.`);
     for (const id of player.party.filter(Boolean)) { const c=state.instances[id]; if(!c?.battlefield||c.battlefield.position==='center'||c.controllerId!==player.id) fail('PARTY_INVARIANT',`${id} is not a controlled Party Member.`); }
   }
   for (const instance of Object.values(state.instances)) if (instance.zone === 'attached' && (!instance.attachedTo || !state.instances[instance.attachedTo]?.battlefield)) fail('ATTACHMENT_INVARIANT', `${instance.instanceId} has no legal host.`);

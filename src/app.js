@@ -90,20 +90,14 @@ async function importDeck(file) {
   const result = deckCheck(deck); saved.push(deck); activeDeckId = deck.id; persist(); syncDeckUI();
   $('match-notice').textContent = result.valid ? 'Deck imported and validated.' : `Deck imported as a draft: ${result.errors.join(' ')}`;
 }
-function selectedMainId(deck) {
-  if (deck.startingMainId && deck.mainIds.includes(deck.startingMainId)) return deck.startingMainId;
-  return deck.mainIds.find((id) => { const card = cards.find((x) => x.id === id); return card?.type === 'Character' && !card.transformation; }) || null;
-}
 function startMatch() {
   const p1 = saved.find((deck) => deck.id === $('p1-deck').value), p2 = saved.find((deck) => deck.id === $('p2-deck').value);
   if (!p1 || !p2) { $('match-notice').textContent = 'Choose two saved decks that pass validation.'; return; }
   for (const deck of [p1, p2]) { const check = deckCheck(deck); if (!check.valid) { $('match-notice').textContent = `${deck.name}: ${check.errors.join(' ')}`; return; } }
-  const starter1 = selectedMainId(p1), starter2 = selectedMainId(p2);
-  if (!starter1 || !starter2) { $('match-notice').textContent = 'Each deck must contain a nontransformed Character to start.'; return; }
   const chooserId = Math.random() < 0.5 ? 'p1' : 'p2';
   const state = createInitialState({
-    players: [{ id: 'p1', name: 'Player One', deck: { mainIds: p1.mainIds, equipmentIds: p1.equipmentIds }, startingMainId: starter1 },
-      { id: 'p2', name: 'Player Two', deck: { mainIds: p2.mainIds, equipmentIds: p2.equipmentIds }, startingMainId: starter2 }],
+    players: [{ id: 'p1', name: 'Player One', deck: { mainIds: p1.mainIds, equipmentIds: p1.equipmentIds } },
+      { id: 'p2', name: 'Player Two', deck: { mainIds: p2.mainIds, equipmentIds: p2.equipmentIds } }],
     chooserId, seed: Math.floor(Math.random() * 0xffffffff), cards
   });
   match = state; $('match-board').hidden = false; $('reset-match').disabled = false;
@@ -112,7 +106,14 @@ function startMatch() {
 }
 function cardName(instanceId) { const instance = match.instances[instanceId]; return cards.find((card) => card.id === instance?.cardId)?.name || instance?.cardId || 'Empty'; }
 function safeDispatch(action) {
-  try { match = dispatch(match, action, cards); assertStateInvariants(match, cards); renderMatch(); }
+  try {
+    match = dispatch(match, action, cards);
+    assertStateInvariants(match, cards);
+    if (match.phase === 'starting-main-selection') $('match-notice').textContent = `${match.players[match.startingMainOrder[match.startingMainIndex]].name} selects their Starting Main now.`;
+    else if (match.phase === 'mulligan') $('match-notice').textContent = `Starting Mains are set. ${match.players[match.mulliganOrder[match.mulliganIndex]].name} may return up to five opening cards.`;
+    else if (match.phase === 'main' && action.type === 'MULLIGAN') $('match-notice').textContent = 'Setup complete. The first player begins their Main Phase.';
+    renderMatch();
+  }
   catch (error) { const notice = $('match-notice'); notice.textContent = `${error.code || 'ERROR'}: ${error.message}`; notice.classList.add('is-error'); setTimeout(() => notice.classList.remove('is-error'), 4000); }
 }
 function create(tag, className, text) { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; }
@@ -143,7 +144,8 @@ function showCard(card) {
 }
 function renderSeat(playerId, revealHand = false) {
   const player = match.players[playerId], seat = create('article', 'seat'), header = create('div', 'seat-header');
-  const name = create('h3', '', `${player.name}${match.phase !== 'first-player-choice' && match.activePlayerId === playerId ? ' · TURN' : ''}${match.phase !== 'first-player-choice' && match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}${match.phase === 'first-player-choice' && match.firstPlayerChooserId === playerId ? ' · CHOOSER' : ''}`);
+  const isSelectingMain = match.phase === 'starting-main-selection' && match.startingMainOrder[match.startingMainIndex] === playerId;
+  const name = create('h3', '', `${player.name}${!['first-player-choice', 'starting-main-selection'].includes(match.phase) && match.activePlayerId === playerId ? ' · TURN' : ''}${!['first-player-choice', 'starting-main-selection'].includes(match.phase) && match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}${match.phase === 'first-player-choice' && match.firstPlayerChooserId === playerId ? ' · CHOOSER' : ''}${isSelectingMain ? ' · PICKING STARTING MAIN' : ''}`);
   const resources = create('div', 'seat-resources'); resources.innerHTML = `<b class="life">${player.life} LIFE</b><b>${player.resources.momentum} M</b><b>${player.resources.light} L</b><b>${player.resources.darkness} D</b>`; header.append(name, resources); seat.append(header);
   const zones = create('div', 'zones'); zones.append(renderCharacterZone(player, player.center, 'CENTER · MAIN', true));
   const party = create('div', 'party-zones'); player.party.forEach((id, index) => party.append(renderCharacterZone(player, id, `PARTY ${index + 1}`)));
@@ -187,6 +189,7 @@ function renderActions(actions, actorId, container) {
       continue;
     }
     if (action.type === 'CHOOSE_FIRST_PLAYER') { container.append(actionButton(`Choose ${match.players[action.firstPlayerId].name} to go first`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+    if (action.type === 'SELECT_STARTING_MAIN') { container.append(actionButton(`Choose ${cardName(action.instanceId)} as Starting Main`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'ASSIGN_GUARDS') {
@@ -232,9 +235,9 @@ function renderMatch() {
   if (!match) return;
   const root = $('match-board'); root.replaceChildren();
   const current = create('div', 'match-topline');
-  current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.phase === 'first-player-choice' ? `First-player choice · ${match.players[match.firstPlayerChooserId].name} is chooser` : match.status === 'setup' ? `Opening mulligan · ${match.mulliganOrder[match.mulliganIndex] === 'p1' ? 'Player One' : 'Player Two'}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
-  current.append(create('span', '', match.phase === 'first-player-choice' ? `${match.players[match.firstPlayerChooserId].name} is choosing who goes first` : match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
-  const actorId = match.status === 'finished' ? null : match.phase === 'first-player-choice' ? match.firstPlayerChooserId : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
+  current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.phase === 'first-player-choice' ? `First-player choice · ${match.players[match.firstPlayerChooserId].name} is chooser` : match.phase === 'starting-main-selection' ? `Starting Main · ${match.players[match.startingMainOrder[match.startingMainIndex]].name} chooses a Character` : match.status === 'setup' ? `Opening mulligan · ${match.players[match.mulliganOrder[match.mulliganIndex]].name}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
+  current.append(create('span', '', match.phase === 'first-player-choice' ? `${match.players[match.firstPlayerChooserId].name} is choosing who goes first` : match.phase === 'starting-main-selection' ? `${match.players[match.startingMainOrder[match.startingMainIndex]].name} selects a nontransformed Character from their Main Deck` : match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
+  const actorId = match.status === 'finished' ? null : match.phase === 'first-player-choice' ? match.firstPlayerChooserId : match.phase === 'starting-main-selection' ? match.startingMainOrder[match.startingMainIndex] : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
   const seats = create('div', 'match-seats'); seats.append(renderSeat('p1', actorId === 'p1'), renderSeat('p2', actorId === 'p2')); root.append(seats);
   if (match.resolutionChoice) {
     const prompt = create('section', 'turn-controls');

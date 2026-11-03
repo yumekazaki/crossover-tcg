@@ -19,7 +19,7 @@ The initial playable loop is: choose two legal decks, initialize both players, t
 
 ## Shared module contract
 
-- `createInitialState({players, firstPlayerId, chooserId, seed, cards}) -> GameState`
+- `createInitialState({players, chooserId, seed, cards}) -> GameState` begins with validated chooser and starting-Main selections before shuffle, draw and mulligan.
 - `getLegalActions(state, playerId) -> Action[]`
 - `dispatch(state, action, cards) -> GameState | throws RuleError`
 - `loadCards()` loads the canonical JSON once; `allCards()` and `getCard(cardId)` read the cache after initialization.

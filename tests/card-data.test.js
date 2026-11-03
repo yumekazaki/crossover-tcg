@@ -107,6 +107,8 @@ test('wrong deck zones, unknown IDs, missing lists and slot underfill are reject
   assert(validateDeck({ ...fixture, mainIds: ['unknown', ...fixture.mainIds.slice(1)] }).errors.some(e => /Unknown card ID/.test(e)));
   assert(!validateDeck({ ...fixture, equipmentIds: fixture.equipmentIds.slice(1) }).valid);
   assert(!validateDeck().valid);
+  const noStartingCharacter = allCards().filter(c => c.deck === 'Main' && c.type !== 'Character').slice(0, 40).map(c => c.id);
+  assert(validateDeck({ ...fixture, mainIds: noStartingCharacter }).errors.some(e => /at least one nontransformed Character/.test(e)));
 });
 test('all imported sample deck registrations validate', () => {
   assert(importedDecks.length > 0);

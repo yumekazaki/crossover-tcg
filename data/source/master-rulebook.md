@@ -1,5 +1,5 @@
 # Crossover TCG — Master Rulebook
-Version 1.0.0 design edition • 2026-10-30
+Version 1.0.1 design edition • 2026-11-02
 
 This is the single authoritative playable design edition. Historical decisions are preserved in sections 1–11; section 12 explicitly completes missing foundations and overrides their completion placeholders. New designer decisions are not represented as historical approvals. Exact recovered statements are in the Existing Rules Registry. Tournament balance and human playtesting remain separate acceptance gates.
 
@@ -116,7 +116,7 @@ Search the Main Deck as it exists at resolution, retrieve as many eligible cards
 
 These decisions fill missing essentials. They preserve the established game identity and are recorded separately from historical approvals.
 
-**D001 — Registration and setup.** Register 40–60 Main Deck cards and exactly20 separate-deck slots. Each Equipment copy occupies1 slot; each transformed Character copy occupies2. Count actual copies, not slots, toward the maximum3 per ID across registration. Base Characters, Abilities, Speed Abilities and Finishers go in Main; Equipment and transformed Characters in Equipment/Transformation. At most6 Finisher copies total. No sideboard in this edition. Players reveal decks' counts and separate-deck contents. Randomly determine who chooses the first player. Each selects and reveals one nontransformed Character from their registered Main Deck as starting Main; remove it to Center before shuffling and drawing5. It counts toward Main Deck registration, not as an extra free registered copy. Both start15 life,5 Momentum,0 Light and0 Darkness. Characters start fullHP including Center bonus. No starting Party Members.
+**D001 — Registration and setup.** Register 40–60 Main Deck cards and exactly20 separate-deck slots. Each Equipment copy occupies1 slot; each transformed Character copy occupies2. Count actual copies, not slots, toward the maximum3 per ID across registration. Base Characters, Abilities, Speed Abilities and Finishers go in Main; Equipment and transformed Characters in Equipment/Transformation. At most6 Finisher copies total. No sideboard in this edition. Players reveal decks' counts and separate-deck contents. Randomly determine who chooses the first player. Starting with that player, each player selects and reveals one nontransformed Character physical copy from their registered Main Deck as starting Main; remove each chosen copy to Center before shuffling either remaining Main Deck and drawing5. It counts toward Main Deck registration, not as an extra free registered copy. Both start15 life,5 Momentum,0 Light and0 Darkness. Characters start fullHP including Center bonus. No starting Party Members. Sequential selection in first-player order makes the setup actor and public reveal order deterministic.
 
 **D002 — Mulligan.** Each player once sets aside0–5 chosen opening hand cards face-down, shuffles those cards back into their Main Deck, then draws that many. Resolve first player's mulligan then second player's. This may redraw returned cards. No further mulligan. No game actions or triggers during setup unless explicit setup text.
 

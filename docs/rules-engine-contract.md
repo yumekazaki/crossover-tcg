@@ -6,7 +6,7 @@ Version 1.0 audit • 2026-10-30 • documentation only
 This contract maps the copied design rules to implementation requirements. It does not amend them, certify card balance, or claim that an engine already supports them.
 
 Read together:
-- [Master rulebook](../data/source/master-rulebook.md), version1.0.0: current playable authority, including D001–D020 and final integration clarifications.
+- [Master rulebook](../data/source/master-rulebook.md), version1.0.1: current playable authority, including D001–D020 and final integration clarifications.
 - [Decision ledger](../data/source/decision-ledger.md): identifies designer completions and historical conflict corrections.
 - [Existing Rules Registry](../data/source/existing-rules-registry.md): exact historical user statements and turn IDs; includes superseded decisions and contextual discussion, not a second set of cumulative active rules.
 - [Keyword reference](../data/source/keyword-reference.md): standardized aliases; the master rulebook prevails.

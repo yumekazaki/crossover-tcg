@@ -19,15 +19,23 @@ function deck(starter, duplicateStarter = false, transformationId = null) {
   return { mainIds, equipmentIds };
 }
 function game(p1Starter = 'CS1-060', duplicateStarter = false, transformationId = null) {
-  return createInitialState({
+  const state = createInitialState({
     players: [
-      { id: 'p1', name: 'Player One', deck: deck(p1Starter, duplicateStarter, transformationId), startingMainId: p1Starter },
-      { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
+      { id: 'p1', name: 'Player One', deck: deck(p1Starter, duplicateStarter, transformationId) },
+      { id: 'p2', name: 'Player Two', deck: deck('CS1-031') }
     ], chooserId: 'p2', seed: 42, cards
   });
+  state.testSetupMainIds = { p1: p1Starter, p2: 'CS1-031' };
+  return state;
+}
+function selectStartingMain(state, playerId, cardId) {
+  const action = getLegalActions(state, playerId, cards).find((candidate) => candidate.type === 'SELECT_STARTING_MAIN' && state.instances[candidate.instanceId].cardId === cardId);
+  assert.ok(action, `expected ${cardId} to be offered as ${playerId}'s starting Main`);
+  return dispatch(state, { ...action, playerId }, cards);
 }
 function start(g) {
   let s = dispatch(g, { type: 'CHOOSE_FIRST_PLAYER', playerId: g.firstPlayerChooserId, firstPlayerId: 'p1' }, cards);
+  for (const playerId of s.startingMainOrder) s = selectStartingMain(s, playerId, s.testSetupMainIds[playerId]);
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p1', instanceIds: [] }, cards);
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards);
   return s;
@@ -79,29 +87,51 @@ test('initialization validates registration, chooses a starting Main, and deals 
 test('the randomly selected chooser makes the first-player choice through a validated setup action', () => {
   let s = createInitialState({
     players: [
-      { id: 'p1', name: 'Player One', deck: deck('CS1-060'), startingMainId: 'CS1-060' },
-      { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
+      { id: 'p1', name: 'Player One', deck: deck('CS1-060') },
+      { id: 'p2', name: 'Player Two', deck: deck('CS1-031') }
     ],
     chooserId: 'p2', seed: 42, cards
   });
   assert.equal(s.phase, 'first-player-choice');
+  assert.equal(s.players.p1.center, null);
+  assert.equal(s.players.p1.zones.hand.length, 0);
+  assertStateInvariants(s, cards);
   assert.deepEqual(getLegalActions(s, 'p1', cards), []);
   const actions = getLegalActions(s, 'p2', cards);
   assert.deepEqual(actions.map((action) => action.firstPlayerId), ['p1', 'p2']);
   assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), (error) => error.code === 'SETUP_ONLY');
   assert.throws(() => dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p1', firstPlayerId: 'p1' }, cards), (error) => error.code === 'CHOOSER_ONLY');
   s = dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p2', firstPlayerId: 'p2' }, cards);
-  assert.equal(s.phase, 'mulligan');
+  assert.equal(s.phase, 'starting-main-selection');
   assert.deepEqual(s.playerOrder, ['p2', 'p1']);
-  assert.deepEqual(s.mulliganOrder, ['p2', 'p1']);
   assert.equal(s.activePlayerId, 'p2');
   assert.equal(s.log.at(-1).type, 'FIRST_PLAYER_CHOSEN');
+  assertStateInvariants(s, cards);
+  const choices = getLegalActions(s, 'p2', cards);
+  assert.ok(choices.some((action) => s.instances[action.instanceId].cardId === 'CS1-031'));
+  assert.ok(choices.every((action) => cards.find((card) => card.id === s.instances[action.instanceId].cardId)?.type === 'Character'));
+  const abilityId = s.players.p2.zones.mainDeck.find((id) => cards.find((card) => card.id === s.instances[id].cardId)?.type === 'Ability');
+  assert.throws(() => dispatch(s, { type: 'SELECT_STARTING_MAIN', playerId: 'p2', instanceId: abilityId }, cards), (error) => error.code === 'ILLEGAL_STARTER');
+  assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), (error) => error.code === 'SETUP_ONLY');
+  assert.throws(() => dispatch(s, { type: 'SELECT_STARTING_MAIN', playerId: 'p1', instanceId: choices[0].instanceId }, cards), (error) => error.code === 'STARTING_MAIN_ORDER');
+  s = selectStartingMain(s, 'p2', 'CS1-031');
+  assert.equal(s.phase, 'starting-main-selection');
+  assertStateInvariants(s, cards);
+  assert.deepEqual(getLegalActions(s, 'p2', cards), []);
+  s = selectStartingMain(s, 'p1', 'CS1-060');
+  assert.equal(s.phase, 'mulligan');
+  assert.deepEqual(s.mulliganOrder, ['p2', 'p1']);
+  assert.equal(s.players.p1.zones.hand.length, 5);
+  assert.equal(s.players.p2.zones.hand.length, 5);
+  assert.equal(s.instances[s.players.p2.center].cardId, 'CS1-031');
   assertStateInvariants(s, cards);
 });
 
 test('ordered mulligans preserve card count and open the first Main Phase', () => {
   let s = game();
   s = dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p2', firstPlayerId: 'p1' }, cards);
+  s = selectStartingMain(s, 'p1', 'CS1-060');
+  s = selectStartingMain(s, 'p2', 'CS1-031');
   assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), RuleError);
   const returned = s.players.p1.zones.hand.slice(0, 2);
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p1', instanceIds: returned }, cards);
