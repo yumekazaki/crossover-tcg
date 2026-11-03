@@ -1,6 +1,6 @@
 # Effect coverage implementation plan
 
-Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js`, updated 2026-11-02. This is an implementation map, not a rewrite of card text or a claim of broad mechanical validation. Five effect programs are implemented (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, `CS1-433`); 495 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
+Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js`, updated 2026-11-02. This is an implementation map, not a rewrite of card text or a claim of broad mechanical validation. Seven effect programs are implemented (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, `CS1-394`, `CS1-433`, `CS1-436`); 493 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
 
 The source data and recent card revisions are explicitly not balance-reviewed or playtested. Preserve each card's exact printed conditions, timing, costs, targets, once-per-name restrictions, and post-resolution clauses. The player preference in the project history favors combo lines, response interaction, deck/hand movement, and Light/Darkness/Momentum generation over standalone numerical stat boosts; use that as a selection priority, not permission to alter card text.
 
@@ -41,7 +41,7 @@ These are candidates for implementation mapping only. The engine must compare ev
 ## Counted observations
 
 - Canonical distribution: 180 Characters, 100 Equipment, 110 Abilities, 70 Speed Abilities, 40 Finishers.
-- Current explicit effect programs: 5 of 500 (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, and `CS1-433`); 495 effects remain blocked.
+- Current explicit effect programs: 7 of 500 (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, `CS1-394`, `CS1-433`, and `CS1-436`); 493 effects remain blocked. Curaga Response heals a Healer and another defender in the current combat; Soul Sever reduces the healing of one affected Character by 3000 before that effect resolves, including First Aid and Curaga. Both cards are covered by an automated combat response test; neither is playtested or balance-reviewed.
 - Current explicit trigger programs: 1 (`CS1-011` Mickey on another allied Character's defeat). Trigger coverage is separate from the activated-effect count and does not imply broad event, ordering, optional-trigger, or suspension support.
 - A literal keyword scan of the 498 unsupported effect texts finds: 261 with a timing/event phrase, 54 with top-deck/reveal/search wording, 35 with draw/hand-add wording, 40 with discard/hand-send wording, 58 with resource wording, 47 with negation/cancel wording, 45 with movement/Equipment/Party wording, 116 with damage wording, 113 with heal wording, and 151 with Chain/Guard/cross-franchise wording. These categories overlap and include conditional/complex clauses; they are not counts of cards that can be implemented by a one-line template.
 - There is a large stat-text surface (172 records mention ATK/HP), but that does not justify prioritizing stat-only support. Search/hand/resource/response and chain families should anchor the early expansion to match the user's design direction.

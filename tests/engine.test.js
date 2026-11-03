@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-433'];
+  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -368,6 +368,50 @@ test('a legal opponent attack can be answered by First Aid before combat damage'
   const attack = cards.find((card) => card.id === s.instances[s.players.p2.center].cardId);
   assert.equal(s.instances[targetId].battlefield.currentHp, hpBeforeResponse + 4000 - attack.statistics.atk);
   assert.equal(s.instances[speedId].zone, 'continue');
+  assertStateInvariants(s, cards);
+});
+
+test('Curaga Response heals two combat allies and Soul Sever interrupts one target before damage', () => {
+  let s = start(game());
+  const curagaId = moveCardToHand(s, 'p1', 'CS1-394');
+  const severId = moveCardToHand(s, 'p2', 'CS1-436');
+  const partyCard = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyCard }, cards);
+  s = passMenu(s);
+  // Yukari is the Healer Main; the Guard joins her as the second combat recipient.
+  const centerId = s.players.p1.center;
+  const guardId = s.players.p1.party[0];
+  const center = s.instances[centerId], guard = s.instances[guardId];
+  center.battlefield.currentHp -= 3000;
+  guard.battlefield.currentHp -= 2000;
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
+  const p1MomentumBeforeGuard = s.players.p1.resources.momentum;
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: centerId }, cards);
+  s = dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [guardId] }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'PASS', playerId: 'p2' }, cards);
+  const curagaAction = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_SPEED' && action.instanceId === curagaId && action.targets[0] === centerId && action.targets[1] === guardId);
+  assert.ok(curagaAction);
+  s = dispatch(s, { ...curagaAction, playerId: 'p1' }, cards);
+  const pendingCuraga = s.menu.selects.find((select) => select.cardId === 'CS1-394');
+  assert.ok(pendingCuraga);
+  const centerBefore = center.battlefield.currentHp, guardBefore = guard.battlefield.currentHp;
+  const severAction = getLegalActions(s, 'p2', cards).find((action) => action.type === 'ACTIVATE_SPEED' && action.instanceId === severId && action.targets[0] === centerId);
+  assert.ok(severAction);
+  const p2MomentumBeforeResponse = s.players.p2.resources.momentum;
+  s = dispatch(s, { ...severAction, playerId: 'p2' }, cards);
+  assert.equal(s.players.p1.resources.momentum, p1MomentumBeforeGuard - 1); // guard costs 2; Curaga activation grants 1
+  assert.equal(s.players.p2.resources.momentum, p2MomentumBeforeResponse + 1);
+  s = passMenu(s);
+  assert.equal(s.players.p1.resources.momentum, p1MomentumBeforeGuard); // conditional reward is granted after the Menu resolves
+  const attack = cards.find((card) => card.id === 'CS1-031');
+  const share = Math.floor(attack.statistics.atk / 2), remainder = attack.statistics.atk % 2;
+  assert.equal(s.instances[centerId].battlefield.currentHp, Math.min(center.battlefield.maxHp, centerBefore) - share - remainder);
+  assert.equal(s.instances[guardId].battlefield.currentHp, Math.min(guard.battlefield.maxHp, guardBefore + 2500) - share);
+  assert.equal(s.instances[curagaId].zone, 'continue');
+  assert.equal(s.instances[severId].zone, 'continue');
+  assert.ok(s.log.some((event) => event.type === 'HEALING_INTERRUPTED' && event.targetId === centerId));
   assertStateInvariants(s, cards);
 });
 

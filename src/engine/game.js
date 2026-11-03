@@ -431,10 +431,36 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
             && (program.requires ?? []).every((tag) => hasControlledSubtype(state, select.playerId, tag, cardIndex));
           if (eligible) {
             let amount = program.amount;
+            const reduction = (select.healingReductions ?? []).filter((entry) => entry.targetId === targetId).reduce((sum, entry) => sum + entry.amount, 0);
+            amount = Math.max(0, amount - reduction);
             if (program.bonus?.when === 'no-equipment' && !Object.values(state.instances).some((gear) => gear.zone === 'attached' && gear.attachedTo === targetId)) amount += program.bonus.amount;
-            target.battlefield.currentHp = Math.min(target.battlefield.maxHp, target.battlefield.currentHp + amount);
-            addLog(state, { type: 'HP_RESTORED', playerId: select.playerId, sourceCardId: card.id, targetId, amount });
+            const restored = Math.min(target.battlefield.maxHp - target.battlefield.currentHp, amount);
+            target.battlefield.currentHp += restored;
+            addLog(state, { type: 'HP_RESTORED', playerId: select.playerId, sourceCardId: card.id, targetId, amount: restored, reducedBy: reduction });
           }
+        }
+      }
+      if (instance && program?.kind === 'curaga-response') {
+        for (const targetId of select.targets ?? []) {
+          const target = state.instances[targetId];
+          if (!target?.battlefield || target.controllerId !== select.playerId) continue;
+          const reduction = (select.healingReductions ?? []).filter((entry) => entry.targetId === targetId).reduce((sum, entry) => sum + entry.amount, 0);
+          const amount = Math.max(0, program.amount - reduction);
+          const restored = Math.min(amount, target.battlefield.maxHp - target.battlefield.currentHp);
+          target.battlefield.currentHp += restored;
+          addLog(state, { type: 'HP_RESTORED', playerId: select.playerId, sourceCardId: card.id, targetId, amount: restored, reducedBy: reduction });
+        }
+      }
+      if (instance && program?.kind === 'soul-sever') {
+        const parent = selections.find((entry) => {
+          if (entry.id !== select.responseToSelectId || entry.kind !== 'CARD_EFFECT' || entry.playerId === select.playerId || !entry.targets?.includes(select.targets?.[0])) return false;
+          const healingProgram = getEffectProgram(entry.cardId);
+          return healingProgram?.kind === 'heal' || healingProgram?.kind === 'curaga-response';
+        });
+        if (parent && parent.playerId !== select.playerId && parent.targets?.includes(select.targets?.[0])) {
+          parent.healingReductions ??= [];
+          parent.healingReductions.push({ targetId: select.targets[0], amount: program.reduceHealing, sourceSelectId: select.id });
+          addLog(state, { type: 'HEALING_INTERRUPTED', playerId: select.playerId, sourceCardId: card.id, targetId: select.targets[0], amount: program.reduceHealing });
         }
       }
       if (instance && program?.kind === 'aether-channel') {
@@ -486,6 +512,13 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
   state.pendingMenuResolution = null;
   state.priorityPlayerId = state.activePlayerId;
   addLog(state, { type: 'MENU_RESOLVED', menuId, selectCount: originalSelectCount });
+  for (const select of selections) {
+    const program = select.kind === 'CARD_EFFECT' && getEffectProgram(select.cardId);
+    if (program?.kind === 'curaga-response' && select.opponentSpeedActivated) {
+      state.players[select.playerId].resources.momentum += program.opponentSpeedReward.amount;
+      addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: select.cardId, resource: 'momentum', amount: program.opponentSpeedReward.amount, afterMenuId: menuId });
+    }
+  }
   openNextTriggerMenu(state);
 }
 
@@ -739,10 +772,28 @@ export function dispatch(stateInput, action, cards) {
       const program = card && getEffectProgram(card.id);
       if (!instance || instance.zone !== 'hand' || card?.type !== 'Speed Ability' || !program) fail('ILLEGAL_SPEED', 'This Speed Ability has no registered, tested response program in the current engine slice.');
       if (player.turn.nameLimits[card.name]) fail('NAME_LIMIT', `${card.name} is limited to one activation per turn.`);
-      if (program.timing !== 'opponent-attack-response' || !state.combat || state.combat.initiatorId === player.id || state.combat.targetId !== action.targets?.[0]) fail('WRONG_TIMING', `${card.name} may be activated only when an opponent attacks its eligible target.`);
-      const speedTarget = state.instances[action.targets?.[0]];
-      if (!speedTarget?.battlefield || speedTarget.controllerId !== player.id || speedTarget.battlefield.currentHp >= speedTarget.battlefield.maxHp / 2) fail('ILLEGAL_TARGET', 'The target must be your attacked Character below half its maximum HP.');
-      if (!(program.requires ?? []).every((tag) => hasControlledSubtype(state, player.id, tag, cardIndex))) fail('REQUIREMENT_FAILED', 'You do not control the required subtype.');
+      const targets = action.targets ?? [];
+      let responseToSelectId = null;
+      if (program.kind === 'heal') {
+        if (program.timing !== 'opponent-attack-response' || !state.combat || state.combat.initiatorId === player.id || state.combat.targetId !== targets[0]) fail('WRONG_TIMING', `${card.name} may be activated only when an opponent attacks its eligible target.`);
+        const target = state.instances[targets[0]];
+        if (!target?.battlefield || target.controllerId !== player.id || target.battlefield.currentHp >= target.battlefield.maxHp / 2) fail('ILLEGAL_TARGET', 'The target must be your attacked Character below half its maximum HP.');
+        if (!(program.requires ?? []).every((tag) => hasControlledSubtype(state, player.id, tag, cardIndex))) fail('REQUIREMENT_FAILED', 'You do not control the required subtype.');
+      } else if (program.kind === 'curaga-response') {
+        const defenders = state.combat && state.combat.initiatorId !== player.id ? [state.combat.targetId, ...state.combat.guardIds] : [];
+        if (program.timing !== 'opponent-attack-response' || targets.length !== 2 || targets[0] === targets[1]) fail('WRONG_TIMING', `${card.name} requires two different allies in the current combat.`);
+        const [healer, other] = targets.map((id) => state.instances[id]);
+        if (!healer?.battlefield || healer.controllerId !== player.id || !defenders.includes(healer.instanceId) || !(cardIndex.get(healer.cardId)?.subtypes ?? []).includes('Healer')
+          || !other?.battlefield || other.controllerId !== player.id || !defenders.includes(other.instanceId)) fail('ILLEGAL_TARGET', 'Choose your Healer and a different allied Character involved in this combat.');
+      } else if (program.kind === 'soul-sever') {
+        const parent = state.menu.selects.find((entry) => {
+          if (entry.kind !== 'CARD_EFFECT' || entry.playerId === player.id || entry.id !== action.responseToSelectId || !entry.targets?.includes(targets[0])) return false;
+          const healingProgram = getEffectProgram(entry.cardId);
+          return healingProgram?.kind === 'heal' || healingProgram?.kind === 'curaga-response';
+        });
+        if (program.timing !== 'opponent-speed-response' || !parent) fail('WRONG_TIMING', `${card.name} can only interrupt an opponent's pending combat healing effect.`);
+        responseToSelectId = parent.id;
+      } else fail('WRONG_TIMING', `${card.name} has no supported response timing.`);
       const cost = card.cost ?? { momentum: 0, light: 0, darkness: 0 };
       for (const key of ['momentum', 'light', 'darkness']) if ((player.resources[key] ?? 0) < (cost[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
       for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= cost[key] ?? 0;
@@ -750,7 +801,10 @@ export function dispatch(stateInput, action, cards) {
       player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1);
       instance.zone = 'pending';
       player.turn.nameLimits[card.name] = true;
-      state.menu.selects.push({ id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [] });
+      for (const pending of state.menu.selects) {
+        if (pending.kind === 'CARD_EFFECT' && pending.cardId === 'CS1-394' && pending.playerId !== player.id) pending.opponentSpeedActivated = true;
+      }
+      state.menu.selects.push({ id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets, ...(responseToSelectId ? { responseToSelectId } : {}) });
       state.menu.consecutivePasses = 0;
       state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
       state.priorityPlayerId = state.menu.priorityPlayerId;
@@ -979,8 +1033,22 @@ export function getLegalActions(state, playerId, cards) {
       const card = cardIndex.get(state.instances[id].cardId), program = card && getEffectProgram(card.id);
       if (card?.type !== 'Speed Ability' || !program || player.turn.nameLimits[card.name]) continue;
       if (program.timing === 'opponent-attack-response' && state.combat?.initiatorId !== playerId) {
-        const target = state.instances[state.combat?.targetId];
-        if (target?.controllerId === playerId && target.battlefield.currentHp < target.battlefield.maxHp / 2 && (program.requires ?? []).every((tag) => hasControlledSubtype(state, playerId, tag, cardIndex))) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id, targets: [target.instanceId] });
+        const defenders = [state.combat.targetId, ...state.combat.guardIds].map((targetId) => state.instances[targetId]).filter((target) => target?.battlefield && target.controllerId === playerId);
+        if (program.kind === 'heal') {
+          const target = state.instances[state.combat.targetId];
+          if (target?.controllerId === playerId && target.battlefield.currentHp < target.battlefield.maxHp / 2 && (program.requires ?? []).every((tag) => hasControlledSubtype(state, playerId, tag, cardIndex))) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id, targets: [target.instanceId] });
+        } else if (program.kind === 'curaga-response') {
+          const healers = defenders.filter((target) => (cardIndex.get(target.cardId)?.subtypes ?? []).includes('Healer'));
+          for (const healer of healers) for (const other of defenders) if (healer.instanceId !== other.instanceId) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id, targets: [healer.instanceId, other.instanceId] });
+        }
+      }
+      if (program.kind === 'soul-sever') {
+        for (const pending of state.menu.selects) {
+          if (pending.kind !== 'CARD_EFFECT' || pending.playerId === playerId) continue;
+          const healingProgram = getEffectProgram(pending.cardId);
+          if (healingProgram?.kind !== 'heal' && healingProgram?.kind !== 'curaga-response') continue;
+          for (const targetId of pending.targets ?? []) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id, targets: [targetId], responseToSelectId: pending.id });
+        }
       }
     }
     return actions;

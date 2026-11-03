@@ -182,7 +182,7 @@ function renderActions(actions, actorId, container) {
       if (action.activationCostInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · put ${cardName(action.activationCostInstanceId)} on deck bottom`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;
     }
-    if (action.type === 'ACTIVATE_SPEED') { container.append(actionButton(`Respond with ${cardName(action.instanceId)} → ${cardName(action.targets?.[0])}`, () => safeDispatch({ ...action, playerId: actorId }), 'pass')); continue; }
+    if (action.type === 'ACTIVATE_SPEED') { container.append(actionButton(`Respond with ${cardName(action.instanceId)} → ${(action.targets ?? []).map(cardName).join(' + ')}`, () => safeDispatch({ ...action, playerId: actorId }), 'pass')); continue; }
     if (action.type === 'DECLARE_ATTACK') {
       const label = `${cardName(action.attackerInstanceId)} attacks ${cardName(action.targetInstanceId)}`;
       container.append(actionButton(label, () => safeDispatch({ ...action, playerId: actorId, chainInstanceIds: [] })));

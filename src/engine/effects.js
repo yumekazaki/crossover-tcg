@@ -20,6 +20,13 @@ const programs = {
     kind: 'blade-awakening', timing: 'main', requires: ['Driver'], excludes: ['Blade'],
     revealSubtype: 'Blade', discardType: 'Ability', addTo: 'party', suppressSpecialsUntilOwnerTurn: true,
     ignoresStandardAddAllowance: true, perNamePerTurn: true
+  },
+  'CS1-394': {
+    kind: 'curaga-response', timing: 'opponent-attack-response', targetCount: 2,
+    requires: ['Healer'], amount: 2500, opponentSpeedReward: { resource: 'momentum', amount: 1 }, perNamePerTurn: true
+  },
+  'CS1-436': {
+    kind: 'soul-sever', timing: 'opponent-speed-response', reduceHealing: 3000, perNamePerTurn: true
   }
 };
 
