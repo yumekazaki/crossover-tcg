@@ -104,7 +104,7 @@ function startMatch() {
   const state = createInitialState({
     players: [{ id: 'p1', name: 'Player One', deck: { mainIds: p1.mainIds, equipmentIds: p1.equipmentIds }, startingMainId: starter1 },
       { id: 'p2', name: 'Player Two', deck: { mainIds: p2.mainIds, equipmentIds: p2.equipmentIds }, startingMainId: starter2 }],
-    chooserId, firstPlayerId: chooserId, awaitingFirstPlayerChoice: true, seed: Math.floor(Math.random() * 0xffffffff), cards
+    chooserId, seed: Math.floor(Math.random() * 0xffffffff), cards
   });
   match = state; $('match-board').hidden = false; $('reset-match').disabled = false;
   $('match-notice').textContent = `A random choice selected ${chooserId === 'p1' ? 'Player One' : 'Player Two'} to choose who goes first. Make that choice below. Local shared-device test only.`;
@@ -143,7 +143,7 @@ function showCard(card) {
 }
 function renderSeat(playerId, revealHand = false) {
   const player = match.players[playerId], seat = create('article', 'seat'), header = create('div', 'seat-header');
-  const name = create('h3', '', `${player.name}${match.activePlayerId === playerId ? ' · TURN' : ''}${match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}`);
+  const name = create('h3', '', `${player.name}${match.phase !== 'first-player-choice' && match.activePlayerId === playerId ? ' · TURN' : ''}${match.phase !== 'first-player-choice' && match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}${match.phase === 'first-player-choice' && match.firstPlayerChooserId === playerId ? ' · CHOOSER' : ''}`);
   const resources = create('div', 'seat-resources'); resources.innerHTML = `<b class="life">${player.life} LIFE</b><b>${player.resources.momentum} M</b><b>${player.resources.light} L</b><b>${player.resources.darkness} D</b>`; header.append(name, resources); seat.append(header);
   const zones = create('div', 'zones'); zones.append(renderCharacterZone(player, player.center, 'CENTER · MAIN', true));
   const party = create('div', 'party-zones'); player.party.forEach((id, index) => party.append(renderCharacterZone(player, id, `PARTY ${index + 1}`)));

@@ -23,11 +23,12 @@ function game(p1Starter = 'CS1-060', duplicateStarter = false, transformationId 
     players: [
       { id: 'p1', name: 'Player One', deck: deck(p1Starter, duplicateStarter, transformationId), startingMainId: p1Starter },
       { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
-    ], firstPlayerId: 'p1', chooserId: 'p2', seed: 42, cards
+    ], chooserId: 'p2', seed: 42, cards
   });
 }
 function start(g) {
-  let s = dispatch(g, { type: 'MULLIGAN', playerId: 'p1', instanceIds: [] }, cards);
+  let s = dispatch(g, { type: 'CHOOSE_FIRST_PLAYER', playerId: g.firstPlayerChooserId, firstPlayerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'MULLIGAN', playerId: 'p1', instanceIds: [] }, cards);
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards);
   return s;
 }
@@ -66,7 +67,7 @@ function moveCardToTop(state, playerId, cardId) {
 }
 
 test('initialization validates registration, chooses a starting Main, and deals five cards', () => {
-  const s = game();
+  const s = start(game());
   assert.equal(s.players.p1.life, 15);
   assert.deepEqual(s.players.p1.resources, { momentum: 5, light: 0, darkness: 0 });
   assert.equal(s.players.p1.zones.hand.length, 5);
@@ -81,12 +82,13 @@ test('the randomly selected chooser makes the first-player choice through a vali
       { id: 'p1', name: 'Player One', deck: deck('CS1-060'), startingMainId: 'CS1-060' },
       { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
     ],
-    firstPlayerId: 'p1', chooserId: 'p2', awaitingFirstPlayerChoice: true, seed: 42, cards
+    chooserId: 'p2', seed: 42, cards
   });
   assert.equal(s.phase, 'first-player-choice');
   assert.deepEqual(getLegalActions(s, 'p1', cards), []);
   const actions = getLegalActions(s, 'p2', cards);
   assert.deepEqual(actions.map((action) => action.firstPlayerId), ['p1', 'p2']);
+  assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), (error) => error.code === 'SETUP_ONLY');
   assert.throws(() => dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p1', firstPlayerId: 'p1' }, cards), (error) => error.code === 'CHOOSER_ONLY');
   s = dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p2', firstPlayerId: 'p2' }, cards);
   assert.equal(s.phase, 'mulligan');
@@ -99,6 +101,7 @@ test('the randomly selected chooser makes the first-player choice through a vali
 
 test('ordered mulligans preserve card count and open the first Main Phase', () => {
   let s = game();
+  s = dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p2', firstPlayerId: 'p1' }, cards);
   assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), RuleError);
   const returned = s.players.p1.zones.hand.slice(0, 2);
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p1', instanceIds: returned }, cards);

@@ -73,12 +73,12 @@ function maxHp(instance, cardIndex, isCenter = false) {
 }
 
 /** Create a two-player game from the canonical card records and registered card IDs. */
-export function createInitialState({ players, firstPlayerId, chooserId, awaitingFirstPlayerChoice = false, seed = 1, cards }) {
+export function createInitialState({ players, chooserId, seed = 1, cards }) {
   const cardIndex = indexCards(cards);
   if (!Array.isArray(players) || players.length !== 2) fail('PLAYER_COUNT', 'This rules edition requires exactly two players.');
   const ids = players.map((p) => p.id);
   if (new Set(ids).size !== 2 || ids.some((id) => !id)) fail('PLAYER_IDS', 'Players must have distinct nonempty IDs.');
-  if (!ids.includes(firstPlayerId) || !ids.includes(chooserId)) fail('FIRST_PLAYER', 'First-player chooser and starting player must be registered players.');
+  if (!ids.includes(chooserId)) fail('FIRST_PLAYER', 'The first-player chooser must be a registered player.');
   const rng = makeRng(seed);
   const instances = {};
   const pstate = {};
@@ -114,19 +114,18 @@ export function createInitialState({ players, firstPlayerId, chooserId, awaiting
       turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], suppressNextEquipmentAbilities: false, nameLimits: {} }
     };
   }
-  const opponentId = ids.find((id) => id !== firstPlayerId);
   return {
     schemaVersion: 1,
     status: 'setup',
     players: pstate,
-    playerOrder: [firstPlayerId, opponentId],
-    activePlayerId: firstPlayerId,
+    playerOrder: [...ids],
+    activePlayerId: chooserId,
     firstPlayerChooserId: chooserId,
     turnNumber: 1,
-    phase: awaitingFirstPlayerChoice ? 'first-player-choice' : 'mulligan',
-    priorityPlayerId: firstPlayerId,
+    phase: 'first-player-choice',
+    priorityPlayerId: chooserId,
     phasePasses: 0,
-    mulliganOrder: [firstPlayerId, opponentId],
+    mulliganOrder: [...ids],
     mulliganIndex: 0,
     instances,
     nextInstanceNumber: nextInstance,
@@ -137,7 +136,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, awaiting
     pendingMenuResolution: null,
     resolutionChoice: null,
     combat: null,
-    log: [{ type: 'GAME_CREATED', playerIds: ids, firstPlayerId, chooserId }],
+    log: [{ type: 'GAME_CREATED', playerIds: ids, chooserId }],
     randomSeed: seed >>> 0
   };
 }
