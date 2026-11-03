@@ -258,6 +258,54 @@ function resolveMenu(state, cardIndex) {
         else returnAttachedEquipment(state, base.instanceId, gear.instanceId);
       }
       addLog(state, { type: 'CHARACTER_TRANSFORMED', playerId: player.id, baseInstanceId: base.instanceId, formInstanceId: form.instanceId, reserveId: select.reservedBaseId ?? null });
+    } else if (select.kind === 'SWITCH_CENTER') {
+      const player = state.players[select.playerId];
+      const incoming = state.instances[select.partyInstanceId];
+      const outgoing = state.instances[player.center];
+      const partyIndex = player.party.indexOf(select.partyInstanceId);
+      const incomingCard = incoming && cardIndex.get(incoming.cardId);
+      const outgoingCard = outgoing && cardIndex.get(outgoing.cardId);
+      if (partyIndex < 0 || !incoming?.battlefield || !outgoing?.battlefield || incomingCard?.transformation || outgoingCard?.transformation) {
+        addLog(state, { type: 'CENTER_SWITCH_FAILED', playerId: player.id, incomingId: select.partyInstanceId, reason: 'A selected Character left its legal untransformed Character Zone.' });
+        continue;
+      }
+      outgoing.battlefield.currentHp = Math.max(1, outgoing.battlefield.currentHp - 13000);
+      outgoing.battlefield.maxHp = Math.max(1, outgoing.battlefield.maxHp - 13000);
+      outgoing.battlefield.position = `party-${partyIndex}`;
+      incoming.battlefield.currentHp += 13000;
+      incoming.battlefield.maxHp += 13000;
+      incoming.battlefield.position = 'center';
+      player.center = incoming.instanceId;
+      player.party[partyIndex] = outgoing.instanceId;
+      addLog(state, { type: 'CENTER_SWITCHED', playerId: player.id, incomingId: incoming.instanceId, outgoingId: outgoing.instanceId, partyIndex });
+    } else if (select.kind === 'PARTY_SWAP') {
+      const player = state.players[select.playerId];
+      for (const instanceId of select.instanceIds) {
+        const partyIndex = player.party.indexOf(instanceId);
+        const character = state.instances[instanceId];
+        const characterCard = character && cardIndex.get(character.cardId);
+        if (partyIndex < 0 || !character?.battlefield || characterCard?.transformation) {
+          addLog(state, { type: 'PARTY_SWAP_TARGET_SKIPPED', playerId: player.id, instanceId, reason: 'The selected Character left its legal untransformed Party Zone.' });
+          continue;
+        }
+        for (const gear of attachedEquipment(state, instanceId)) {
+          const gearCard = cardIndex.get(gear.cardId);
+          for (const resource of ['light', 'darkness']) {
+            const printed = gearCard?.cost?.[resource] ?? 0;
+            player.resources[resource] += printed === 1 ? 1 : Math.floor(printed / 2);
+          }
+        }
+        returnAttachedEquipment(state, instanceId);
+        player.party[partyIndex] = null;
+        character.zone = 'retired';
+        character.battlefield = null;
+        character.attachedTo = null;
+        const replacementId = `${player.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+        const replacement = createInstance({ id: replacementId, cardId: character.cardId, ownerId: character.ownerId, physicalCopyId: character.physicalCopyId, zone: 'hand', usage: character.usage });
+        state.instances[replacementId] = replacement;
+        player.zones.hand.push(replacementId);
+        addLog(state, { type: 'PARTY_MEMBER_SWAPPED', playerId: player.id, oldInstanceId: instanceId, instanceId: replacementId, cardId: replacement.cardId });
+      }
     } else if (select.kind === 'CARD_EFFECT') {
       const instance = state.instances[select.instanceId];
       const card = instance && cardIndex.get(instance.cardId);
@@ -552,6 +600,31 @@ export function dispatch(stateInput, action, cards) {
     openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'ADD_TO_PARTY', playerId: player.id, instanceId: instance.instanceId, partyIndex });
     return state;
   }
+  if (action.type === 'SWITCH_CENTER') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Center switching is a Main Phase action.');
+    if (player.turn.freeCenterSwitchUsed) fail('CENTER_SWITCH_USED', 'Your free Center switch was already used this turn.');
+    const incoming = state.instances[action.partyInstanceId];
+    const outgoing = state.instances[player.center];
+    if (!incoming?.battlefield || incoming.controllerId !== player.id || !player.party.includes(incoming.instanceId)) fail('ILLEGAL_SWITCH_TARGET', 'Choose an untransformed Character from your Party.');
+    if (cardIndex.get(incoming.cardId)?.transformation || cardIndex.get(outgoing.cardId)?.transformation) fail('TRANSFORMED_SWITCH', 'Transformed Characters cannot use the standard Center switch.');
+    player.turn.freeCenterSwitchUsed = true;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'SWITCH_CENTER', playerId: player.id, partyInstanceId: incoming.instanceId });
+    return state;
+  }
+  if (action.type === 'PARTY_SWAP') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Party Swap is a Main Phase action.');
+    const targets = action.instanceIds ?? [];
+    if (targets.length < 1 || targets.length > 2 || new Set(targets).size !== targets.length) fail('INVALID_PARTY_SWAP', 'Choose one or two distinct Party Members.');
+    for (const instanceId of targets) {
+      const target = state.instances[instanceId];
+      if (!target?.battlefield || target.controllerId !== player.id || !player.party.includes(instanceId)) fail('ILLEGAL_SWAP_TARGET', 'Party Swap targets must be your Party Members.');
+      if (cardIndex.get(target.cardId)?.transformation) fail('TRANSFORMED_SWAP', 'Transformed Characters cannot be moved by Party Swap.');
+    }
+    if (player.resources.momentum < 6) fail('INSUFFICIENT_RESOURCE', 'Party Swap costs 6 Momentum.');
+    player.resources.momentum -= 6;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'PARTY_SWAP', playerId: player.id, instanceIds: [...targets] });
+    return state;
+  }
   if (action.type === 'TRANSFORM') {
     if (state.phase !== 'main') fail('WRONG_PHASE', 'Transformation is a Main Phase action.');
     const form = state.instances[action.formInstanceId], formCard = form && cardIndex.get(form.cardId);
@@ -689,6 +762,14 @@ export function getLegalActions(state, playerId, cards) {
   const actions = [{ type: 'PASS_PRIORITY' }];
   if (state.phase === 'main') {
     if (!player.turn.standardAddUsed && emptyPartyIndex(player) >= 0) for (const id of player.zones.hand) if (cardIndex.get(state.instances[id].cardId)?.type === 'Character' && !cardIndex.get(state.instances[id].cardId).transformation) actions.push({ type: 'ADD_TO_PARTY', instanceId: id });
+    if (!player.turn.freeCenterSwitchUsed && !cardIndex.get(state.instances[player.center].cardId)?.transformation) for (const id of player.party.filter(Boolean)) if (!cardIndex.get(state.instances[id].cardId)?.transformation) actions.push({ type: 'SWITCH_CENTER', partyInstanceId: id });
+    if (player.resources.momentum >= 6) {
+      const swapTargets = player.party.filter(Boolean).filter((id) => !cardIndex.get(state.instances[id].cardId)?.transformation);
+      for (let i = 0; i < swapTargets.length; i += 1) {
+        actions.push({ type: 'PARTY_SWAP', instanceIds: [swapTargets[i]] });
+        for (let j = i + 1; j < swapTargets.length; j += 1) actions.push({ type: 'PARTY_SWAP', instanceIds: [swapTargets[i], swapTargets[j]] });
+      }
+    }
     for (const id of player.zones.arsenal) {
       const equipment = cardIndex.get(state.instances[id].cardId), cost = equipment?.cost ?? {};
       if (player.resources.light < (cost.light ?? 0) || player.resources.darkness < (cost.darkness ?? 0)) continue;

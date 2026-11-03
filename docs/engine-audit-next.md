@@ -8,6 +8,8 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 **Phase-window update:** Empty phase windows now require two consecutive passes, with the second player receiving priority and phase changes rejected through the old single-click action. The queue blocks advancement if pending triggers exist; trigger collection and resolution are still not implemented.
 
+**Movement update:** `SWITCH_CENTER` now opens a standard response Menu, consumes the once-per-own-turn allowance on activation, rejects transformed Characters, exchanges the Center/Party positions, and applies the ±13,000 current/max HP adjustments. `PARTY_SWAP` requires 6 Momentum up front, selects one or two untransformed Party instances, returns legal portions through fresh hand instances, and refunds each returned Equipment's printed Light/Darkness components using the D004 rounding rule. Both actions are exposed to the local practice UI and covered by automated tests. Trigger collection for Party Swap remains unavailable because the event scheduler is not implemented; this limitation is tracked rather than silently treated as complete.
+
 ## P0 — Correct before extending combat
 
 1. **Main defeat does not perform the required revival transition.** In `src/engine/game.js:295-300`, a defeated untransformed Main keeps the same battlefield instance, merely resets its HP and attack-use flag, and keeps attached Equipment. D010 requires a new instance at full HP, returning gear to its owners’ arsenals, clearing instance effects/references, and retaining card-name/physical-copy use and shared allowances. Effect damage also has no supported damage path yet. Add a single defeat transition routine and tests for combat and effect defeat, gear return, fresh instance identity, and preserved usage/allowances before adding more removal effects. Authority: `master-rulebook.md:58-60,137`; rules contract “HP, movement, and Equipment” and “Win conditions”.
@@ -26,10 +28,10 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## P2 — Expand only after the above
 
-7. **Switch/Party Swap/unequip, effect negation, protection/suspension, delayed effects, and Finishers have no executable commands.** Transformation entry, Main base restoration, and Party form defeat are covered; voluntary reversion remains unsupported. Build protection/suspension only over an explicit duration/trigger queue and retain U003-U010 as unresolved where the rulebook says so.
+7. **Voluntary unequip, effect negation, protection/suspension, delayed effects, and Finishers have no executable commands.** Center switch and Party Swap are now implemented. Party Swap trigger handling depends on the unfinished trigger scheduler. Transformation entry, Main base restoration, and Party form defeat are covered; voluntary reversion remains unsupported. Build protection/suspension only over an explicit duration/trigger queue and retain U003-U010 as unresolved where the rulebook says so.
 
 8. **Acceptance tests cover a growing set of narrow engine cases.** They now verify setup, mulligan, Add, two healing programs, response and guard windows, chain costs, Equipment cost, combat/Main revival, simultaneous combat defeats, transformation requirements, Main restoration, Party form defeat and blocked unregistered Equipment effects. Most other rulebook invariants remain untested. Add tests per rule capability as each foundation lands. Test counts are not evidence that the whole master rulebook is implemented.
 
 ## Recommended next implementation slice
 
-Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement event/trigger ordering and add Switch, Party Swap and voluntary unequip commands before expanding card effects.
+Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement event/trigger ordering so Party Swap and combat events can collect/resolve triggers; then add voluntary unequip and continue card-effect coverage.

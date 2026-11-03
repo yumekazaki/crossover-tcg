@@ -171,6 +171,8 @@ function renderActions(actions, actorId, container) {
     }
     if (action.type === 'BEGIN_COMBAT_RESPONSES') { container.append(actionButton('Confirm guards and begin responses', () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ADD_TO_PARTY') { container.append(actionButton(`Add ${cardName(action.instanceId)} to Party`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+    if (action.type === 'SWITCH_CENTER') { container.append(actionButton(`Switch Center → ${cardName(action.partyInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+    if (action.type === 'PARTY_SWAP') { container.append(actionButton(`Party Swap → ${action.instanceIds.map(cardName).join(' + ')}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'TRANSFORM') { container.append(actionButton(`Transform ${cardName(action.baseInstanceId)} → ${cardName(action.formInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ATTACH_EQUIPMENT') { const gear = cardName(action.equipmentInstanceId), host = cardName(action.hostInstanceId); container.append(actionButton(`Attach ${gear} → ${host}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ACTIVATE_ABILITY') {

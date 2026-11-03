@@ -107,6 +107,78 @@ test('standard Add to Party opens a Menu and deploys only after two passes', () 
   assertStateInvariants(s, cards);
 });
 
+test('free Center switch opens a Menu, adjusts both Characters by 13000 HP, and is once per turn', () => {
+  let s = start(game());
+  const partyCard = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyCard }, cards);
+  s = passMenu(s);
+  const outgoingId = s.players.p1.center, incomingId = s.players.p1.party[0];
+  s.instances[outgoingId].battlefield.currentHp = 9000;
+  s.instances[incomingId].battlefield.currentHp -= 2000;
+  const oldMainMax = s.instances[outgoingId].battlefield.maxHp;
+  const oldPartyMax = s.instances[incomingId].battlefield.maxHp;
+  s = dispatch(s, { type: 'SWITCH_CENTER', playerId: 'p1', partyInstanceId: incomingId }, cards);
+  assert.equal(s.players.p1.center, outgoingId);
+  assert.ok(s.menu);
+  s = passMenu(s);
+  assert.equal(s.players.p1.center, incomingId);
+  assert.equal(s.players.p1.party[0], outgoingId);
+  assert.equal(s.instances[outgoingId].battlefield.currentHp, 1);
+  assert.equal(s.instances[outgoingId].battlefield.maxHp, oldMainMax - 13000);
+  assert.equal(s.instances[incomingId].battlefield.currentHp, cards.find((c) => c.id === s.instances[incomingId].cardId).statistics.hp - 2000 + 13000);
+  assert.equal(s.instances[incomingId].battlefield.maxHp, oldPartyMax + 13000);
+  assert.throws(() => dispatch(s, { type: 'SWITCH_CENTER', playerId: 'p1', partyInstanceId: outgoingId }, cards), (error) => error.code === 'CENTER_SWITCH_USED');
+  assertStateInvariants(s, cards);
+});
+
+test('Party Swap pays six Momentum, returns one or two untransformed Party Members, and refunds printed Equipment costs only', () => {
+  let s = start(game());
+  for (const cardId of ['CS1-001', 'CS1-002']) {
+    const id = moveCardToHand(s, 'p1', cardId);
+    s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: id }, cards);
+    s = passMenu(s);
+    s.players.p1.turn.standardAddUsed = false;
+  }
+  const [firstId, secondId] = s.players.p1.party.filter(Boolean);
+  const gearId = s.players.p1.zones.arsenal.find((id) => cards.find((c) => c.id === s.instances[id].cardId)?.type === 'Equipment');
+  const gearCard = cards.find((c) => c.id === s.instances[gearId].cardId);
+  s.players.p1.zones.arsenal = s.players.p1.zones.arsenal.filter((id) => id !== gearId);
+  s.instances[gearId].zone = 'attached'; s.instances[gearId].attachedTo = firstId;
+  s.instances[firstId].battlefield.currentHp -= 5000;
+  s.players.p1.resources.momentum = 8;
+  const lightBefore = s.players.p1.resources.light, darknessBefore = s.players.p1.resources.darkness;
+  const lightRefund = (gearCard.cost?.light ?? 0) === 1 ? 1 : Math.floor((gearCard.cost?.light ?? 0) / 2);
+  const darknessRefund = (gearCard.cost?.darkness ?? 0) === 1 ? 1 : Math.floor((gearCard.cost?.darkness ?? 0) / 2);
+  s = dispatch(s, { type: 'PARTY_SWAP', playerId: 'p1', instanceIds: [firstId, secondId] }, cards);
+  assert.equal(s.players.p1.resources.momentum, 2);
+  assert.ok(s.menu);
+  s = passMenu(s);
+  assert.equal(s.players.p1.party.filter(Boolean).length, 0);
+  assert.ok(s.players.p1.zones.hand.some((id) => s.instances[id].cardId === 'CS1-001'));
+  assert.ok(s.players.p1.zones.hand.some((id) => s.instances[id].cardId === 'CS1-002'));
+  assert.notEqual(s.players.p1.zones.hand.find((id) => s.instances[id].cardId === 'CS1-001'), firstId);
+  assert.equal(s.instances[firstId].zone, 'retired');
+  assert.ok(s.players.p1.zones.arsenal.includes(gearId));
+  assert.equal(s.players.p1.resources.light, lightBefore + lightRefund);
+  assert.equal(s.players.p1.resources.darkness, darknessBefore + darknessRefund);
+  assertStateInvariants(s, cards);
+});
+
+test('Party Swap rejects transformed Members and unaffordable actions before opening a Menu', () => {
+  let s = start(game());
+  const id = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: id }, cards);
+  s = passMenu(s);
+  s.players.p1.resources.momentum = 5;
+  assert.throws(() => dispatch(s, { type: 'PARTY_SWAP', playerId: 'p1', instanceIds: [s.players.p1.party[0]] }, cards), (error) => error.code === 'INSUFFICIENT_RESOURCE');
+  s.players.p1.resources.momentum = 6;
+  const transformed = cards.find((card) => card.transformation)?.id;
+  assert.ok(transformed);
+  s.instances[s.players.p1.party[0]].cardId = transformed;
+  assert.throws(() => dispatch(s, { type: 'PARTY_SWAP', playerId: 'p1', instanceIds: [s.players.p1.party[0]] }, cards), (error) => error.code === 'TRANSFORMED_SWAP');
+  assert.equal(s.menu, null);
+});
+
 test('Ability card Cure resolves through the Menu and goes to Continue?', () => {
   let s = start(game());
   const cureId = moveCardToHand(s, 'p1', 'CS1-281');
