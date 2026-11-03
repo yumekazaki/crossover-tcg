@@ -198,7 +198,10 @@ export function validateDeck({ mainIds, equipmentIds } = {}) {
 export function getArtwork(card) {
   const art = card?.artwork;
   const verified = card && verifiedArtwork.get(card.id);
-  const local = approved(art) ? localArtworkURL(art) : null;
+  // Only expose a validated path inside this site's public/ folder. Attached
+  // local art is displayed directly; remote credit and approval flags never
+  // become image URLs.
+  const local = localArtworkURL(art);
   const usable = !!local;
   return {
     src: usable ? (verified?.artwork === art ? verified.url : local.href) : null,
