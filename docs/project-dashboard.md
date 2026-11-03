@@ -7,7 +7,7 @@
 - Rules, decision history, registries and complete card database: imported from the current crossover design workspace.
 - GitHub repository: public `yumekazaki/crossover-tcg`; deployed through GitHub Pages at https://yumekazaki.github.io/crossover-tcg/.
 - Card artwork integration: library cards, card detail panels and local-match dialogs render an approved local image when available. Approval, local-file existence and one-image-per-card uniqueness are required.
-- Card images renderable in this repository: 0 of 500. Records label 163 images as attached, but their local files are absent and none establishes redistribution approval. Character art must depict the specific character/form, including Roxas, Xion, Axel and other Organization members individually; no repeated group image.
+- Card artwork display is live in the app and 159 of 500 cards have distinct, locally approved images in the public site; 341 remain labeled pending. Character cards use individual images only; group shots are excluded.
 
 ## Delivery status
 
@@ -16,7 +16,7 @@
 | Rules engine | Yes | Partial: required randomized chooser/first-player action, sequential per-player starting Main selection from registered copies, then shuffle/deal and selectable partial mulligan; two-pass empty phase windows, deployment, one free Center switch per turn, six-Momentum Party Swap with printed-cost refund, compatible Equipment, healing and combat response interruption, staged deck reveal/selection, six combo resource/deployment effects, Heart-to-Heart cross-franchise healing/resource choice, Axel multi-target, Ashley return/replace and Grace deck/resource/discount Character Specials, Firaga effect-damage transaction, Mickey's defeat trigger, combat guard window, attacker-first response priority, simultaneous HP/life commit, fresh-instance Main revival, and all eight registered transformation entry paths | Covered paths pass 37 engine tests; full rule audit not passed | Partial automated tests only |
 | 500-card source data | Yes | Yes (imported) | Structural checks pass; semantic and balance review remain open | No full set playtesting |
 | Local playable interface | Yes | Yes: card browser, deck builder and shared-device practice prototype | UI component checks pass; live local app launch blocked by this environment's loopback socket restriction | No full-game playtest |
-| Card artwork display | Yes | Yes: approved local art is integrated in library, detail and match card views | Loader rejects remote/missing files and duplicate asset paths; 0 approved local images available | No art review |
+| Card artwork display | Yes | Yes: approved local art is integrated in library, detail and match card views | Loader rejects remote/missing files and duplicate asset paths; 159 unique local images available | No art review |
 | Deck builder | Yes | Yes: create/save/import/export/search and exact legality checks | 17 data checks and 16 UI browser checks pass | Not separately playtested |
 | Practice AI | Yes | No | No | No |
 | Accounts / online multiplayer | Yes | No | No | No |
