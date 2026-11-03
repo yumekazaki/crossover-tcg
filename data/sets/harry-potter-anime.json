@@ -1,0 +1,3262 @@
+[
+  {
+    "id": "HPA-001",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry Potter, Precise Disarming",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Warrior",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 6500,
+      "hp": 15500
+    },
+    "effect_text": "Once per turn, when an enemy Character becomes the target of an Ability you control: you may pay 1 Momentum. If you do, that Ability cannot be interrupted by the next Speed Ability this Menu.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Wand Combo"
+    ],
+    "strategic_purpose": "Reactive spell protection; rewards timing Harry after a target is announced.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry Potter, Precise Disarming"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Harry Potter, Precise Disarming",
+      "asset_path": "artwork/HPAN-001.png",
+      "local_asset_path": "artwork/HPAN-001.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Warrior",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-002",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry Potter, Keeper of the Old Ward",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 6000,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, after this Character joins an Attack Chain: if you activated a Speed Ability earlier this turn, reveal the top 2 cards of your Main Deck. Add an Ability among them to your hand and put the rest on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Speed Spell"
+    ],
+    "strategic_purpose": "Turns a response into a small, capped hand-selection engine.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry Potter, Keeper of the Old Ward"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Harry Potter, Keeper of the Old Ward",
+      "asset_path": "artwork/HPAN-002.png",
+      "local_asset_path": "artwork/HPAN-002.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-003",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry Potter, Patronus at Dusk",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Guardian",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5500,
+      "hp": 16000
+    },
+    "effect_text": "Once per turn, when an allied Character would be defeated by effect damage: you may discard an Ability. If you do, prevent that defeat and put that Character on top of its owner’s Main Deck after this Menu resolves.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Protection"
+    ],
+    "strategic_purpose": "A costly rescue that converts a card from hand into delayed recovery.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry Potter, Patronus at Dusk"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Harry Potter, Patronus at Dusk",
+      "asset_path": "artwork/HPAN-003.png",
+      "local_asset_path": "artwork/HPAN-003.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Guardian",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-004",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Draconia Malfoy, Slytherin Prodigy",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5500,
+      "hp": 14000
+    },
+    "effect_text": "Once per turn, when you add an allied Character to Party from your hand: look at the top 3 cards of your Main Deck. You may reveal a Speed Ability among them and put it into your hand; put the rest on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Draconia Malfoy",
+      "Wand Combo",
+      "Slytherin"
+    ],
+    "strategic_purpose": "The Slytherin planner turns deployment into a bounded response setup.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Draconia Malfoy, Slytherin Prodigy"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Draconia Malfoy, Slytherin Prodigy",
+      "asset_path": "artwork/HPAN-004.png",
+      "local_asset_path": "artwork/HPAN-004.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-005",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Draconia Malfoy, Emerald Counterspell",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 13500
+    },
+    "effect_text": "Once per turn, when an opponent activates a Speed Ability in a Menu that targets exactly one of your Characters: you may pay 1 Darkness. If you do, change that Ability’s target to this Character, if legal.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Draconia Malfoy",
+      "Protection",
+      "Slytherin"
+    ],
+    "strategic_purpose": "A targeted redirect that spends Darkness and requires a legal target.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Draconia Malfoy, Emerald Counterspell"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Draconia Malfoy, Emerald Counterspell",
+      "asset_path": "artwork/HPAN-005.png",
+      "local_asset_path": "artwork/HPAN-005.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-006",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Draconia Malfoy, Calculated Reposition",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 14000
+    },
+    "effect_text": "Once per turn, after you resolve an Ability that moved a card from your Deck to your hand: you may put one card from your hand on the bottom of your Main Deck. If you do, gain 1 Momentum.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Draconia Malfoy",
+      "Deck Setup",
+      "Slytherin"
+    ],
+    "strategic_purpose": "Trades a card for a capped Momentum burst after deck-to-hand setup.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Draconia Malfoy, Calculated Reposition"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Draconia Malfoy, Calculated Reposition",
+      "asset_path": "artwork/HPAN-006.png",
+      "local_asset_path": "artwork/HPAN-006.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Slytherin Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-007",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry & Draconia, Rivalry in Motion",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Warrior",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Witch",
+      "Human"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 6000,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, when you activate an Ability while both Harry Potter and Draconia Malfoy are in your Party: after that Menu resolves, choose one of them. Its next Attack Chain this turn costs 1 less Momentum, to a minimum of 1.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Draconia Malfoy",
+      "Pair Combo"
+    ],
+    "strategic_purpose": "A pair card that converts a shared spell into a limited chain discount.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry & Draconia, Rivalry in Motion"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Harry & Draconia, Rivalry in Motion",
+      "asset_path": "artwork/HPAN-007.png",
+      "local_asset_path": "artwork/HPAN-007.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Warrior",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Witch"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-008",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry & Draconia, Shared Spellline",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Support",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Witch",
+      "Human"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, when an opponent activates a Speed Ability: if Harry Potter and Draconia Malfoy are both in your Party, you may discard one card. If you do, draw one card after that Menu resolves, then gain 1 Light or 1 Darkness.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Draconia Malfoy",
+      "Pair Combo"
+    ],
+    "strategic_purpose": "A pair-based hand filter that rewards response timing and costs a discard.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry & Draconia, Shared Spellline"
+    },
+    "artwork": {
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Harry & Draconia, Shared Spellline",
+      "asset_path": "artwork/HPAN-008.png",
+      "local_asset_path": "artwork/HPAN-008.png",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Support",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Witch"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-009",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Hermione Granger, Library Strategist",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Ravenclaw Student"
+    ],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 14500
+    },
+    "effect_text": "Once per turn, when you look at or reveal cards from the top of your Main Deck: you may reveal an Ability among them and put it into your hand. Put the remaining revealed cards on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Hermione Granger",
+      "Research"
+    ],
+    "strategic_purpose": "Reliable, once-per-turn spell selection without unrestricted tutoring.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Hermione Granger, Library Strategist"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Hermione Granger, Library Strategist"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Ravenclaw Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-010",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Hermione Granger, First to the Answer",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 4500,
+      "hp": 13000
+    },
+    "effect_text": "Once per turn, during your Main Phase: reveal the top 4 cards of your Main Deck. Add one Equipment or Speed Ability among them to your hand; put the rest on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Hermione Granger",
+      "Research",
+      "Deck Setup"
+    ],
+    "strategic_purpose": "A deeper but narrower setup effect that costs a full Main Phase action.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Hermione Granger, First to the Answer"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Hermione Granger, First to the Answer"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-011",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Ron Weasley, Loyal Interceptor",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Guardian",
+      "Warrior",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 16500
+    },
+    "effect_text": "Once per turn, when this Character survives as an Allied Guard: discard one card, then gain 1 Momentum and draw one card.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Ron Weasley",
+      "Guard Combo"
+    ],
+    "strategic_purpose": "Card-neutral guard payoff with a meaningful discard and survival condition.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Ron Weasley, Loyal Interceptor"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Ron Weasley, Loyal Interceptor"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Guardian",
+      "Warrior"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-012",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Ron Weasley, Knight's Gambit",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Guardian",
+      "Warrior",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5500,
+      "hp": 16000
+    },
+    "effect_text": "Once per turn, when an allied Character is chosen by an enemy Ability: you may pay 1 Light. If you do, Ron becomes that Ability’s target instead, if legal; after it resolves, draw one card if Ron survived.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Ron Weasley",
+      "Protection"
+    ],
+    "strategic_purpose": "Protects a teammate by redirecting one legal effect and rewards survival.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Ron Weasley, Knight's Gambit"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Ron Weasley, Knight's Gambit"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Guardian",
+      "Warrior"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-013",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Hermione & Ron, Study Group",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Support",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Witch",
+      "Human"
+    ],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 4500,
+      "hp": 14500
+    },
+    "effect_text": "Once per turn, when you activate an Ability while Harry Potter or Draconia Malfoy is in your Party: you may discard one card. If you do, draw one card, then gain 1 Momentum if both are present.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Hermione Granger",
+      "Ron Weasley",
+      "Harry Potter",
+      "Draconia Malfoy",
+      "Pair Combo"
+    ],
+    "strategic_purpose": "A filtering bridge into the set’s central pair strategy.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Hermione & Ron, Study Group"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Hermione & Ron, Study Group"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Support",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Witch"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-014",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Voldemort, Horcrux Anchor",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Dark Wizard",
+      "Death Eater"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 7000,
+      "hp": 17000
+    },
+    "effect_text": "Once per turn, when an opposing Character is returned from the battlefield to a Deck by an effect: gain 1 Darkness. If you control a Horcrux, you may also put the top card of your Main Deck into your hand, then discard one card.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Voldemort",
+      "Horcrux"
+    ],
+    "strategic_purpose": "Darkness engine with a conditional, card-neutral Horcrux filter.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Voldemort, Horcrux Anchor"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Voldemort, Horcrux Anchor"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Dark Wizard",
+      "Death Eater"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-015",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Voldemort, the Dark Lord's Return",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Berserker",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Dark Wizard",
+      "Death Eater"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 7500,
+      "hp": 18000
+    },
+    "effect_text": "Once per turn, when this Character would leave the battlefield: if you control a Horcrux Equipment, you may pay 2 Darkness. If you do, return this card to your hand instead.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Voldemort",
+      "Horcrux",
+      "Recursion"
+    ],
+    "strategic_purpose": "A costly return-to-hand line that needs separate Horcrux setup.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Voldemort, the Dark Lord's Return"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Voldemort, the Dark Lord's Return"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Berserker",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Dark Wizard",
+      "Death Eater"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-016",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Albus Dumbledore, Headmaster's Plan",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Wizard"
+    ],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 4500,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, when an opponent interrupts one of your Abilities: look at the top 3 cards of your Main Deck. You may put one Ability among them on top and the rest on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Dumbledore",
+      "Spell Sequencing"
+    ],
+    "strategic_purpose": "Turns an interrupted spell into future setup without negating the answer.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Albus Dumbledore, Headmaster's Plan"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Albus Dumbledore, Headmaster's Plan"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-017",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Severus Snape, Double Agent",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Tactician",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Slytherin Student"
+    ],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, when an enemy Ability targets exactly one allied Character: you may discard an Ability. If you do, that Ability’s controller may choose a different legal target; if they cannot, negate that Ability.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Snape",
+      "Disruption"
+    ],
+    "strategic_purpose": "A conditional soft redirect with discard cost and fallback negation.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Severus Snape, Double Agent"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Severus Snape, Double Agent"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Tactician",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Slytherin Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-018",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Luna Lovegood, Unexpected Clarity",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Support",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Ravenclaw Student"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 4000,
+      "hp": 13000
+    },
+    "effect_text": "Once per turn, after you put a card from your Deck on the bottom: gain 1 Light. If that card was an Ability, you may reveal the top card of your Deck and put it on the bottom too.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Luna",
+      "Light Engine",
+      "Deck Setup"
+    ],
+    "strategic_purpose": "Small Light generation tied to deliberate deck filtering.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Luna Lovegood, Unexpected Clarity"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Luna Lovegood, Unexpected Clarity"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Support",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Ravenclaw Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-019",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Neville Longbottom, Courage Blossoms",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Warrior",
+      "Guardian",
+      "Mage",
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5000,
+      "hp": 15500
+    },
+    "effect_text": "Once per turn, when an allied Character is defeated: gain 1 Momentum. If you control a Gryffindor Student, you may return one Ability from your discard pile to the bottom of your Main Deck.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Neville",
+      "Recovery"
+    ],
+    "strategic_purpose": "Converts a setback into Momentum and limited non-hand recursion.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Neville Longbottom, Courage Blossoms"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Neville Longbottom, Courage Blossoms"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Warrior",
+      "Guardian",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-020",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Ginny Weasley, Fast Counter",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Warrior",
+      "Mage",
+      "Wand Wielder",
+      "Witch",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5500,
+      "hp": 14500
+    },
+    "effect_text": "Once per turn, after you activate a Speed Ability: gain 1 Light. If Harry Potter or Draconia Malfoy is in your Party, the next Speed Ability you activate this turn costs 1 less Momentum, to a minimum of 0.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Ginny",
+      "Speed Spell",
+      "Light Engine"
+    ],
+    "strategic_purpose": "Speed-chain support with a bounded resource gain and discount.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Ginny Weasley, Fast Counter"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Ginny Weasley, Fast Counter"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Warrior",
+      "Mage"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wand Wielder",
+      "Witch",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-021",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Cedric Diggory, Fair Duelist",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Warrior",
+      "Guardian",
+      "Wizard",
+      "Hufflepuff Student"
+    ],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 5500,
+      "hp": 15000
+    },
+    "effect_text": "Once per turn, when this Character joins an Attack Chain with an allied Character from another franchise: gain 1 Momentum after that Chain resolves. If the enemy spent a Speed Ability in that Menu, draw one card, then discard one card.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Cedric",
+      "Crossover Chain"
+    ],
+    "strategic_purpose": "Cross-franchise chain reward with conditional card-neutral filtering.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Cedric Diggory, Fair Duelist"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Cedric Diggory, Fair Duelist"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Warrior",
+      "Guardian"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wizard",
+      "Hufflepuff Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-022",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Rubeus Hagrid, Keeper of Creatures",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Character",
+    "subtypes": [
+      "Guardian",
+      "Support",
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": {
+      "atk": 4500,
+      "hp": 17500
+    },
+    "effect_text": "Once per turn, when you add a Magical Creature from your hand to Party: reveal the top 3 cards of your Main Deck. Add one Ability among them to your hand; put the rest on the bottom in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Hagrid",
+      "Magical Creature",
+      "Deck Setup"
+    ],
+    "strategic_purpose": "Creature deployment becomes capped spell selection.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Rubeus Hagrid, Keeper of Creatures"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Rubeus Hagrid, Keeper of Creatures"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [
+      "Guardian",
+      "Support"
+    ],
+    "species_nature": [
+      "Human"
+    ],
+    "franchise_subtypes": [
+      "Wizard",
+      "Gryffindor Student"
+    ],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-023",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Elder Wand",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 2,
+      "darkness": 2,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when you activate an Ability: you may pay 1 Momentum. If you do, look at the top 2 cards of your Main Deck and put them back in either order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Mage"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Spell Sequencing"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Spell Sequencing while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Elder Wand"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Elder Wand"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 2,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-024",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Harry's Holly Wand",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when its wielder activates a Speed Ability: if Harry Potter is in your Party, gain 1 Light. This can trigger only once per turn.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Wand Wielder"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Speed Spell"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Harry Potter, Speed Spell while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Harry's Holly Wand"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Harry's Holly Wand"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-025",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Draconia's Slytherin Wand",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 0,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, after its wielder changes the target of an enemy effect: gain 1 Darkness. This can trigger only once per turn.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Wand Wielder",
+        "Slytherin Student"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Draconia Malfoy",
+      "Slytherin"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Draconia Malfoy, Slytherin while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Draconia's Slytherin Wand"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Draconia's Slytherin Wand"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-026",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Invisibility Cloak",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 1,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when an enemy Ability targets its wielder: you may pay 1 Light. If you do, that Ability cannot choose this wielder as its target.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Mage"
+      ],
+      "any": [
+        "Tactician",
+        "Assassin"
+      ]
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Protection",
+      "Crossover Equipment"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Protection, Crossover Equipment while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Invisibility Cloak"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Invisibility Cloak"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 2,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-027",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Nimbus Racing Broom",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When its wielder joins an Attack Chain, you may pay 1 Momentum. If you do, search your Main Deck for a Speed Ability, reveal it, put it on the bottom of your Main Deck, then shuffle. The next Speed Ability you activate this turn costs 1 less Momentum.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Seeker"
+      ],
+      "any": [
+        "Archer",
+        "Warrior"
+      ]
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Harry Potter",
+      "Speed Spell"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Harry Potter, Speed Spell while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Nimbus Racing Broom"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Nimbus Racing Broom"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-028",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Marauder's Map",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 1,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when you look at cards from your Deck: you may reveal one additional card, then put one card from your hand on the bottom of your Main Deck.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Tactician"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Deck Setup"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Deck Setup while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Marauder's Map"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Marauder's Map"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-029",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Time-Turner",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 1,
+      "darkness": 1,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when an opponent activates their second card in one Menu: you may pay 1 Momentum. If you do, look at the top 3 cards of your Main Deck and put them back in any order.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Mage",
+        "Tactician"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Menu Control",
+      "Crossover Equipment"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Menu Control, Crossover Equipment while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Time-Turner"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Time-Turner"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-030",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Sword of Gryffindor",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 2,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, after its wielder guards: if a Character was defeated in that combat, return one Ability from your discard pile to the bottom of your Main Deck.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Sword Wielder"
+      ],
+      "any": [
+        "Gryffindor Student",
+        "Warrior"
+      ]
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Recovery"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Recovery while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Sword of Gryffindor"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Sword of Gryffindor"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 2,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-031",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Felix Felicis Vial",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "When you activate your second card in a Menu, you may put one card from your hand on the bottom of your Main Deck. If you do, gain 1 Light or 1 Darkness.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Support",
+        "Tactician"
+      ],
+      "any": []
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Resource Engine",
+      "Menu Sequencing"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Resource Engine, Menu Sequencing while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Felix Felicis Vial"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Felix Felicis Vial"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-032",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Basilisk Fang",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Equipment",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 2,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Once per turn, when an Ability targets an opposing Character with a Horcrux attached: you may discard this Equipment. If you do, negate that Ability and put the Horcrux on the bottom of its owner’s Deck.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Assassin"
+      ],
+      "any": [
+        "Sword Wielder",
+        "Gunner"
+      ]
+    },
+    "targets": "Only the Characters or cards specified in effect text; all printed controller, zone, subtype and timing restrictions apply.",
+    "archetypes": [
+      "Horcrux",
+      "Disruption",
+      "Crossover Equipment"
+    ],
+    "strategic_purpose": "Crossover Equipment: supports Horcrux, Disruption, Crossover Equipment while creating a distinct utility line.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Basilisk Fang"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Basilisk Fang"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Equipment/Transformation",
+    "slots": 2,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-033",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Expelliarmus: Disarming Charm",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Interrupt an Ability that targets exactly one allied Character. Its controller may pay 1 Momentum; if they do, that Ability is not interrupted. Otherwise negate it.",
+    "timing": "During a Menu, after an Ability chooses its target and before it resolves.",
+    "requirements": {
+      "all": [
+        "Wand Wielder"
+      ],
+      "any": []
+    },
+    "targets": "One targeted enemy Ability.",
+    "archetypes": [
+      "Harry Potter",
+      "Disruption"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Harry Potter, Disruption; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Expelliarmus: Disarming Charm"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Expelliarmus: Disarming Charm"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-034",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Protego: Shield Charm",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Choose an allied Character. Prevent the next 4000 effect damage it would take before the start of your next turn. If that Character is Harry or Draconia, gain 1 Light.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One allied Character.",
+    "archetypes": [
+      "Protection",
+      "Harry Potter",
+      "Draconia Malfoy"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Protection, Harry Potter, Draconia Malfoy; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Protego: Shield Charm"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Protego: Shield Charm"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-035",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Accio: Summoning Charm",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Search your Main Deck for an Equipment with printed cost 2 or less, reveal it, and put it into your hand. Shuffle. If Harry or Draconia is in your Party, gain 1 Momentum.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Mage"
+      ],
+      "any": []
+    },
+    "targets": "One Equipment from your Main Deck.",
+    "archetypes": [
+      "Search",
+      "Harry Potter",
+      "Draconia Malfoy"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Search, Harry Potter, Draconia Malfoy; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Accio: Summoning Charm"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Accio: Summoning Charm"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-036",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Expecto Patronum",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Choose an allied Character. Heal 3000 HP. If you control a Wand Wielder, gain 1 Light; if the opponent controls a Darkness resource, you may also put one card from your hand on the bottom of your Main Deck to draw one card.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Mage"
+      ],
+      "any": []
+    },
+    "targets": "One allied Character.",
+    "archetypes": [
+      "Healing",
+      "Light Engine",
+      "Hand Filtering"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Healing, Light Engine, Hand Filtering; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Expecto Patronum"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Expecto Patronum"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-037",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Hermione's Counter-Research",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Reveal the top 5 cards of your Main Deck. Add one Ability among them to your hand; put the rest on the bottom in any order. If you control Hermione, reveal 6 instead.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One Ability among the revealed cards.",
+    "archetypes": [
+      "Hermione Granger",
+      "Deck Setup",
+      "Search"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Hermione Granger, Deck Setup, Search; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Hermione's Counter-Research"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Hermione's Counter-Research"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-038",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Dumbledore's Army Drill",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Choose a Character with printed cost 2 or less in your hand and add it to Party. If Harry and Draconia are both in your Party, gain 1 Momentum after this Ability resolves.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One Character in your hand.",
+    "archetypes": [
+      "Party Deployment",
+      "Harry Potter",
+      "Draconia Malfoy"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Party Deployment, Harry Potter, Draconia Malfoy; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Dumbledore's Army Drill"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Dumbledore's Army Drill"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-039",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Horcrux Trace",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 1,
+      "momentum": 0
+    },
+    "statistics": null,
+    "effect_text": "Reveal the top 4 cards of your Main Deck. You may add one Horcrux or one Speed Ability among them to your hand; put the rest on the bottom in any order. If Voldemort is in your Party, gain 1 Darkness.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One Horcrux or Speed Ability among the revealed cards.",
+    "archetypes": [
+      "Voldemort",
+      "Horcrux",
+      "Deck Setup"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Voldemort, Horcrux, Deck Setup; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Horcrux Trace"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Horcrux Trace"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-040",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Room of Requirement",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "Put one card from your hand on the bottom of your Main Deck. Search your Main Deck for a Character with a different name and printed cost 1 or less, reveal it, and put it into your hand. Shuffle. If you control Hermione, you may add an Ability instead.",
+    "timing": "Your Main Phase; empty Menu.",
+    "requirements": {
+      "all": [
+        "Tactician"
+      ],
+      "any": []
+    },
+    "targets": "One eligible Character or Ability from your Main Deck.",
+    "archetypes": [
+      "Search",
+      "Party Setup",
+      "Crossover"
+    ],
+    "strategic_purpose": "Main-phase combo piece for Search, Party Setup, Crossover; creates interaction beyond a stat change.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Room of Requirement"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Room of Requirement"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-041",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Finite Incantatem",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 1,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When an Ability resolves, choose one effect on it that targets an allied Character. That effect does not apply to that Character. If Draconia is in your Party, gain 1 Darkness.",
+    "timing": "After an Ability chooses targets and before it resolves.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One targeted effect on an allied Character.",
+    "archetypes": [
+      "Draconia Malfoy",
+      "Negation"
+    ],
+    "strategic_purpose": "Response-window interaction for Draconia Malfoy, Negation; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Finite Incantatem"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Finite Incantatem"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-042",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Protego at the Last Moment",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Common",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When an opposing card effect would deal damage to an allied Character, prevent up to 4000 of that damage. If you control a Guardian, draw one card then discard one card.",
+    "timing": "After damage is assigned and before it is applied.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One allied Character.",
+    "archetypes": [
+      "Protection",
+      "Guardian"
+    ],
+    "strategic_purpose": "Response-window interaction for Protection, Guardian; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Protego at the Last Moment"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Protego at the Last Moment"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-043",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Apparition Break",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 2
+    },
+    "statistics": null,
+    "effect_text": "When an enemy Ability targets exactly one allied Character, return that Character to its owner’s hand after the Ability resolves. If it left the battlefield this way, its Equipment returns to its owner’s Equipment/Transformation Deck.",
+    "timing": "After the target is chosen and before the Ability resolves.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One allied Character.",
+    "archetypes": [
+      "Evade",
+      "Recovery"
+    ],
+    "strategic_purpose": "Response-window interaction for Evade, Recovery; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Apparition Break"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Apparition Break"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-044",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Red-and-Emerald Counterchain",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 1,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When an opponent activates a Speed Ability: if Harry and Draconia are both in your Party, discard one card. If you do, negate that Speed Ability unless its controller pays 1 additional Momentum.",
+    "timing": "In response to an opposing Speed Ability, before it resolves.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One opposing Speed Ability.",
+    "archetypes": [
+      "Harry Potter",
+      "Draconia Malfoy",
+      "Counterspell"
+    ],
+    "strategic_purpose": "Response-window interaction for Harry Potter, Draconia Malfoy, Counterspell; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Red-and-Emerald Counterchain"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Red-and-Emerald Counterchain"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-045",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Felix Felicis Twist",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Uncommon",
+    "cost": {
+      "light": 0,
+      "darkness": 0,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When a card is added to an opponent’s hand from their Deck: gain 1 Light. If you control a Support Character, look at the top card of your Main Deck; you may put it on the bottom.",
+    "timing": "After the opponent’s Deck-to-hand effect resolves.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "No chosen target.",
+    "archetypes": [
+      "Resource Engine",
+      "Deck Setup"
+    ],
+    "strategic_purpose": "Response-window interaction for Resource Engine, Deck Setup; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Felix Felicis Twist"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Felix Felicis Twist"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-046",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Stupefy: Chain Stop",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Speed Ability",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 0,
+      "darkness": 1,
+      "momentum": 1
+    },
+    "statistics": null,
+    "effect_text": "When an opposing Character joins an Attack Chain: that Character cannot join another Attack Chain this turn. If you control a Gryffindor Student, gain 1 Momentum after the Menu resolves.",
+    "timing": "After the attacker is declared and before the response Menu closes.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One opposing Character in that Attack Chain.",
+    "archetypes": [
+      "Attack Disruption",
+      "Gryffindor"
+    ],
+    "strategic_purpose": "Response-window interaction for Attack Disruption, Gryffindor; offers counterplay and combo timing.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Stupefy: Chain Stop"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Stupefy: Chain Stop"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-047",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Patronus Stand",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Finisher",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 3,
+      "darkness": 0,
+      "momentum": 2
+    },
+    "statistics": null,
+    "effect_text": "Choose an opposing Character. Deal 7000 damage to it. If it survives, its controller may discard a card; if they do not, put it on top of its owner’s Main Deck. If Harry is in your Party, heal one allied Character 2000 HP.",
+    "timing": "Your Main Phase; empty Menu; once per turn.",
+    "requirements": {
+      "all": [
+        "Mage"
+      ],
+      "any": []
+    },
+    "targets": "One opposing Character.",
+    "archetypes": [
+      "Harry Potter",
+      "Removal",
+      "Patronus"
+    ],
+    "strategic_purpose": "High-cost closing line with interaction and counterplay for Harry Potter, Removal, Patronus.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Patronus Stand"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Patronus Stand"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-048",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Twin Wands: Red & Emerald Convergence",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Finisher",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 2,
+      "darkness": 2,
+      "momentum": 2
+    },
+    "statistics": null,
+    "effect_text": "Requires both Harry Potter and Draconia Malfoy in your Party. Interrupt one opposing Ability or Speed Ability. Its controller may pay 2 Momentum; if they do, the card resolves with one fewer chosen target, if any. Then gain 1 Light and 1 Darkness.",
+    "timing": "During a Menu, after an opposing effect chooses targets and before it resolves.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "One opposing Ability or Speed Ability.",
+    "archetypes": [
+      "Harry Potter",
+      "Draconia Malfoy",
+      "Pair Combo",
+      "Counterspell"
+    ],
+    "strategic_purpose": "High-cost closing line with interaction and counterplay for Harry Potter, Draconia Malfoy, Pair Combo, Counterspell.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Twin Wands: Red & Emerald Convergence"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Twin Wands: Red & Emerald Convergence"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-049",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Sundering the Horcrux",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Finisher",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Mythic",
+    "cost": {
+      "light": 0,
+      "darkness": 4,
+      "momentum": 2
+    },
+    "statistics": null,
+    "effect_text": "Requires Voldemort in your Party. Choose an opposing Character and one Horcrux in any discard pile. Put the Horcrux on the bottom of its owner’s Deck; if you do, deal 8000 damage to that Character and gain 2 Darkness.",
+    "timing": "Your Main Phase; empty Menu; once per turn.",
+    "requirements": {
+      "all": [
+        "Dark Wizard"
+      ],
+      "any": []
+    },
+    "targets": "One opposing Character and one Horcrux in a discard pile.",
+    "archetypes": [
+      "Voldemort",
+      "Horcrux",
+      "Removal"
+    ],
+    "strategic_purpose": "High-cost closing line with interaction and counterplay for Voldemort, Horcrux, Removal.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Sundering the Horcrux"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Sundering the Horcrux"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  },
+  {
+    "id": "HPA-050",
+    "set": "Harry Potter (Anime)",
+    "set_code": "HPA",
+    "name": "Hogwarts Great Hall Rally",
+    "franchise": "Harry Potter (Anime)",
+    "game": "Harry Potter (Anime) · Fan-made alternate-universe set",
+    "type": "Finisher",
+    "subtypes": [],
+    "affiliations": [],
+    "rarity": "Rare",
+    "cost": {
+      "light": 2,
+      "darkness": 1,
+      "momentum": 3
+    },
+    "statistics": null,
+    "effect_text": "Choose up to two allied Characters. Each may join one Attack Chain this turn without paying its first Momentum cost. After that Chain resolves, if Harry or Draconia participated, gain 1 Momentum and draw one card, then discard one card.",
+    "timing": "Your Main Phase; empty Menu; once per turn.",
+    "requirements": {
+      "all": [],
+      "any": []
+    },
+    "targets": "Up to two allied Characters.",
+    "archetypes": [
+      "Hogwarts",
+      "Crossover Chain",
+      "Resource Engine"
+    ],
+    "strategic_purpose": "High-cost closing line with interaction and counterplay for Hogwarts, Crossover Chain, Resource Engine.",
+    "balance_notes": "New card text is drafted for the 50-card set. Engine behavior, balance and gameplay remain unverified; this card is not marked playtested.",
+    "canonical_source": {
+      "url": "https://www.wizardingworld.com/",
+      "reference": "Hogwarts Great Hall Rally"
+    },
+    "artwork": {
+      "status": "pending",
+      "description": "Unique artwork pending; no shared image is assigned.",
+      "subject": "Hogwarts Great Hall Rally"
+    },
+    "status": {
+      "designed": true,
+      "mechanically_validated": false,
+      "balance_reviewed": false,
+      "playtested": false,
+      "structurally_validated": true,
+      "rule_reviewed": false
+    },
+    "deck": "Main",
+    "slots": 1,
+    "transformation": null,
+    "combat_subtypes": [],
+    "species_nature": [],
+    "franchise_subtypes": [],
+    "form_tags": []
+  }
+]

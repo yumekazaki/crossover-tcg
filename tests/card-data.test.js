@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { loadCards, allCards, getCard, searchCards, validateDeck, getArtwork } from '../src/data/cards.js';
 
 const original = JSON.parse(await readFile(new URL('../data/cards.json', import.meta.url), 'utf8'));
+const harryPotterAnime = JSON.parse(await readFile(new URL('../data/sets/harry-potter-anime.json', import.meta.url), 'utf8'));
 const importedDecks = JSON.parse(await readFile(new URL('../data/source/decks.json', import.meta.url), 'utf8'));
 await loadCards();
 
@@ -13,10 +14,19 @@ function legalFixture() {
   return { mainIds, equipmentIds };
 }
 
-test('imports all 500 complete canonical definitions without synthesized fields', () => {
-  assert.equal(allCards().length, 500);
-  assert.deepEqual(allCards(), original);
-  assert.equal(new Set(allCards().map(c => c.id)).size, 500);
+test('imports the original 500 unchanged and the distinct 50-card expansion', () => {
+  assert.equal(original.length, 500);
+  assert.equal(harryPotterAnime.length, 50);
+  assert.equal(allCards().length, 550);
+  assert.deepEqual(allCards().slice(0, original.length), original);
+  assert.deepEqual(allCards().slice(original.length), harryPotterAnime);
+  assert.equal(new Set(allCards().map(c => c.id)).size, 550);
+  assert(harryPotterAnime.every(card => card.set_code === 'HPA' && card.franchise === 'Harry Potter (Anime)'));
+  assert(harryPotterAnime.some(card => card.name.startsWith('Hermione')));
+  assert(harryPotterAnime.some(card => card.name.startsWith('Ron')));
+  assert(harryPotterAnime.some(card => card.name.includes('Voldemort')));
+  assert(harryPotterAnime.filter(card => /Harry Potter|Draconia Malfoy|Harry & Draconia/.test(card.name)).length >= 8);
+  assert(harryPotterAnime.every(card => !/Draco Malfoy/i.test(card.name)));
 });
 test('mechanical validation status matches focused engine coverage without implying balance or playtesting', () => {
   const coveredIds = ['CS1-005', 'CS1-011', 'CS1-177', 'CS1-178', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
@@ -29,7 +39,7 @@ test('mechanical validation status matches focused engine coverage without imply
 });
 test('loading is repeatable and synchronous lookups retain canonical identity', async () => {
   const [a, b] = await Promise.all([loadCards(), loadCards()]);
-  assert.equal(a.length, 500);
+  assert.equal(a.length, 550);
   assert.equal(a[0], b[0]);
   assert.equal(getCard('CS1-001'), a[0]);
   assert.equal(getCard('missing-id'), null);
@@ -37,7 +47,7 @@ test('loading is repeatable and synchronous lookups retain canonical identity', 
 test('query arrays cannot mutate the internal database and nested records are immutable', () => {
   const cards = allCards();
   cards.pop();
-  assert.equal(allCards().length, 500);
+  assert.equal(allCards().length, 550);
   assert(Object.isFrozen(getCard('CS1-001')));
   assert(Object.isFrozen(getCard('CS1-001').subtypes));
   assert.throws(() => { getCard('CS1-001').name = 'Changed'; }, TypeError);
@@ -118,12 +128,19 @@ test('all imported sample deck registrations validate', () => {
   }
 });
 test('source citations and attached status never imply redistribution approval', () => {
-  const sora = getCard('CS1-001'), art = getArtwork(sora);
-  assert.equal(art.src, null);
-  assert.equal(art.placeholder, true);
-  assert.match(art.label, /Sora/);
-  assert.equal(art.sourceUrl, sora.artwork.source_page || sora.artwork.source_url);
-  assert(allCards().every(c => getArtwork(c).src === null));
+  const sourceOnly = getCard('CS1-004'), sourceOnlyArt = getArtwork(sourceOnly);
+  assert.equal(sourceOnlyArt.src, null);
+  assert.equal(sourceOnlyArt.placeholder, true);
+  assert.match(sourceOnlyArt.label, /Roxas/);
+  assert.equal(sourceOnlyArt.sourceUrl, sourceOnly.canonical_source.url);
+  const approvedOriginal = getArtwork(getCard('CS1-001'));
+  assert.match(approvedOriginal.src, /public[\\/]artwork[\\/]CS1-001\.jpg/i);
+  assert.equal(approvedOriginal.placeholder, false);
+  for (const card of harryPotterAnime.filter(c => c.artwork.redistribution_approved)) {
+    const art = getArtwork(getCard(card.id));
+    assert.equal(art.placeholder, false);
+    assert.match(art.src, /public[\\/]artwork[\\/]HPAN-/i);
+  }
 });
 test('remote and nonexistent local images remain placeholders even with claimed approval', () => {
   const sora = getCard('CS1-001');

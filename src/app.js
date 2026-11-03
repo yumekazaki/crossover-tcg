@@ -293,7 +293,7 @@ try {
   await loadCards(); cards = allCards(); $('card-count').textContent = cards.length.toLocaleString();
   const response = await fetch('data/source/decks.json'); if (!response.ok) throw new Error('Could not load the registered sample decks.'); samples = await response.json();
   initSavedDecks(); mountBrowser(); syncDeckUI();
-  $('implemented-effects').textContent = `${implementedEffectIds().length}/500 effects · ${supportedTransformationIds().length} form entries`;
+  $('implemented-effects').textContent = `${implementedEffectIds().length}/${cards.length} effects · ${supportedTransformationIds().length} form entries`;
   $('match-notice').textContent = 'Choose two validated decks. A random chooser will select who goes first after the match begins.';
 } catch (error) {
   $('match-notice').textContent = `Application data could not load: ${error.message}`;

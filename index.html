@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111823">
-  <meta name="description" content="A browser playtest preview for the rules-driven Crossover TCG, with shared-device matches and the 500-card set.">
+  <meta name="description" content="A browser playtest preview for the rules-driven Crossover TCG, with shared-device matches and 550 cards across two sets.">
   <title>Crossover TCG — Browser Playtest</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="src/ui/card-browser.css">
@@ -22,8 +22,8 @@
   <main>
     <section id="library-view" class="view is-visible">
       <div class="hero">
-        <div><p class="eyebrow">FIRST PLAYABLE SLICE · 500 CARD DATASET</p><h1>Choose your next combination.</h1><p>Browse the complete set, inspect the full card text, and validate a deck against the established limits.</p></div>
-        <div class="hero-stat"><strong id="card-count">500</strong><span>canonical cards</span><small id="implemented-effects">Loading engine coverage…</small></div>
+        <div><p class="eyebrow">TWO SETS · 550 CARD DATASET</p><h1>Choose your next combination.</h1><p>Browse the complete card pool, inspect the full card text, and validate a deck against the established limits.</p></div>
+        <div class="hero-stat"><strong id="card-count">550</strong><span>cards across 2 sets</span><small id="implemented-effects">Loading engine coverage…</small></div>
       </div>
       <section class="deck-controls" aria-label="Deck management">
         <label>Deck<select id="deck-select"></select></label>
@@ -54,10 +54,10 @@
     <section id="status-view" class="view" hidden>
       <div class="page-heading"><p class="eyebrow">BUILD STATUS</p><h1>What works in this build</h1><p>Imported source data is not the same as implemented or tested game functionality. This view lists the current boundaries.</p></div>
       <div class="status-grid">
-        <article class="status-card status-good"><h2>Imported</h2><p>All 500 exact card records, the recovered master rules, decision history, and subtype/form registries are in this separate project.</p></article>
+        <article class="status-card status-good"><h2>Imported</h2><p>The original 500-card set and the separate 50-card Harry Potter (Anime) fan set are available with the recovered master rules, decision history, and subtype/form registries.</p></article>
         <article class="status-card status-progress"><h2>Implemented slice</h2><p>Deck checks, setup/mulligans, standard Party deployment, paid compatible Equipment attachment, response Menus, two healing effects, turn resources, basic chain combat and defeat/life handling.</p></article>
         <article class="status-card status-open"><h2>Not complete</h2><p>Most effects and all Finishers remain blocked. Eight transformation entry paths work, but their printed form abilities and voluntary reversion remain pending; trigger/delay/protection systems, full effect negation, persistence, accounts, AI, and online matches are not implemented.</p></article>
-        <article class="status-card status-open"><h2>Playtest limits</h2><p>Card images show placeholders until redistribution rights are approved. Matches use one shared browser, decks stay in that browser, and no accounts, AI opponent, or remote multiplayer backend is connected.</p></article>
+        <article class="status-card status-open"><h2>Playtest limits</h2><p>New Harry Potter (Anime) card effects are visible in the library and can be added to deck lists, but their effects are not implemented in the match engine. Matches use one shared browser, decks stay in that browser, and no accounts, AI opponent, or remote multiplayer backend is connected.</p></article>
       </div>
     </section>
   </main>

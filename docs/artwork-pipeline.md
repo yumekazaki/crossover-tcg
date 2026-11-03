@@ -2,11 +2,11 @@
 
 ## Live status
 
-Card artwork is live in the library, card detail and local match views. As of 2026-11-03, 159 of 500 cards have distinct local images, with individual-character images only on Character cards. The remaining cards show named pending placeholders. Group shots are excluded from Character cards, and no asset path is reused. The owner confirmed redistribution approval; source, publisher credit and local derivative are recorded in the manifest.
+Card artwork is live in the library, card detail and local match views. The original set has 159 distinct local images; the Harry Potter (Anime) set adds 8 new AI-generated images for its Harry, Draconia and shared-pair cards. Each path belongs to one card. Other Set 02 art remains pending with named placeholders. Original-set image provenance is recorded in the existing artwork manifest; AI-generated assets have their own manifest.
 
 ## Display contract
 
-Each card uses its own artwork record in data/cards.json and unique file in public/artwork/. The browser displays a local image only when permission is recorded, the file exists, and the path is unique. Source URLs are kept as credits and provenance; the site does not hotlink artwork.
+Each card uses its own artwork record and unique file in public/artwork/. Set 01 records remain in data/cards.json; Set 02 records live in data/sets/harry-potter-anime.json. The browser displays a local image only when permission is recorded, the file exists, and the path is unique. Source URLs are kept as credits and provenance; the site does not hotlink artwork.
 
 ## Adding a remaining image
 

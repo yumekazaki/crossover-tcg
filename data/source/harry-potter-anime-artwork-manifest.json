@@ -1,0 +1,66 @@
+[
+  {
+    "card_id": "HPA-001",
+    "card_name": "Harry Potter, Precise Disarming",
+    "file": "public/artwork/HPAN-001.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "36f3d03214fcb8b5cce0f151a1da25a570f2ed9cae06274917a69f0742641c90"
+  },
+  {
+    "card_id": "HPA-002",
+    "card_name": "Harry Potter, Keeper of the Old Ward",
+    "file": "public/artwork/HPAN-002.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "ea373db92a8f452e27e219477d7b6953a05ee1af13ff5c496758fb04137d61e3"
+  },
+  {
+    "card_id": "HPA-003",
+    "card_name": "Harry Potter, Patronus at Dusk",
+    "file": "public/artwork/HPAN-003.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "e0c05b94327d8ecb57ed3e688d62d448bfe9db7f908244cdae9ce0ebc3985f6a"
+  },
+  {
+    "card_id": "HPA-004",
+    "card_name": "Draconia Malfoy, Slytherin Prodigy",
+    "file": "public/artwork/HPAN-004.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "6585e3f7b22dd22f6326054df2ae044702240de0bf3bdb33727b89ddf17c3fb1"
+  },
+  {
+    "card_id": "HPA-005",
+    "card_name": "Draconia Malfoy, Emerald Counterspell",
+    "file": "public/artwork/HPAN-005.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "65c3b93626c853f70ca4c512759c58252ab295f4e02cf93395a632df0895d223"
+  },
+  {
+    "card_id": "HPA-006",
+    "card_name": "Draconia Malfoy, Calculated Reposition",
+    "file": "public/artwork/HPAN-006.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "49e2b896489786496c9bf770fd304e03b2c64f66f9ba2195bc48f825bef27b93"
+  },
+  {
+    "card_id": "HPA-007",
+    "card_name": "Harry & Draconia, Rivalry in Motion",
+    "file": "public/artwork/HPAN-007.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "910459d6d82c3fa88d20416a20af4032ea133354dbd8f266224479715d3bf217"
+  },
+  {
+    "card_id": "HPA-008",
+    "card_name": "Harry & Draconia, Shared Spellline",
+    "file": "public/artwork/HPAN-008.png",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "d2547dd8005f8b5363b68b31a135699c60fa7b1891c4ac5bdc86394f712f0c3e"
+  }
+]

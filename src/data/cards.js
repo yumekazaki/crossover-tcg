@@ -1,5 +1,8 @@
 /** Canonical card access. Call loadCards() before the synchronous query APIs. */
 const DATA_URL = new URL('../../data/cards.json', import.meta.url);
+const SET_URLS = [
+  { code: 'HPA', url: new URL('../../data/sets/harry-potter-anime.json', import.meta.url), expectedCount: 50 },
+];
 const PUBLIC_URL = new URL('../../public/', import.meta.url);
 let records = [];
 let index = new Map();
@@ -49,7 +52,7 @@ async function existingLocalImage(url) {
   } catch { return false; }
 }
 
-/** Loads the original 500 definitions without renaming, normalizing, or adding fields. */
+/** Loads the original set and registered expansions without rewriting their records. */
 export async function loadCards() {
   if (loaded) return allCards();
   if (!loading) loading = (async () => {
@@ -62,7 +65,23 @@ export async function loadCards() {
       if (!response.ok) throw new Error(`Unable to load card data (${response.status}).`);
       data = await response.json();
     }
-    if (!Array.isArray(data) || data.length !== 500) throw new Error('Expected exactly 500 canonical card records.');
+    if (!Array.isArray(data) || data.length !== 500) throw new Error('Expected exactly 500 canonical Set 01 records.');
+    const expansionSets = await Promise.all(SET_URLS.map(async set => {
+      let expansion;
+      if (set.url.protocol === 'file:' && typeof process !== 'undefined' && process.versions?.node) {
+        const { readFile } = await import('node:fs/promises');
+        expansion = JSON.parse(await readFile(set.url, 'utf8'));
+      } else {
+        const response = await fetch(set.url);
+        if (!response.ok) throw new Error(`Unable to load ${set.code} set (${response.status}).`);
+        expansion = await response.json();
+      }
+      if (!Array.isArray(expansion) || expansion.length !== set.expectedCount) {
+        throw new Error(`Expected ${set.expectedCount} records in ${set.code}.`);
+      }
+      return expansion;
+    }));
+    data = [...data, ...expansionSets.flat()];
     const nextIndex = new Map();
     for (const card of data) {
       if (!card || typeof card.id !== 'string' || !card.id || nextIndex.has(card.id)) {

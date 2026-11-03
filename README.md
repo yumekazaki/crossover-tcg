@@ -4,7 +4,9 @@ An independent implementation of the Crossover TCG design. This repository is se
 
 ## Current milestone
 
-The authoritative 500-card JSON pool and recovered rules have been imported. The first milestone is a local, rules-driven playable vertical slice with game state and legal action validation. See [the dashboard](docs/project-dashboard.md) and [architecture](docs/architecture.md).
+The original 500-card JSON pool and recovered rules are preserved, with a separate 50-card Harry Potter (Anime) fan-made expansion loaded as Set 02. The local, rules-driven playable vertical slice supports library search and deck registration; the new set's card effects are designed but are not yet implemented in the match engine. See [the dashboard](docs/project-dashboard.md) and [architecture](docs/architecture.md).
+
+See the [Set 02 overview](docs/set02-harry-potter-anime.md) for the card breakdown, combo plan and implementation status.
 
 ## Run
 
@@ -22,4 +24,4 @@ The current engine executes a limited set of explicit effects and Specials, incl
 
 The browser playtest now renders card art in library tiles, card details and the local-match card dialog. It displays an image only when all of these are true: the card explicitly records redistribution approval, the image is stored inside `public/`, the local file exists and is an image, and no other card points at that same file. Remote links and source citations are provenance only; they are never used as display images.
 
-There are currently **159 distinct images** in the site, all individually assigned and locally loaded. Character cards do not use group shots, and each image path belongs to one card. Artwork for the remaining cards is still pending and uses a named placeholder. The owner confirmed redistribution approval; source credits and local image paths are recorded in `data/source/artwork-manifest.json`. See [the artwork pipeline](docs/artwork-pipeline.md).
+There are currently **167 distinct images** in the site: 159 individually assigned approved images for the original set and 8 new, distinct AI-generated images for the Harry/Draconia cards. Character cards do not reuse group shots, and each image path belongs to one card. Remaining card artwork is pending and uses a named placeholder. Original-set source credits and the new set's generated-art manifest are recorded under `data/source/`. See [the artwork pipeline](docs/artwork-pipeline.md).
