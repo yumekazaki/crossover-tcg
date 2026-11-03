@@ -481,6 +481,17 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
           }
         }
       }
+      if (instance && program?.kind === 'effect-damage') {
+        const targetId = select.targets?.[0];
+        const target = state.instances[targetId];
+        if (target?.battlefield && target.controllerId !== select.playerId) {
+          let amount = program.amount;
+          const bonus = program.bonus;
+          if (bonus && hasControlledSubtype(state, select.playerId, bonus.requiresControllerSubtype, cardIndex)
+            && attachedEquipment(state, targetId).length >= bonus.targetEquipmentAtLeast) amount += bonus.amount;
+          resolveDamageTransaction(state, cardIndex, [{ targetId, amount }], { origin: 'effect', sourcePlayerId: select.playerId, sourceCardId: card.id });
+        } else addLog(state, { type: 'EFFECT_FIZZLED', selectId: select.id, sourceCardId: card.id, reason: 'The chosen opposing Character was no longer a legal target.' });
+      }
       if (instance && program?.kind === 'curaga-response') {
         for (const targetId of select.targets ?? []) {
           const target = state.instances[targetId];
@@ -611,57 +622,42 @@ function passiveEquipmentAttackBonus(state, hostId, cardIndex) {
   return bonus;
 }
 
-function resolveCombat(state, cardIndex) {
-  const combat = state.combat;
-  if (!combat) return;
-  const target = state.instances[combat.targetId];
-  const initiator = state.players[combat.initiatorId];
-  if (!target?.battlefield || target.controllerId === combat.initiatorId) {
-    addLog(state, { type: 'COMBAT_FAILED', targetId: combat.targetId });
-    state.combat = null;
-    return;
+function resolveDamageTransaction(state, cardIndex, assignments, { origin, sourcePlayerId = null, sourceCardId = null }) {
+  const amounts = new Map();
+  for (const assignment of assignments) {
+    const target = state.instances[assignment.targetId];
+    if (!target?.battlefield || !Number.isFinite(assignment.amount)) continue;
+    const amount = Math.max(0, Math.floor(assignment.amount));
+    amounts.set(target.instanceId, (amounts.get(target.instanceId) ?? 0) + amount);
   }
-  const participants = combat.attackerIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId === combat.initiatorId && !x.usage.attackedThisTurn);
-  if (!participants.length) { state.combat = null; return; }
-  const total = participants.reduce((sum, instance) => sum + (cardIndex.get(instance.cardId)?.statistics?.atk ?? 0) + passiveEquipmentAttackBonus(state, instance.instanceId, cardIndex), 0);
-  const recipients = [target, ...combat.guardIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId !== combat.initiatorId)];
-  if (recipients.length === 0) { state.combat = null; return; }
-  const share = Math.floor(total / recipients.length), remainder = total % recipients.length;
-  const damageAssignments = recipients.map((recipient, index) => {
-    let amount = share + (index === 0 ? remainder : 0);
-    for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === recipient.instanceId)) {
-      const program = getEquipmentProgram(gear.cardId);
-      if (program?.combatDamageReduction) amount = Math.max(0, amount - program.combatDamageReduction);
-    }
-    return { recipient, amount, remainingHp: recipient.battlefield.currentHp - amount };
-  });
-  // Commit every recipient's HP change together before determining any defeat.
-  for (const { recipient, amount, remainingHp } of damageAssignments) {
-    recipient.battlefield.currentHp = remainingHp;
-    addLog(state, { type: 'COMBAT_DAMAGE', targetId: recipient.instanceId, amount, remainingHp });
+  const affected = [...amounts].map(([targetId, amount]) => ({ target: state.instances[targetId], amount }));
+  for (const { target, amount } of affected) {
+    target.battlefield.currentHp -= amount;
+    addLog(state, { type: origin === 'combat' ? 'COMBAT_DAMAGE' : 'EFFECT_DAMAGE', sourcePlayerId, sourceCardId, targetId: target.instanceId, amount, remainingHp: target.battlefield.currentHp });
   }
-  participants.forEach((instance) => { instance.usage.attackedThisTurn = true; });
-  const declaredLead = combat.attackerIds[0];
-  if (declaredLead === initiator.center) initiator.turn.freeMainAttackUsed = true;
-  else initiator.turn.freePartyAttackUsed = true;
-  const defeated = recipients.filter((x) => x.battlefield.currentHp <= 0);
-  const lifeLoss = new Map();
-  let momentumGain = 0;
+
+  const defeated = affected.map(({ target }) => target).filter((target) => target.battlefield.currentHp <= 0);
   const defeatRecords = defeated.map((victim) => {
     const owner = state.players[victim.controllerId];
-    const isMain = owner.center === victim.instanceId;
-    const amount = isMain ? 2 : 1;
-    lifeLoss.set(owner.id, (lifeLoss.get(owner.id) ?? 0) + amount);
-    momentumGain += amount;
-    return { victim, owner, isMain, amount, lastKnown: snapshotCharacter(state, victim, cardIndex) };
+    return { victim, owner, isMain: owner.center === victim.instanceId, lastKnown: snapshotCharacter(state, victim, cardIndex) };
   });
   const lastKnownCharacters = state.playerOrder.flatMap((playerId) => {
     const owner = state.players[playerId];
     return [owner.center, ...owner.party].filter(Boolean).map((id) => snapshotCharacter(state, state.instances[id], cardIndex));
   });
-  // Life loss and the resulting terminal check use the same simultaneous defeat event.
-  for (const [ownerId, amount] of lifeLoss) state.players[ownerId].life = Math.max(0, state.players[ownerId].life - amount);
-  initiator.resources.momentum += momentumGain;
+
+  if (origin === 'combat' && defeatRecords.length) {
+    const lifeLoss = new Map();
+    let momentumGain = 0;
+    for (const { owner, isMain } of defeatRecords) {
+      const amount = isMain ? 2 : 1;
+      lifeLoss.set(owner.id, (lifeLoss.get(owner.id) ?? 0) + amount);
+      momentumGain += amount;
+    }
+    for (const [ownerId, amount] of lifeLoss) state.players[ownerId].life = Math.max(0, state.players[ownerId].life - amount);
+    if (sourcePlayerId) state.players[sourcePlayerId].resources.momentum += momentumGain;
+  }
+
   for (const { victim, owner, isMain } of defeatRecords) {
     returnAttachedEquipment(state, victim.instanceId);
     if (victim.transformState) {
@@ -671,7 +667,7 @@ function resolveCombat(state, cardIndex) {
         const reserve = state.instances[victim.transformState.reservedBaseId];
         if (!reserve || reserve.zone !== 'baseReserve' || reserve.cardId !== underlay.cardId) fail('TRANSFORMATION_RESERVE_MISSING', 'A transformed Main must have its reserved exact base copy.');
         owner.zones.baseReserve = owner.zones.baseReserve.filter((id) => id !== reserve.instanceId);
-        const restoredId = `${owner.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+        const restoredId = owner.id + '-C' + String(state.nextInstanceNumber++).padStart(4, '0');
         const restored = createInstance({ id: restoredId, physicalCopyId: reserve.physicalCopyId, cardId: reserve.cardId, ownerId: reserve.ownerId, zone: 'center', usage: victim.usage });
         restored.battlefield = { currentHp: maxHp(restored, cardIndex, true), maxHp: maxHp(restored, cardIndex, true), position: 'center' };
         state.instances[restoredId] = restored;
@@ -690,9 +686,8 @@ function resolveCombat(state, cardIndex) {
       }
     } else if (isMain) {
       const oldId = victim.instanceId;
-      const replacementId = `${owner.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+      const replacementId = owner.id + '-C' + String(state.nextInstanceNumber++).padStart(4, '0');
       const replacement = createInstance({ id: replacementId, physicalCopyId: victim.physicalCopyId, cardId: victim.cardId, ownerId: victim.ownerId, zone: 'center', usage: victim.usage });
-      const card = cardIndex.get(victim.cardId);
       replacement.battlefield = { currentHp: maxHp(replacement, cardIndex, true), maxHp: maxHp(replacement, cardIndex, true), position: 'center' };
       state.instances[replacementId] = replacement;
       victim.zone = 'retired'; victim.battlefield = null;
@@ -703,17 +698,49 @@ function resolveCombat(state, cardIndex) {
       victim.zone = 'continue'; victim.battlefield = null;
       owner.zones.continue.push(victim.instanceId);
     }
-    addLog(state, { type: 'BATTLE_DEFEAT', victimId: victim.instanceId, playerId: owner.id, mainCharacter: isMain });
+    addLog(state, { type: origin === 'combat' ? 'BATTLE_DEFEAT' : 'EFFECT_DEFEAT', victimId: victim.instanceId, playerId: owner.id, mainCharacter: isMain, sourceCardId });
   }
   if (defeatRecords.length) {
     const event = {
-      id: `E${String(state.nextEventNumber++).padStart(4, '0')}`, type: 'character-defeated', turn: state.turnNumber,
+      id: 'E' + String(state.nextEventNumber++).padStart(4, '0'), type: 'character-defeated', turn: state.turnNumber, origin,
       defeated: defeatRecords.map(({ owner, isMain, lastKnown }) => ({ ...lastKnown, controllerId: owner.id, wasMain: isMain }))
     };
     collectEventTriggers(state, event, lastKnownCharacters, cardIndex);
   }
   const down = state.playerOrder.filter((id) => state.players[id].life <= 0);
   if (down.length) { state.status = 'finished'; state.winnerId = down.length === 2 ? null : state.playerOrder.find((id) => !down.includes(id)); }
+  return defeatRecords.map(({ victim }) => victim.instanceId);
+}
+
+function resolveCombat(state, cardIndex) {
+  const combat = state.combat;
+  if (!combat) return;
+  const target = state.instances[combat.targetId];
+  const initiator = state.players[combat.initiatorId];
+  if (!target?.battlefield || target.controllerId === combat.initiatorId) {
+    addLog(state, { type: 'COMBAT_FAILED', targetId: combat.targetId });
+    state.combat = null;
+    return;
+  }
+  const participants = combat.attackerIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId === combat.initiatorId && !x.usage.attackedThisTurn);
+  if (!participants.length) { state.combat = null; return; }
+  const total = participants.reduce((sum, instance) => sum + (cardIndex.get(instance.cardId)?.statistics?.atk ?? 0) + passiveEquipmentAttackBonus(state, instance.instanceId, cardIndex), 0);
+  const recipients = [target, ...combat.guardIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId !== combat.initiatorId)];
+  if (recipients.length === 0) { state.combat = null; return; }
+  const share = Math.floor(total / recipients.length), remainder = total % recipients.length;
+  const damageAssignments = recipients.map((recipient, index) => {
+    let amount = share + (index === 0 ? remainder : 0);
+    for (const gear of attachedEquipment(state, recipient.instanceId)) {
+      const program = getEquipmentProgram(gear.cardId);
+      if (program?.combatDamageReduction) amount = Math.max(0, amount - program.combatDamageReduction);
+    }
+    return { targetId: recipient.instanceId, amount };
+  });
+  participants.forEach((instance) => { instance.usage.attackedThisTurn = true; });
+  const declaredLead = combat.attackerIds[0];
+  if (declaredLead === initiator.center) initiator.turn.freeMainAttackUsed = true;
+  else initiator.turn.freePartyAttackUsed = true;
+  resolveDamageTransaction(state, cardIndex, damageAssignments, { origin: 'combat', sourcePlayerId: initiator.id });
   state.combat = null;
 }
 
@@ -1121,6 +1148,9 @@ export function dispatch(stateInput, action, cards) {
       if (!armigerRequirementMet(state, player.id, cardIndex, program.minimumAttachedEquipment)) fail('REQUIREMENT_FAILED', 'Armiger Preparation requires a Sword Wielder you control with at least three attached Equipment.');
     } else if (program.kind === 'stocked-memories') {
       // No target or additional activation cost; card selection is made during resolution.
+    } else if (program.kind === 'effect-damage') {
+      const target = state.instances[action.targets?.[0]];
+      if (!target?.battlefield || target.controllerId === player.id) fail('ILLEGAL_TARGET', 'Choose an opposing Character as the effect-damage target.');
     } else if (program.kind === 'union-cross') {
       if (!controlsDifferentNamedSubtypes(state, player.id, 'Keyblade Wielder', 'Keyblade Wielder', cardIndex)) fail('REQUIREMENT_FAILED', 'Union Cross requires two differently named Keyblade Wielders you control.');
       const costId = action.activationCostInstanceId;
@@ -1333,6 +1363,9 @@ export function getLegalActions(state, playerId, cards) {
               if (activationCostInstanceId !== id && cardIndex.get(state.instances[activationCostInstanceId]?.cardId)?.type === 'Character') actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, activationCostInstanceId });
             }
           } else actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
+        } else if (program.kind === 'effect-damage') {
+          const targetOptions = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => [state.players[id].center, ...state.players[id].party].filter(Boolean));
+          for (const targetId of targetOptions) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, targets: [targetId] });
         } else if (program.kind === 'stocked-memories') {
           actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'blade-awakening') {

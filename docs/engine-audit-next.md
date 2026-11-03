@@ -2,7 +2,7 @@
 
 Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/master-rulebook.md`, and `docs/rules-engine-contract.md`. This is a focused review of implemented paths, not a certification of the full rules engine.
 
-**Combat update:** Earlier combat audit findings were rechecked against the current engine. Main revival and guard/response sequencing are implemented for the current paths, and combat damage is committed simultaneously. General effect-damage defeats and trigger ordering remain incomplete; see the current P0 status below.
+**Damage update:** Combat and the first targeted effect-damage card now share a transaction that applies damage before defeat handling, preserves Main revival/Equipment return and records last-known snapshots. Firaga's effect damage does not apply combat life loss or Momentum. Multi-target effect damage, prevention/redirection and general trigger ordering remain incomplete.
 
 **Transformation update:** All eight canonical transformation IDs now have explicit entry-condition programs. The engine supports paid Main Phase activation, exact-base checks, Main reserve search/shuffle, legal Equipment transfer, full-HP form entry, and transformed Main and Party defeat handling. Printed form abilities, voluntary reversion, and trigger interactions remain unverified or unsupported.
 
@@ -24,7 +24,7 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## P0 — Current combat and trigger status
 
-1. **Main defeat revival — implemented for Battle combat.** `resolveCombat()` commits all assigned damage before deriving defeat candidates, snapshots them together, returns attached Equipment, creates a fresh Main battlefield instance at full HP, and preserves physical-copy usage and shared allowances. Tests cover revival, fresh identity, gear return, and simultaneous Main/Party defeat processing. General effect-damage defeat remains unsupported because no general effect-damage program is registered. Authority: `master-rulebook.md:58-60,137`; rules contract “Combat transaction”, “HP, movement, and Equipment”, and “Win conditions”.
+1. **Damage and Main defeat revival — implemented for Battle combat and targeted Firaga.** Combat commits assigned damage together; Firaga uses the shared transaction for its single target. Defeat handling snapshots affected Characters, returns attached Equipment, creates a fresh Main battlefield instance at full HP, and checks victory. Combat applies printed life/Momentum consequences; effect-origin damage does not. Multi-target effect damage and broad damage modifiers remain unsupported. Authority: `master-rulebook.md:58-60,137`; rules contract “Combat transaction”, “HP, movement, and Equipment”, and “Win conditions”.
 
 2. **Combat guard and response priority — implemented for the current combat path.** The defender receives one pre-response guard declaration checkpoint; after confirmation, the response Menu begins with the attacker and alternates. Tests verify that guard declaration closes before responses and that attacker priority follows. Additional speed/Finisher windows remain incomplete. Authority: `master-rulebook.md:89,127,131-133`.
 
@@ -46,4 +46,4 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## Recommended next implementation slice
 
-The full D001 setup choice sequence is now covered. Next implement a general effect-damage transaction using the same simultaneous defeat, Main revival, life/Momentum and last-known trigger pipeline as combat; keep it separate from combat-specific guard timing.
+The full D001 setup choice sequence is now covered. The first shared damage transaction slice is Firaga; next expand to a tested multi-target effect-damage cohort and explicit prevention/redirection handling while keeping combat-only life/Momentum consequences separated by origin.

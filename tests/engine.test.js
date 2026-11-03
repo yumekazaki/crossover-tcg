@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -450,6 +450,32 @@ test('Ability card Cure resolves through the Menu and goes to Continue?', () => 
   assertStateInvariants(s, cards);
 });
 
+test('Firaga effect damage defeats and revives a Main without combat life or Momentum consequences', () => {
+  let s = start(game('CS1-001'));
+  const firagaId = moveCardToHand(s, 'p1', 'CS1-282');
+  const targetId = s.players.p2.center;
+  const target = s.instances[targetId];
+  target.battlefield.currentHp = 3500;
+  const p1Momentum = s.players.p1.resources.momentum;
+  const p2Life = s.players.p2.life;
+  const p2Momentum = s.players.p2.resources.momentum;
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_ABILITY' && candidate.instanceId === firagaId && candidate.targets?.[0] === targetId);
+  assert.ok(action, 'Firaga can target the opposing Main Character');
+  assert.throws(() => dispatch(s, { ...action, playerId: 'p1', targets: [s.players.p1.center] }, cards), (error) => error.code === 'ILLEGAL_TARGET');
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  const replacementId = s.players.p2.center;
+  assert.notEqual(replacementId, targetId);
+  assert.equal(s.instances[targetId].zone, 'retired');
+  assert.equal(s.instances[replacementId].battlefield.currentHp, cards.find((card) => card.id === s.instances[replacementId].cardId).statistics.hp + 13000);
+  assert.equal(s.players.p2.life, p2Life, 'effect damage does not cause Battle life loss');
+  assert.equal(s.players.p1.resources.momentum, p1Momentum, 'effect damage does not grant defeat Momentum');
+  assert.equal(s.players.p2.resources.momentum, p2Momentum);
+  assert.ok(s.log.some((entry) => entry.type === 'EFFECT_DAMAGE' && entry.targetId === targetId && entry.amount === 4000));
+  assert.ok(s.log.some((entry) => entry.type === 'EFFECT_DEFEAT' && entry.mainCharacter));
+  assertStateInvariants(s, cards);
+});
+
 test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {
   let s = start(game());
   const stockedId = moveCardToHand(s, 'p1', 'CS1-285');
@@ -613,7 +639,7 @@ test('Dorm Study Session applies its conditional Character cost and deploys only
 
 test('Character without a registered effect program is blocked explicitly', () => {
   let s = start(game());
-  const other = moveCardToHand(s, 'p1', 'CS1-282');
+  const other = moveCardToHand(s, 'p1', 'CS1-283');
   assert.throws(() => dispatch(s, { type: 'ACTIVATE_ABILITY', playerId: 'p1', instanceId: other, targets: [s.players.p1.center] }, cards), (error) => error.code === 'UNIMPLEMENTED_EFFECT');
 });
 
