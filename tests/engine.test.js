@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-005', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-177', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-005', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-177', 'CS1-178', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -40,10 +40,10 @@ function start(g) {
   s = dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards);
   return s;
 }
-function passMenu(s) {
+function passMenu(s, engineCards = cards) {
   const first = s.menu.priorityPlayerId;
-  s = dispatch(s, { type: 'PASS', playerId: first }, cards);
-  return dispatch(s, { type: 'PASS', playerId: s.menu.priorityPlayerId }, cards);
+  s = dispatch(s, { type: 'PASS', playerId: first }, engineCards);
+  return dispatch(s, { type: 'PASS', playerId: s.menu.priorityPlayerId }, engineCards);
 }
 function advancePhase(s, playerId = s.activePlayerId) {
   assert.equal(s.activePlayerId, playerId);
@@ -608,6 +608,55 @@ test('Ashley returns a damaged Party Member, its gear without refund, and offers
   sameFranchise = dispatch(sameFranchise, { ...zackChoice, playerId: 'p1' }, cards);
   assert.equal(sameFranchise.players.p1.resources.momentum, 6, 'replacement sharing a franchise with another ally grants one Momentum');
   assertStateInvariants(sameFranchise, cards);
+});
+
+test('Grace filters an Ability, chooses its resource bonus, and discounts the next matching Ability', () => {
+  const testCards = cards.map((card) => card.id === 'CS1-281'
+    ? { ...card, requirements: { all: ['Healer'], any: [] } }
+    : card.id === 'CS1-282'
+      ? { ...card, cost: { ...card.cost, momentum: 2 }, requirements: { all: ['Sword Wielder'], any: [] } }
+      : card);
+  let s = start(game('CS1-060'));
+  for (const cardId of ['CS1-031', 'CS1-178']) {
+    s.players.p1.turn.standardAddUsed = false;
+    const instanceId = moveCardToHand(s, 'p1', cardId);
+    s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId }, testCards);
+    s = passMenu(s, testCards);
+  }
+  const cloudId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-031');
+  const graceId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-178');
+  const cureId = moveCardToTop(s, 'p1', 'CS1-281');
+  for (const cardId of ['CS1-002', 'CS1-004', 'CS1-009', 'CS1-014']) moveCardToTop(s, 'p1', cardId);
+  const activateGrace = getLegalActions(s, 'p1', testCards).find((action) => action.type === 'ACTIVATE_SPECIAL' && action.instanceId === graceId);
+  assert.ok(activateGrace);
+  s = dispatch(s, { ...activateGrace, playerId: 'p1' }, testCards);
+  s = passMenu(s, testCards);
+  assert.equal(s.resolutionChoice.kind, 'DECK_REVEAL');
+  assert.ok(s.resolutionChoice.options.includes(cureId), 'the Ability is selected from actual revealed card instances');
+  const addCure = getLegalActions(s, 'p1', testCards).find((action) => action.stage === 'ADD_ABILITY' && action.instanceId === cureId);
+  s = dispatch(s, { ...addCure, playerId: 'p1' }, testCards);
+  while (s.resolutionChoice?.stage === 'BOTTOM_REVEALED') {
+    const putNext = getLegalActions(s, 'p1', testCards)[0];
+    s = dispatch(s, { ...putNext, playerId: 'p1' }, testCards);
+  }
+  assert.equal(s.resolutionChoice.stage, 'GRACE_RESOURCE', 'a selected Ability with a printed Healer requirement enables the resource choice');
+  const gainDarkness = getLegalActions(s, 'p1', testCards).find((action) => action.resourceChoice === 'darkness');
+  s = dispatch(s, { ...gainDarkness, playerId: 'p1' }, testCards);
+  assert.equal(s.players.p1.resources.darkness, 1);
+  const chooseSubtype = getLegalActions(s, 'p1', testCards).find((action) => action.stage === 'GRACE_ALLY' && action.instanceId === cloudId && action.subtype === 'Sword Wielder');
+  assert.ok(chooseSubtype);
+  s = dispatch(s, { ...chooseSubtype, playerId: 'p1' }, testCards);
+  assert.deepEqual(s.players.p1.turn.nextAbilityMomentumDiscount, { subtype: 'Sword Wielder', sourceCardId: 'CS1-178', amount: 1 });
+  s.players.p1.resources.momentum = 1;
+  const firagaId = moveCardToHand(s, 'p1', 'CS1-282');
+  const firagaAction = getLegalActions(s, 'p1', testCards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === firagaId && action.targets[0] === s.players.p2.center);
+  assert.ok(firagaAction, 'one Momentum is sufficient for a two-Momentum Ability with a matching requirement');
+  s = dispatch(s, { ...firagaAction, playerId: 'p1' }, testCards);
+  assert.equal(s.players.p1.resources.momentum, 0);
+  assert.equal(s.players.p1.turn.nextAbilityMomentumDiscount, null);
+  assert.ok(s.log.some((entry) => entry.type === 'ABILITY_MOMENTUM_DISCOUNT_USED' && entry.amount === 1 && entry.abilityCardId === 'CS1-282'));
+  s = passMenu(s, testCards);
+  assertStateInvariants(s, testCards);
 });
 
 test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {

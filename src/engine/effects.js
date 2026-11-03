@@ -75,6 +75,11 @@ const specialPrograms = Object.freeze({
     kind: 'ashley-rescue', timing: 'main', target: 'allied-damaged-party', minimumMissingHp: 4000,
     returnAttachedEquipmentWithoutRefund: true, replacementSubtypeSource: 'returned-character', optionalReplacement: true,
     addToParty: true, replacementSpecialSuppression: true, sameFranchiseMomentum: 1, perNamePerTurn: true
+  },
+  'CS1-178': {
+    kind: 'grace-intel', timing: 'main', revealCount: 5, addType: 'Ability', optionalAdd: true,
+    remainderToDeckBottom: true, resourceRequirementAny: ['Healer', 'Support'], resourceChoice: ['light', 'darkness'],
+    discount: { amount: 1, until: 'end-of-turn', choose: 'ally-universal-subtype', appliesToNextMatchingAbility: true }, perNamePerTurn: true
   }
 });
 

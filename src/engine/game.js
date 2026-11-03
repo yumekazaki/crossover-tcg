@@ -102,7 +102,7 @@ export function createInitialState({ players, chooserId, seed = 1, cards }) {
       center: null,
       party: Array(6).fill(null),
       registration: { mainCount: player.deck.mainIds.length, equipmentIds: [...player.deck.equipmentIds] },
-      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], suppressNextEquipmentAbilities: false, nameLimits: {} }
+      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], suppressNextEquipmentAbilities: false, nextAbilityMomentumDiscount: null, nameLimits: {} }
     };
   }
   return {
@@ -165,6 +165,7 @@ function startNextTurn(state, cardIndex) {
     player.turn.finisherDisabled = false;
     player.turn.equipmentLockedInstanceIds = [];
     player.turn.suppressNextEquipmentAbilities = false;
+    player.turn.nextAbilityMomentumDiscount = null;
     player.turn.nameLimits = {};
     for (const instance of Object.values(state.instances)) instance.usage.nameLimits = {};
   }
@@ -323,7 +324,7 @@ function beginDeckRevealChoice(state, select, program, cardIndex) {
   addLog(state, { type: 'CARDS_REVEALED', playerId: player.id, sourceCardId: select.cardId, instanceIds: revealedInstanceIds, cardIds: revealedInstanceIds.map((id) => state.instances[id].cardId) });
 }
 
-function setDeckBottomOrderChoice(state, choice) {
+function setDeckBottomOrderChoice(state, choice, cardIndex) {
   if (choice.remainingRevealedIds.length) {
     choice.stage = 'BOTTOM_REVEALED';
     choice.options = [...choice.remainingRevealedIds];
@@ -331,8 +332,38 @@ function setDeckBottomOrderChoice(state, choice) {
     choice.prompt = 'Choose the next revealed card to place on the bottom of your Main Deck.';
     return false;
   }
+  if (choice.effectKind === 'grace-intel') {
+    if (choice.grantResourceIfAdded) {
+      choice.stage = 'GRACE_RESOURCE';
+      choice.options = ['light', 'darkness'];
+      choice.canDecline = false;
+      choice.prompt = 'Choose one Light or Darkness to gain for revealing a required Healer or Support Ability.';
+      return false;
+    }
+    return beginGraceAllyChoice(state, choice, cardIndex);
+  }
   state.resolutionChoice = null;
   return true;
+}
+
+function beginGraceAllyChoice(state, choice, cardIndex) {
+  const player = state.players[choice.playerId];
+  const sourceFranchise = cardIndex.get(choice.sourceCardId)?.franchise;
+  const eligible = [player.center, ...player.party].filter(Boolean).flatMap((instanceId) => {
+    const instance = state.instances[instanceId], card = instance && cardIndex.get(instance.cardId);
+    if (!card || card.franchise === sourceFranchise) return [];
+    return (card.combat_subtypes ?? []).map((subtype) => ({ instanceId, subtype }));
+  });
+  if (!eligible.length) {
+    state.resolutionChoice = null;
+    addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', sourceInstanceId: choice.sourceInstanceId, cardId: choice.sourceCardId, discountSet: false, reason: 'No allied Character from another franchise has a universal combat subtype.' });
+    return true;
+  }
+  choice.stage = 'GRACE_ALLY';
+  choice.options = eligible;
+  choice.canDecline = false;
+  choice.prompt = 'Choose an allied Character from another franchise and one of its printed universal combat subtypes.';
+  return false;
 }
 
 function resumePausedMenuResolution(state, cardIndex) {
@@ -602,12 +633,12 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
       const source = state.instances[select.instanceId];
       const sourceCard = source && cardIndex.get(source.cardId);
       const program = getSpecialProgram(select.cardId);
-      if (source?.battlefield && source.controllerId === select.playerId && sourceCard?.id === select.cardId && program?.kind === 'axel-party-blast') {
+      if (source?.cardId === select.cardId && program?.kind === 'axel-party-blast') {
         const targets = (select.targets ?? []).map((id) => state.instances[id]).filter((target) => target?.battlefield
           && target.controllerId !== select.playerId && state.players[target.controllerId].party.includes(target.instanceId));
         if (targets.length) resolveDamageTransaction(state, cardIndex, targets.map((target) => ({ targetId: target.instanceId, amount: program.amount })), { origin: 'effect', sourcePlayerId: select.playerId, sourceCardId: sourceCard.id });
         addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, affectedTargets: targets.map((target) => target.instanceId) });
-      } else if (source?.battlefield && source.controllerId === select.playerId && sourceCard?.id === select.cardId && program?.kind === 'ashley-rescue') {
+      } else if (source?.cardId === select.cardId && program?.kind === 'ashley-rescue') {
         const target = state.instances[select.targets?.[0]];
         const targetCard = target && cardIndex.get(target.cardId);
         const player = state.players[select.playerId];
@@ -641,7 +672,14 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
           }
           addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, returnedInstanceId: returnedId, replacementAdded: false });
         } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId, reason: 'The target is no longer an eligible damaged Party Member.' });
-      } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId });
+      } else if (source?.cardId === select.cardId && program?.kind === 'grace-intel') {
+        beginDeckRevealChoice(state, select, program, cardIndex);
+        state.resolutionChoice.sourceInstanceId = select.instanceId;
+        state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), originalSelectCount };
+        state.priorityPlayerId = select.playerId;
+        addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVING', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId });
+        return;
+      } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.instanceId, sourceInstanceId: select.instanceId, cardId: select.cardId });
     } else {
       addLog(state, { type: 'UNSUPPORTED_SELECT_SKIPPED', selectId: select.id, reason: 'No registered effect program.' });
     }
@@ -961,6 +999,26 @@ export function dispatch(stateInput, action, cards) {
     }
     if (choice.kind === 'DECK_REVEAL') {
       if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This choice is no longer active.');
+      if (choice.stage === 'GRACE_RESOURCE') {
+        if (!choice.options.includes(action.resourceChoice)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose Light or Darkness.');
+        player.resources[action.resourceChoice] += 1;
+        addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: choice.sourceCardId, resource: action.resourceChoice, amount: 1 });
+        if (beginGraceAllyChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'GRACE_ALLY') {
+        const selected = choice.options.find((option) => option.instanceId === action.instanceId && option.subtype === action.subtype);
+        const target = selected && state.instances[selected.instanceId];
+        const targetCard = target && cardIndex.get(target.cardId);
+        const sourceFranchise = cardIndex.get(choice.sourceCardId)?.franchise;
+        if (!selected || !target?.battlefield || target.controllerId !== player.id || targetCard?.franchise === sourceFranchise || !(targetCard.combat_subtypes ?? []).includes(selected.subtype)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose an allied Character from a different franchise and one of its printed universal subtypes.');
+        player.turn.nextAbilityMomentumDiscount = { subtype: selected.subtype, sourceCardId: choice.sourceCardId, amount: 1 };
+        state.resolutionChoice = null;
+        addLog(state, { type: 'ABILITY_MOMENTUM_DISCOUNT_SET', playerId: player.id, sourceCardId: choice.sourceCardId, characterInstanceId: target.instanceId, subtype: selected.subtype, amount: 1, expiresAtEndOfTurn: true });
+        addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', sourceInstanceId: choice.sourceInstanceId, cardId: choice.sourceCardId, discountSubtype: selected.subtype });
+        resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
       if (choice.stage === 'ADD_ABILITY') {
         if (action.decline) {
           if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This effect choice cannot be declined.');
@@ -973,13 +1031,18 @@ export function dispatch(stateInput, action, cards) {
           revealed.zone = 'hand';
           player.zones.hand.push(revealed.instanceId);
           addLog(state, { type: 'CARD_ADDED_TO_HAND', playerId: player.id, instanceId: revealed.instanceId, cardId: revealed.cardId, sourceCardId: choice.sourceCardId });
+          if (choice.effectKind === 'grace-intel') {
+            const ability = cardIndex.get(revealed.cardId);
+            const requirementTags = [...(ability.requirements?.all ?? []), ...(ability.requirements?.any ?? [])];
+            choice.grantResourceIfAdded = requirementTags.some((tag) => ['Healer', 'Support'].includes(tag));
+          }
         }
         if (choice.effectKind === 'stocked-memories' && player.zones.hand.length) {
           choice.stage = 'BOTTOM_HAND';
           choice.options = [...player.zones.hand];
           choice.canDecline = false;
           choice.prompt = 'Choose one card from your hand to place on the bottom of your Main Deck.';
-        } else if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        } else if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       if (choice.stage === 'ADD_PARTY') {
@@ -1005,7 +1068,7 @@ export function dispatch(stateInput, action, cards) {
           player.party[action.partyIndex] = added.instanceId;
           addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: added.instanceId, cardId: added.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: added.characterSpecialsSuppressedUntilTurn ?? null });
         }
-        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       if (choice.stage === 'BOTTOM_HAND') {
@@ -1014,7 +1077,7 @@ export function dispatch(stateInput, action, cards) {
         const bottomed = state.instances[action.instanceId];
         bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
         addLog(state, { type: 'CARD_BOTTOMED_FROM_HAND', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
-        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       if (choice.stage === 'BOTTOM_REVEALED') {
@@ -1024,7 +1087,7 @@ export function dispatch(stateInput, action, cards) {
         const bottomed = state.instances[action.instanceId];
         bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
         addLog(state, { type: 'CARD_BOTTOMED_FROM_REVEAL', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
-        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       fail('ILLEGAL_RESOLUTION_CHOICE', 'Unknown deck-reveal choice step.');
@@ -1171,6 +1234,8 @@ export function dispatch(stateInput, action, cards) {
       const target = state.instances[targets[0]];
       if (targets.length !== 1 || !target?.battlefield || target.instanceId === source.instanceId || target.controllerId !== player.id || !player.party.includes(target.instanceId)
         || cardIndex.get(target.cardId)?.transformation || target.battlefield.maxHp - target.battlefield.currentHp < program.minimumMissingHp) fail('ILLEGAL_TARGET', 'Choose an allied untransformed Party Member with at least 4000 missing HP.');
+    } else if (program.kind === 'grace-intel') {
+      if (targets.length) fail('ILLEGAL_TARGET', 'Grace’s Special has no Character targets.');
     } else fail('UNIMPLEMENTED_SPECIAL', 'This Character Special has no registered resolution program.');
     const costId = action.activationCostInstanceId;
     if (program.activationCost?.handCardToContinue && (!costId || costId === source.instanceId || !player.zones.hand.includes(costId))) fail('ACTIVATION_COST_REQUIRED', 'Discard one card from your hand as Axel’s activation cost.');
@@ -1263,6 +1328,9 @@ export function dispatch(stateInput, action, cards) {
     if (!getEffectProgram(card.id)) fail('UNIMPLEMENTED_EFFECT', `${card.name} has no validated engine program yet; it remains visible in the database but cannot be resolved.`);
     if (player.turn.nameLimits[card.name]) fail('NAME_LIMIT', `${card.name} is limited to one activation per turn.`);
     const program = getEffectProgram(card.id);
+    const discount = player.turn.nextAbilityMomentumDiscount;
+    const consumesDiscount = card.type === 'Ability' && !!discount && hasPrintedRequirement(card, discount.subtype);
+    const momentumDiscount = consumesDiscount ? Math.min(card.cost?.momentum ?? 0, discount.amount) : 0;
     let requirementInstanceIds = [];
     if (program.kind === 'aether-channel') {
       requirementInstanceIds = action.requirementInstanceIds ?? [];
@@ -1335,8 +1403,15 @@ export function dispatch(stateInput, action, cards) {
       player.zones.mainDeck.push(discardId);
       addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'hand-to-main-deck-bottom', instanceId: discardId });
     }
-    for (const key of ['momentum', 'light', 'darkness']) if (player.resources[key] < (card.cost?.[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
-    for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= card.cost?.[key] ?? 0;
+    for (const key of ['momentum', 'light', 'darkness']) {
+      const cost = Math.max(0, (card.cost?.[key] ?? 0) - (key === 'momentum' ? momentumDiscount : 0));
+      if (player.resources[key] < cost) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
+    }
+    for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= Math.max(0, (card.cost?.[key] ?? 0) - (key === 'momentum' ? momentumDiscount : 0));
+    if (consumesDiscount) {
+      player.turn.nextAbilityMomentumDiscount = null;
+      addLog(state, { type: 'ABILITY_MOMENTUM_DISCOUNT_USED', playerId: player.id, sourceCardId: discount.sourceCardId, abilityCardId: card.id, subtype: discount.subtype, amount: momentumDiscount });
+    }
     player.turn.nameLimits[card.name] = true;
     player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1); instance.zone = 'pending';
     openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [], resourceChoice: action.resourceChoice, requirementInstanceIds, bladeInstanceId: action.bladeInstanceId });
@@ -1388,6 +1463,10 @@ function requirementsMet(equipment, hostInstance, cardIndex) {
   return (req.all ?? []).every((tag) => tags.has(tag)) && (req.any ?? []).every((group) => (Array.isArray(group) ? group.some((tag) => tags.has(tag)) : tags.has(group)));
 }
 
+function hasPrintedRequirement(card, subtype) {
+  return [...(card?.requirements?.all ?? []), ...(card?.requirements?.any ?? [])].includes(subtype);
+}
+
 export function getLegalActions(state, playerId, cards) {
   const cardIndex = indexCards(cards);
   const player = state.players[playerId];
@@ -1412,6 +1491,8 @@ export function getLegalActions(state, playerId, cards) {
     }
     if (state.resolutionChoice.kind === 'DECK_REVEAL') {
       const choice = state.resolutionChoice;
+      if (choice.stage === 'GRACE_RESOURCE') return choice.options.map((resourceChoice) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, stage: choice.stage, resourceChoice }));
+      if (choice.stage === 'GRACE_ALLY') return choice.options.map(({ instanceId, subtype }) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, stage: choice.stage, instanceId, subtype }));
       if (choice.stage === 'ADD_PARTY') {
         const emptySlots = player.party.flatMap((instanceId, partyIndex) => instanceId === null ? [partyIndex] : []);
         const actions = choice.options.flatMap((instanceId) => emptySlots.map((partyIndex) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, effectKind: choice.effectKind, stage: choice.stage, instanceId, partyIndex })));
@@ -1480,6 +1561,9 @@ export function getLegalActions(state, playerId, cards) {
     for (const id of player.zones.hand) {
       const card = cardIndex.get(state.instances[id].cardId), program = card && getEffectProgram(card.id);
       if (card?.type === 'Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) {
+        const discount = player.turn.nextAbilityMomentumDiscount;
+        const momentumDiscount = discount && hasPrintedRequirement(card, discount.subtype) ? Math.min(card.cost?.momentum ?? 0, discount.amount) : 0;
+        if (['momentum', 'light', 'darkness'].some((resource) => player.resources[resource] < Math.max(0, (card.cost?.[resource] ?? 0) - (resource === 'momentum' ? momentumDiscount : 0)))) continue;
         if (program.kind === 'aether-channel' && controlsDifferentNamedSubtypes(state, playerId, 'Mage', 'Warrior', cardIndex)) {
           const field = [player.center, ...player.party].filter(Boolean).map((characterId) => state.instances[characterId]);
           const mages = field.filter((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes('Mage'));
@@ -1539,7 +1623,7 @@ export function getLegalActions(state, playerId, cards) {
           const target = state.instances[targetId];
           if (targetId !== instanceId && !cardIndex.get(target.cardId)?.transformation && target.battlefield.maxHp - target.battlefield.currentHp >= program.minimumMissingHp) actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, targets: [targetId] });
         }
-      }
+      } else if (program.kind === 'grace-intel') actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, targets: [] });
     }
     for (const formId of player.zones.arsenal) {
       const form = cardIndex.get(state.instances[formId]?.cardId);
