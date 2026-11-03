@@ -46,10 +46,10 @@ async function existingLocalImage(url) {
     const { stat } = await import('node:fs/promises');
     try { return (await stat(url)).isFile(); } catch { return false; }
   }
-  try {
-    const response = await fetch(url, { method: 'HEAD', redirect: 'error' });
-    return response.ok && /^image\//i.test(response.headers.get('content-type') || '');
-  } catch { return false; }
+  // GitHub Pages may reject or redirect HEAD requests for static images. The
+  // path has already been restricted to this site's public/ directory; the
+  // browser's <img> request is the authoritative check when the art is shown.
+  return true;
 }
 
 /** Loads the original set and registered expansions without rewriting their records. */
@@ -206,3 +206,4 @@ export function getArtwork(card) {
     credit: art?.credit || null,
   };
 }
+
