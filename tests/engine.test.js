@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-005', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-005', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-177', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -547,6 +547,67 @@ test('Axel Special pays a hand discard and deals simultaneous damage to up to tw
   assert.equal(s.players.p1.resources.momentum, 5, 'effect damage does not grant defeat Momentum');
   assert.equal(s.log.filter((entry) => entry.type === 'EFFECT_DAMAGE' && enemyPartyIds.includes(entry.targetId)).length, 2);
   assertStateInvariants(s, cards);
+});
+
+test('Ashley returns a damaged Party Member, its gear without refund, and offers a matching hand replacement', () => {
+  let s = start(game('CS1-001'));
+  const ashleyHandId = moveCardToHand(s, 'p1', 'CS1-177');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: ashleyHandId }, cards);
+  s = passMenu(s);
+  const rikuHandId = moveCardToHand(s, 'p1', 'CS1-002');
+  s.players.p1.turn.standardAddUsed = false;
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: rikuHandId }, cards);
+  s = passMenu(s);
+  const rikuId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-002');
+  const cloudHandId = moveCardToHand(s, 'p1', 'CS1-031');
+  const gearId = s.players.p1.zones.arsenal.find((id) => s.instances[id].cardId === 'CS1-181');
+  s.players.p1.resources.light = 1;
+  s.players.p1.resources.darkness = 1;
+  const attach = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ATTACH_EQUIPMENT' && candidate.equipmentInstanceId === gearId && candidate.hostInstanceId === rikuId);
+  assert.ok(attach);
+  s = dispatch(s, { ...attach, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  s.players.p1.resources.light = 0;
+  s.players.p1.resources.darkness = 0;
+  s.instances[rikuId].battlefield.currentHp -= 4000;
+  const resourcesBeforeSpecial = { ...s.players.p1.resources };
+  const ashleyId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-177');
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_SPECIAL' && candidate.instanceId === ashleyId && candidate.targets[0] === rikuId);
+  assert.ok(action, 'Ashley offers a damaged untransformed Party Member with 4000 missing HP');
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.instances[rikuId].zone, 'retired');
+  assert.equal(s.instances[gearId].zone, 'arsenal');
+  assert.deepEqual(s.players.p1.resources, resourcesBeforeSpecial, 'returning Equipment through Ashley has no refund');
+  assert.equal(s.resolutionChoice.kind, 'ASHLEY_REPLACEMENT');
+  assert.ok(s.resolutionChoice.options.includes(cloudHandId), 'Cloud shares Riku’s universal Sword Wielder subtype');
+  const replacement = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'RESOLVE_CHOICE' && candidate.instanceId === cloudHandId);
+  s = dispatch(s, { ...replacement, playerId: 'p1' }, cards);
+  const replacementId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-031');
+  assert.equal(replacementId, cloudHandId);
+  assert.equal(s.instances[replacementId].battlefield.currentHp, cards.find((card) => card.id === 'CS1-031').statistics.hp);
+  assert.ok(s.instances[replacementId].characterSpecialsSuppressedUntilTurn > s.turnNumber);
+  assert.ok(s.players.p1.zones.hand.some((id) => s.instances[id].physicalCopyId === s.instances[rikuId].physicalCopyId));
+  assertStateInvariants(s, cards);
+
+  let sameFranchise = start(game('CS1-031'));
+  for (const cardId of ['CS1-177', 'CS1-002']) {
+    sameFranchise.players.p1.turn.standardAddUsed = false;
+    const handId = moveCardToHand(sameFranchise, 'p1', cardId);
+    sameFranchise = dispatch(sameFranchise, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: handId }, cards);
+    sameFranchise = passMenu(sameFranchise);
+  }
+  const sameRikuId = sameFranchise.players.p1.party.find((id) => id && sameFranchise.instances[id].cardId === 'CS1-002');
+  const zackId = moveCardToHand(sameFranchise, 'p1', 'CS1-035');
+  sameFranchise.instances[sameRikuId].battlefield.currentHp -= 4000;
+  const sameAshleyId = sameFranchise.players.p1.party.find((id) => id && sameFranchise.instances[id].cardId === 'CS1-177');
+  const sameAction = getLegalActions(sameFranchise, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_SPECIAL' && candidate.instanceId === sameAshleyId && candidate.targets[0] === sameRikuId);
+  sameFranchise = dispatch(sameFranchise, { ...sameAction, playerId: 'p1' }, cards);
+  sameFranchise = passMenu(sameFranchise);
+  const zackChoice = getLegalActions(sameFranchise, 'p1', cards).find((candidate) => candidate.type === 'RESOLVE_CHOICE' && candidate.instanceId === zackId);
+  sameFranchise = dispatch(sameFranchise, { ...zackChoice, playerId: 'p1' }, cards);
+  assert.equal(sameFranchise.players.p1.resources.momentum, 6, 'replacement sharing a franchise with another ally grants one Momentum');
+  assertStateInvariants(sameFranchise, cards);
 });
 
 test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {

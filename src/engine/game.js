@@ -607,6 +607,40 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
           && target.controllerId !== select.playerId && state.players[target.controllerId].party.includes(target.instanceId));
         if (targets.length) resolveDamageTransaction(state, cardIndex, targets.map((target) => ({ targetId: target.instanceId, amount: program.amount })), { origin: 'effect', sourcePlayerId: select.playerId, sourceCardId: sourceCard.id });
         addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, affectedTargets: targets.map((target) => target.instanceId) });
+      } else if (source?.battlefield && source.controllerId === select.playerId && sourceCard?.id === select.cardId && program?.kind === 'ashley-rescue') {
+        const target = state.instances[select.targets?.[0]];
+        const targetCard = target && cardIndex.get(target.cardId);
+        const player = state.players[select.playerId];
+        const partyIndex = player.party.indexOf(target?.instanceId);
+        if (target?.battlefield && target.controllerId === player.id && partyIndex >= 0 && !targetCard?.transformation
+          && target.battlefield.maxHp - target.battlefield.currentHp >= program.minimumMissingHp) {
+          const lastKnown = snapshotCharacter(state, target, cardIndex);
+          for (const eventType of ['character-left-battlefield', 'character-returned-to-hand']) {
+            collectEventTriggers(state, { id: `E${String(state.nextEventNumber++).padStart(4, '0')}`, type: eventType, turn: state.turnNumber, instanceId: target.instanceId, controllerId: target.controllerId }, [lastKnown], cardIndex);
+          }
+          returnAttachedEquipment(state, target.instanceId);
+          player.party[partyIndex] = null;
+          target.zone = 'retired'; target.battlefield = null; target.attachedTo = null;
+          const returnedId = `${player.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+          const returned = createInstance({ id: returnedId, cardId: target.cardId, ownerId: target.ownerId, physicalCopyId: target.physicalCopyId, zone: 'hand', usage: target.usage });
+          state.instances[returnedId] = returned;
+          player.zones.hand.push(returnedId);
+          addLog(state, { type: 'CHARACTER_RETURNED_TO_HAND', playerId: player.id, sourceCardId: sourceCard.id, instanceId: returnedId, physicalCopyId: target.physicalCopyId, clearedDamage: true, equipmentRefund: false });
+          const requiredSubtypes = targetCard.combat_subtypes ?? [];
+          const candidates = player.zones.hand.filter((id) => {
+            const candidate = cardIndex.get(state.instances[id]?.cardId);
+            return candidate?.type === 'Character' && !candidate.transformation && (candidate.combat_subtypes ?? []).some((tag) => requiredSubtypes.includes(tag));
+          });
+          if (candidates.length) {
+            state.resolutionChoice = { id: `RC${state.log.length + 1}`, kind: 'ASHLEY_REPLACEMENT', playerId: player.id, sourceCardId: sourceCard.id, sourceInstanceId: source.instanceId,
+              returnedInstanceId: returnedId, physicalCopyId: target.physicalCopyId, requiredSubtypes, partyIndex, options: candidates, canDecline: true,
+              prompt: 'You may reveal a Character from your hand with a universal combat subtype matching the returned Party Member and Add it to that empty Party Zone.' };
+            state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), originalSelectCount };
+            state.priorityPlayerId = player.id;
+            return;
+          }
+          addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, returnedInstanceId: returnedId, replacementAdded: false });
+        } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId, reason: 'The target is no longer an eligible damaged Party Member.' });
       } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId });
     } else {
       addLog(state, { type: 'UNSUPPORTED_SELECT_SKIPPED', selectId: select.id, reason: 'No registered effect program.' });
@@ -897,6 +931,34 @@ export function dispatch(stateInput, action, cards) {
   if (state.resolutionChoice) {
     const choice = state.resolutionChoice;
     if (action.type !== 'RESOLVE_CHOICE' || action.playerId !== choice.playerId) fail('RESOLUTION_CHOICE_REQUIRED', 'The responsible player must make the pending resolution choice before play can continue.');
+    if (choice.kind === 'ASHLEY_REPLACEMENT') {
+      if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This Character replacement choice is no longer active.');
+      if (action.decline) {
+        if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This replacement cannot be declined.');
+        addLog(state, { type: 'ASHLEY_REPLACEMENT_DECLINED', playerId: player.id, sourceCardId: choice.sourceCardId, returnedInstanceId: choice.returnedInstanceId });
+      } else {
+        const candidate = state.instances[action.instanceId];
+        const card = candidate && cardIndex.get(candidate.cardId);
+        if (!choice.options.includes(action.instanceId) || candidate?.zone !== 'hand' || !player.zones.hand.includes(candidate.instanceId)
+          || card?.type !== 'Character' || card.transformation || !(card.combat_subtypes ?? []).some((tag) => choice.requiredSubtypes.includes(tag))
+          || player.party[choice.partyIndex] !== null) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose a matching untransformed Character from hand and the still-empty Party Zone.');
+        player.zones.hand = player.zones.hand.filter((id) => id !== candidate.instanceId);
+        candidate.zone = 'party'; candidate.controllerId = player.id;
+        candidate.battlefield = { currentHp: card.statistics.hp, maxHp: card.statistics.hp, position: `party-${choice.partyIndex}` };
+        candidate.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+        player.party[choice.partyIndex] = candidate.instanceId;
+        const sharesFranchise = [player.center, ...player.party].filter((id) => id && id !== candidate.instanceId)
+          .some((id) => cardIndex.get(state.instances[id]?.cardId)?.franchise === card.franchise);
+        if (sharesFranchise) player.resources.momentum += 1;
+        addLog(state, { type: 'CHARACTER_REVEALED', playerId: player.id, sourceCardId: choice.sourceCardId, instanceId: candidate.instanceId, cardId: candidate.cardId });
+        addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: candidate.instanceId, cardId: candidate.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: candidate.characterSpecialsSuppressedUntilTurn });
+        if (sharesFranchise) addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: choice.sourceCardId, resource: 'momentum', amount: 1 });
+      }
+      state.resolutionChoice = null;
+      addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: choice.id, sourceInstanceId: choice.sourceInstanceId, cardId: choice.sourceCardId, returnedInstanceId: choice.returnedInstanceId, replacementAdded: !action.decline, momentumGained: !action.decline && [player.center, ...player.party].filter(Boolean).some((id) => id !== action.instanceId && cardIndex.get(state.instances[id]?.cardId)?.franchise === cardIndex.get(state.instances[action.instanceId]?.cardId)?.franchise) });
+      resumePausedMenuResolution(state, cardIndex);
+      return state;
+    }
     if (choice.kind === 'DECK_REVEAL') {
       if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This choice is no longer active.');
       if (choice.stage === 'ADD_ABILITY') {
@@ -1102,10 +1164,14 @@ export function dispatch(stateInput, action, cards) {
     if ((source.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) fail('SPECIAL_SUPPRESSED', 'This Character’s Specials are suppressed.');
     if (player.turn.nameLimits[sourceCard.name]) fail('NAME_LIMIT', `${sourceCard.name} is limited to one Special activation per turn.`);
     const targets = action.targets ?? [];
-    if (targets.length < program.targetCount.min || targets.length > program.targetCount.max || new Set(targets).size !== targets.length
-      || targets.some((id) => { const target = state.instances[id]; return !target?.battlefield || target.controllerId === player.id || !state.players[target.controllerId].party.includes(target.instanceId); })) {
-      fail('ILLEGAL_TARGET', 'Choose up to two distinct opposing Party Characters.');
-    }
+    if (program.kind === 'axel-party-blast') {
+      if (targets.length < program.targetCount.min || targets.length > program.targetCount.max || new Set(targets).size !== targets.length
+        || targets.some((id) => { const target = state.instances[id]; return !target?.battlefield || target.controllerId === player.id || !state.players[target.controllerId].party.includes(target.instanceId); })) fail('ILLEGAL_TARGET', 'Choose up to two distinct opposing Party Characters.');
+    } else if (program.kind === 'ashley-rescue') {
+      const target = state.instances[targets[0]];
+      if (targets.length !== 1 || !target?.battlefield || target.instanceId === source.instanceId || target.controllerId !== player.id || !player.party.includes(target.instanceId)
+        || cardIndex.get(target.cardId)?.transformation || target.battlefield.maxHp - target.battlefield.currentHp < program.minimumMissingHp) fail('ILLEGAL_TARGET', 'Choose an allied untransformed Party Member with at least 4000 missing HP.');
+    } else fail('UNIMPLEMENTED_SPECIAL', 'This Character Special has no registered resolution program.');
     const costId = action.activationCostInstanceId;
     if (program.activationCost?.handCardToContinue && (!costId || costId === source.instanceId || !player.zones.hand.includes(costId))) fail('ACTIVATION_COST_REQUIRED', 'Discard one card from your hand as Axel’s activation cost.');
     if (program.activationCost?.handCardToContinue) {
@@ -1338,6 +1404,12 @@ export function getLegalActions(state, playerId, cards) {
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
   if (state.resolutionChoice) {
     if (state.resolutionChoice.playerId !== playerId) return [];
+    if (state.resolutionChoice.kind === 'ASHLEY_REPLACEMENT') {
+      const choice = state.resolutionChoice;
+      const actions = choice.options.map((instanceId) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, instanceId }));
+      if (choice.canDecline) actions.push({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, decline: true });
+      return actions;
+    }
     if (state.resolutionChoice.kind === 'DECK_REVEAL') {
       const choice = state.resolutionChoice;
       if (choice.stage === 'ADD_PARTY') {
@@ -1455,12 +1527,19 @@ export function getLegalActions(state, playerId, cards) {
       const character = state.instances[instanceId], program = character && getSpecialProgram(character.cardId);
       if (!program || program.timing !== 'main' || player.turn.nameLimits[cardIndex.get(character.cardId)?.name]
         || (character.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) continue;
-      const enemies = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => state.players[id].party.filter(Boolean));
-      const targetSets = [[]];
-      for (const enemy of enemies) targetSets.push([enemy]);
-      if (program.targetCount.max > 1) for (let i = 0; i < enemies.length; i += 1) for (let j = i + 1; j < enemies.length; j += 1) targetSets.push([enemies[i], enemies[j]]);
-      const costs = player.zones.hand.filter((handId) => handId !== instanceId);
-      for (const activationCostInstanceId of costs) for (const targets of targetSets) actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, activationCostInstanceId, targets });
+      if (program.kind === 'axel-party-blast') {
+        const enemies = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => state.players[id].party.filter(Boolean));
+        const targetSets = [[]];
+        for (const enemy of enemies) targetSets.push([enemy]);
+        if (program.targetCount.max > 1) for (let i = 0; i < enemies.length; i += 1) for (let j = i + 1; j < enemies.length; j += 1) targetSets.push([enemies[i], enemies[j]]);
+        const costs = player.zones.hand.filter((handId) => handId !== instanceId);
+        for (const activationCostInstanceId of costs) for (const targets of targetSets) actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, activationCostInstanceId, targets });
+      } else if (program.kind === 'ashley-rescue') {
+        for (const targetId of player.party.filter(Boolean)) {
+          const target = state.instances[targetId];
+          if (targetId !== instanceId && !cardIndex.get(target.cardId)?.transformation && target.battlefield.maxHp - target.battlefield.currentHp >= program.minimumMissingHp) actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, targets: [targetId] });
+        }
+      }
     }
     for (const formId of player.zones.arsenal) {
       const form = cardIndex.get(state.instances[formId]?.cardId);

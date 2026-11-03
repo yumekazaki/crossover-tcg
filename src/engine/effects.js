@@ -70,6 +70,11 @@ const specialPrograms = Object.freeze({
   'CS1-005': {
     kind: 'axel-party-blast', timing: 'main', target: 'opposing-party-characters', targetCount: { min: 0, max: 2 }, amount: 2000,
     activationCost: { handCardToContinue: 1 }, perNamePerTurn: true
+  },
+  'CS1-177': {
+    kind: 'ashley-rescue', timing: 'main', target: 'allied-damaged-party', minimumMissingHp: 4000,
+    returnAttachedEquipmentWithoutRefund: true, replacementSubtypeSource: 'returned-character', optionalReplacement: true,
+    addToParty: true, replacementSpecialSuppression: true, sameFranchiseMomentum: 1, perNamePerTurn: true
   }
 });
 
