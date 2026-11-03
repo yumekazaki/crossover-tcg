@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -403,7 +403,7 @@ test('Stocked Memories offers a revealed Ability, bottoms a hand card, and order
   assert.ok(activation);
   s = dispatch(s, { ...activation, playerId: 'p1' }, cards);
   s = passMenu(s);
-  assert.equal(s.resolutionChoice.kind, 'STOCKED_MEMORIES');
+  assert.equal(s.resolutionChoice.kind, 'DECK_REVEAL');
   const revealedIds = [...topIds].reverse();
   assert.deepEqual(s.resolutionChoice.revealedInstanceIds, revealedIds);
   assert.deepEqual(s.players.p1.zones.revealed, revealedIds);
@@ -452,6 +452,61 @@ test('Stocked Memories can decline an Ability pickup when the reveal has no Abil
   }
   assert.equal(s.resolutionChoice, null);
   assert.deepEqual(s.players.p1.zones.mainDeck.slice(-5), [handId, ...[...topIds].reverse()]);
+  assertStateInvariants(s, cards);
+});
+
+test('Union Cross pays a hand card, deploys a revealed Sword Wielder outside standard Add, and suppresses its Specials through the next turn', () => {
+  let s = start(game('CS1-001'));
+  const unionId = moveCardToHand(s, 'p1', 'CS1-290');
+  const costId = s.players.p1.zones.hand.find((id) => id !== unionId);
+  assert.ok(costId);
+  const unionAction = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === unionId);
+  assert.equal(unionAction, undefined, 'a lone Keyblade Wielder cannot activate Union Cross');
+  assert.throws(() => dispatch(s, { type: 'ACTIVATE_ABILITY', playerId: 'p1', instanceId: unionId, activationCostInstanceId: costId }, cards), (error) => error.code === 'REQUIREMENT_FAILED');
+  assert.ok(s.players.p1.zones.hand.includes(costId), 'a rejected activation does not pay its discard cost');
+
+  const rikuId = moveCardToHand(s, 'p1', 'CS1-002');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: rikuId }, cards);
+  s = passMenu(s);
+  const topIds = ['CS1-004', 'CS1-031', 'CS1-009', 'CS1-054', 'CS1-035'].map((id) => moveCardToTop(s, 'p1', id));
+  const paidCostId = moveCardToHand(s, 'p1', 'CS1-059');
+  const legal = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === unionId && action.activationCostInstanceId === paidCostId);
+  assert.ok(legal, 'distinct controlled Keyblade Wielders enable the activation');
+  s = dispatch(s, { ...legal, playerId: 'p1' }, cards);
+  assert.ok(s.players.p1.zones.continue.includes(paidCostId));
+  s = passMenu(s);
+  assert.equal(s.resolutionChoice.kind, 'DECK_REVEAL');
+  assert.equal(s.resolutionChoice.effectKind, 'union-cross');
+  const revealedIds = [...topIds].reverse();
+  assert.deepEqual(s.resolutionChoice.revealedInstanceIds, revealedIds);
+  assert.deepEqual(s.resolutionChoice.options.map((id) => s.instances[id].cardId), revealedIds.map((id) => s.instances[id].cardId));
+  assert.ok(s.resolutionChoice.options.every((id) => (cards.find((card) => card.id === s.instances[id].cardId).subtypes ?? []).includes('Sword Wielder')));
+  assert.equal(s.players.p1.turn.standardAddUsed, true);
+  const addedId = topIds[0];
+  const addAction = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'ADD_PARTY' && action.instanceId === addedId && action.partyIndex === 4);
+  assert.ok(addAction);
+  s = dispatch(s, { ...addAction, playerId: 'p1' }, cards);
+  const added = s.instances[addedId];
+  assert.equal(s.players.p1.party[4], addedId);
+  assert.equal(added.zone, 'party');
+  assert.equal(added.battlefield.currentHp, cards.find((card) => card.id === added.cardId).statistics.hp);
+  assert.equal(added.characterSpecialsSuppressedUntilTurn, s.turnNumber + 2);
+  assert.equal(s.players.p1.turn.standardAddUsed, true, 'Union Cross did not reset or consume an extra standard Add');
+  assert.equal(s.resolutionChoice.stage, 'BOTTOM_REVEALED');
+  for (const instanceId of [topIds[2], topIds[1], topIds[4], topIds[3]]) {
+    const bottomAction = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'BOTTOM_REVEALED' && action.instanceId === instanceId);
+    assert.ok(bottomAction);
+    s = dispatch(s, { ...bottomAction, playerId: 'p1' }, cards);
+  }
+  assert.equal(s.resolutionChoice, null);
+  assert.deepEqual(s.players.p1.zones.revealed, []);
+  assert.deepEqual(s.players.p1.zones.mainDeck.slice(-4), [topIds[2], topIds[1], topIds[4], topIds[3]]);
+  assert.ok(s.players.p1.zones.continue.includes(unionId));
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  assert.ok((s.instances[addedId].characterSpecialsSuppressedUntilTurn ?? 0) > s.turnNumber);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p2');
+  assert.equal(s.turnNumber, 3);
+  assert.equal(s.instances[addedId].characterSpecialsSuppressedUntilTurn, undefined);
   assertStateInvariants(s, cards);
 });
 

@@ -120,7 +120,8 @@ function renderCharacterZone(player, instanceId, label, isCenter = false) {
   const zone = create('button', `zone-card ${isCenter ? 'center' : instanceId ? '' : 'empty'}`); zone.type = 'button';
   if (!instanceId) { zone.disabled = true; zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>Open zone</b>`; return zone; }
   const instance = match.instances[instanceId], card = cards.find((x) => x.id === instance.cardId);
-  zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>${esc(card.name)}</b><small>${Number(instance.battlefield.currentHp).toLocaleString()} / ${Number(instance.battlefield.maxHp).toLocaleString()} HP · ${Number(card.statistics.atk).toLocaleString()} ATK</small>`;
+  const specialsSuppressed = (instance.characterSpecialsSuppressedUntilTurn ?? 0) > match.turnNumber;
+  zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>${esc(card.name)}</b><small>${Number(instance.battlefield.currentHp).toLocaleString()} / ${Number(instance.battlefield.maxHp).toLocaleString()} HP · ${Number(card.statistics.atk).toLocaleString()} ATK${specialsSuppressed ? ' · Specials suppressed' : ''}</small>`;
   zone.addEventListener('click', () => showCard(card)); return zone;
 }
 function showCard(card) {
@@ -179,8 +180,8 @@ function renderActions(actions, actorId, container) {
       container.append(wrap); continue;
     }
     if (action.type === 'RESOLVE_CHOICE') {
-      const label = action.choiceKind === 'STOCKED_MEMORIES'
-        ? action.decline ? 'Skip adding an Ability' : action.stage === 'ADD_ABILITY' ? `Add ${cardName(action.instanceId)} to hand` : action.stage === 'BOTTOM_HAND' ? `Put ${cardName(action.instanceId)} from hand on deck bottom` : `Put ${cardName(action.instanceId)} on deck bottom next`
+      const label = action.choiceKind === 'DECK_REVEAL'
+        ? action.decline ? action.effectKind === 'union-cross' ? 'Skip Character placement' : 'Skip adding an Ability' : action.stage === 'ADD_ABILITY' ? `Add ${cardName(action.instanceId)} to hand` : action.stage === 'ADD_PARTY' ? `Add ${cardName(action.instanceId)} to Party ${action.partyIndex + 1}` : action.stage === 'BOTTOM_HAND' ? `Put ${cardName(action.instanceId)} from hand on deck bottom` : `Put ${cardName(action.instanceId)} on deck bottom next`
         : `Discard ${cardName(action.instanceId)} to Continue?`;
       container.append(actionButton(label, () => safeDispatch({ ...action, playerId: actorId }), action.decline ? 'pass' : ''));
       continue;
@@ -204,6 +205,7 @@ function renderActions(actions, actorId, container) {
       if (action.resourceChoice) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 2 ${action.resourceChoice} with ${action.requirementInstanceIds.map(cardName).join(' + ')}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.abilityKind === 'armiger-preparation') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 1 Light + 1 Darkness`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.abilityKind === 'stocked-memories') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal the top four cards`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+      if (action.abilityKind === 'union-cross') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · discard ${cardName(action.activationCostInstanceId)} · reveal top five`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.bladeInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal ${cardName(action.bladeInstanceId)}, discard ${cardName(action.activationCostInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.activationCostInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · put ${cardName(action.activationCostInstanceId)} on deck bottom`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;
@@ -237,7 +239,7 @@ function renderMatch() {
     prompt.append(create('strong', '', match.resolutionChoice.prompt));
     root.append(prompt);
   }
-  if (match.resolutionChoice?.kind === 'STOCKED_MEMORIES') {
+  if (match.resolutionChoice?.kind === 'DECK_REVEAL') {
     const reveal = create('section', 'turn-controls');
     reveal.append(create('strong', '', 'Public reveal · '), create('span', '', match.resolutionChoice.revealedInstanceIds.map(cardName).join(' · ') || 'No cards were available to reveal.'));
     root.append(reveal);

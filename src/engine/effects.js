@@ -29,6 +29,12 @@ const programs = {
     kind: 'stocked-memories', timing: 'main', revealCount: 4, addType: 'Ability',
     optionalAdd: true, bottomOneFromHand: true, remainderToDeckBottom: true, perNamePerTurn: true
   },
+  'CS1-290': {
+    kind: 'union-cross', timing: 'main', requires: ['Keyblade Wielder', 'Keyblade Wielder'],
+    activationCost: { handCardToContinue: 1 }, revealCount: 5, addType: 'Character', addSubtype: 'Sword Wielder',
+    excludeTransformations: true, addTo: 'party', optionalAdd: true, suppressCharacterSpecials: true,
+    remainderToDeckBottom: true, perNamePerTurn: true
+  },
   'CS1-394': {
     kind: 'curaga-response', timing: 'opponent-attack-response', targetCount: 2,
     requires: ['Healer'], amount: 2500, opponentSpeedReward: { resource: 'momentum', amount: 1 }, perNamePerTurn: true

@@ -306,23 +306,30 @@ function resolveTriggerSelect(state, select, cardIndex) {
   return false;
 }
 
-function beginStockedMemoriesChoice(state, select, program, cardIndex) {
+function beginDeckRevealChoice(state, select, program, cardIndex) {
   const player = state.players[select.playerId];
   const revealedInstanceIds = player.zones.mainDeck.splice(0, program.revealCount);
   for (const instanceId of revealedInstanceIds) {
     state.instances[instanceId].zone = 'revealed';
     player.zones.revealed.push(instanceId);
   }
-  const options = revealedInstanceIds.filter((id) => cardIndex.get(state.instances[id].cardId)?.type === program.addType);
+  const options = revealedInstanceIds.filter((id) => {
+    const card = cardIndex.get(state.instances[id].cardId);
+    return card?.type === program.addType
+      && (!program.excludeTransformations || !card.transformation)
+      && (!program.addSubtype || (card.subtypes ?? []).includes(program.addSubtype));
+  });
+  const addStage = program.addTo === 'party' ? 'ADD_PARTY' : 'ADD_ABILITY';
   state.resolutionChoice = {
-    id: `RC${state.log.length + 1}`, kind: 'STOCKED_MEMORIES', stage: 'ADD_ABILITY', playerId: player.id,
+    id: `RC${state.log.length + 1}`, kind: 'DECK_REVEAL', effectKind: program.kind, stage: addStage, playerId: player.id,
     sourceCardId: select.cardId, revealedInstanceIds: [...revealedInstanceIds], remainingRevealedIds: [...revealedInstanceIds],
     options, canDecline: true, prompt: 'Choose an Ability among the revealed cards to add to hand, or skip that optional instruction.'
   };
+  if (program.addTo === 'party') state.resolutionChoice.prompt = 'Choose a revealed untransformed Sword Wielder to Add to an empty Party Zone, or skip that optional instruction.';
   addLog(state, { type: 'CARDS_REVEALED', playerId: player.id, sourceCardId: select.cardId, instanceIds: revealedInstanceIds, cardIds: revealedInstanceIds.map((id) => state.instances[id].cardId) });
 }
 
-function setStockedBottomOrderChoice(state, choice) {
+function setDeckBottomOrderChoice(state, choice) {
   if (choice.remainingRevealedIds.length) {
     choice.stage = 'BOTTOM_REVEALED';
     choice.options = [...choice.remainingRevealedIds];
@@ -526,7 +533,7 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
         addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: card.id, resource: 'darkness', amount: program.gain.darkness });
         addLog(state, { type: 'EQUIPMENT_ABILITY_SUPPRESSION_ARMED', playerId: player.id, sourceCardId: card.id, untilNextTurn: true });
       }
-      if (instance && program?.kind === 'stocked-memories') beginStockedMemoriesChoice(state, select, program, cardIndex);
+      if (instance && ['stocked-memories', 'union-cross'].includes(program?.kind)) beginDeckRevealChoice(state, select, program, cardIndex);
       if (instance && program?.kind === 'blade-awakening') {
         const player = state.players[select.playerId];
         const blade = state.instances[select.bladeInstanceId];
@@ -552,7 +559,7 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
         state.players[instance.ownerId].zones.continue.push(instance.instanceId);
       }
       addLog(state, { type: 'EFFECT_RESOLVED', selectId: select.id, cardId: select.cardId, supported: !!program });
-      if (state.resolutionChoice?.kind === 'STOCKED_MEMORIES') {
+      if (state.resolutionChoice?.kind === 'DECK_REVEAL') {
         state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), originalSelectCount };
         state.priorityPlayerId = state.resolutionChoice.playerId;
         return;
@@ -776,7 +783,7 @@ export function dispatch(stateInput, action, cards) {
   if (state.resolutionChoice) {
     const choice = state.resolutionChoice;
     if (action.type !== 'RESOLVE_CHOICE' || action.playerId !== choice.playerId) fail('RESOLUTION_CHOICE_REQUIRED', 'The responsible player must make the pending resolution choice before play can continue.');
-    if (choice.kind === 'STOCKED_MEMORIES') {
+    if (choice.kind === 'DECK_REVEAL') {
       if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This choice is no longer active.');
       if (choice.stage === 'ADD_ABILITY') {
         if (action.decline) {
@@ -791,12 +798,36 @@ export function dispatch(stateInput, action, cards) {
           player.zones.hand.push(revealed.instanceId);
           addLog(state, { type: 'CARD_ADDED_TO_HAND', playerId: player.id, instanceId: revealed.instanceId, cardId: revealed.cardId, sourceCardId: choice.sourceCardId });
         }
-        if (player.zones.hand.length) {
+        if (choice.effectKind === 'stocked-memories' && player.zones.hand.length) {
           choice.stage = 'BOTTOM_HAND';
           choice.options = [...player.zones.hand];
           choice.canDecline = false;
           choice.prompt = 'Choose one card from your hand to place on the bottom of your Main Deck.';
-        } else if (setStockedBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        } else if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'ADD_PARTY') {
+        const program = getEffectProgram(choice.sourceCardId);
+        if (action.decline) {
+          if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This Character placement cannot be declined.');
+        } else {
+          if (!choice.options.includes(action.instanceId) || !Number.isInteger(action.partyIndex) || player.party[action.partyIndex] !== null) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose an eligible revealed Character and an empty Party Zone.');
+          const added = state.instances[action.instanceId];
+          const addedCard = added && cardIndex.get(added.cardId);
+          const eligible = added?.zone === 'revealed' && player.zones.revealed.includes(added.instanceId)
+            && added.ownerId === player.id && addedCard?.type === program.addType
+            && (!program.excludeTransformations || !addedCard.transformation)
+            && (!program.addSubtype || (addedCard.subtypes ?? []).includes(program.addSubtype));
+          if (!eligible) fail('ILLEGAL_RESOLUTION_CHOICE', 'The selected Character no longer meets the printed deck-placement requirements.');
+          player.zones.revealed = player.zones.revealed.filter((id) => id !== added.instanceId);
+          choice.remainingRevealedIds = choice.remainingRevealedIds.filter((id) => id !== added.instanceId);
+          added.zone = 'party'; added.controllerId = player.id;
+          added.battlefield = { currentHp: addedCard.statistics.hp, maxHp: addedCard.statistics.hp, position: `party-${action.partyIndex}` };
+          if (program.suppressCharacterSpecials) added.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+          player.party[action.partyIndex] = added.instanceId;
+          addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: added.instanceId, cardId: added.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: added.characterSpecialsSuppressedUntilTurn ?? null });
+        }
+        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       if (choice.stage === 'BOTTOM_HAND') {
@@ -805,7 +836,7 @@ export function dispatch(stateInput, action, cards) {
         const bottomed = state.instances[action.instanceId];
         bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
         addLog(state, { type: 'CARD_BOTTOMED_FROM_HAND', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
-        if (setStockedBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
       if (choice.stage === 'BOTTOM_REVEALED') {
@@ -815,10 +846,10 @@ export function dispatch(stateInput, action, cards) {
         const bottomed = state.instances[action.instanceId];
         bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
         addLog(state, { type: 'CARD_BOTTOMED_FROM_REVEAL', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
-        if (setStockedBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
+        if (setDeckBottomOrderChoice(state, choice)) resumePausedMenuResolution(state, cardIndex);
         return state;
       }
-      fail('ILLEGAL_RESOLUTION_CHOICE', 'Unknown Stocked Memories choice step.');
+      fail('ILLEGAL_RESOLUTION_CHOICE', 'Unknown deck-reveal choice step.');
     }
     if (choice.kind !== 'DISCARD_ONE' || !choice.options.includes(action.instanceId) || !player.zones.hand.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose one card currently in your hand to discard.');
     player.zones.hand = player.zones.hand.filter((id) => id !== action.instanceId);
@@ -1038,6 +1069,14 @@ export function dispatch(stateInput, action, cards) {
       if (!armigerRequirementMet(state, player.id, cardIndex, program.minimumAttachedEquipment)) fail('REQUIREMENT_FAILED', 'Armiger Preparation requires a Sword Wielder you control with at least three attached Equipment.');
     } else if (program.kind === 'stocked-memories') {
       // No target or additional activation cost; card selection is made during resolution.
+    } else if (program.kind === 'union-cross') {
+      if (!controlsDifferentNamedSubtypes(state, player.id, 'Keyblade Wielder', 'Keyblade Wielder', cardIndex)) fail('REQUIREMENT_FAILED', 'Union Cross requires two differently named Keyblade Wielders you control.');
+      const costId = action.activationCostInstanceId;
+      if (!costId || costId === instance.instanceId || !player.zones.hand.includes(costId)) fail('ACTIVATION_COST_REQUIRED', 'Discard one other card from your hand as Union Cross’s activation cost.');
+      player.zones.hand = player.zones.hand.filter((id) => id !== costId);
+      state.instances[costId].zone = 'continue';
+      player.zones.continue.push(costId);
+      addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'discard-hand-card', instanceId: costId });
     } else if (program.kind === 'blade-awakening') {
       const blade = state.instances[action.bladeInstanceId];
       const bladeCard = blade && cardIndex.get(blade.cardId);
@@ -1126,10 +1165,16 @@ export function getLegalActions(state, playerId, cards) {
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
   if (state.resolutionChoice) {
     if (state.resolutionChoice.playerId !== playerId) return [];
-    if (state.resolutionChoice.kind === 'STOCKED_MEMORIES') {
+    if (state.resolutionChoice.kind === 'DECK_REVEAL') {
       const choice = state.resolutionChoice;
+      if (choice.stage === 'ADD_PARTY') {
+        const emptySlots = player.party.flatMap((instanceId, partyIndex) => instanceId === null ? [partyIndex] : []);
+        const actions = choice.options.flatMap((instanceId) => emptySlots.map((partyIndex) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, effectKind: choice.effectKind, stage: choice.stage, instanceId, partyIndex })));
+        if (choice.canDecline) actions.push({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, effectKind: choice.effectKind, stage: choice.stage, decline: true });
+        return actions;
+      }
       const actions = choice.options.map((instanceId) => ({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, stage: choice.stage, instanceId }));
-      if (choice.stage === 'ADD_ABILITY' && choice.canDecline) actions.push({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, stage: choice.stage, decline: true });
+      if (choice.stage === 'ADD_ABILITY' && choice.canDecline) actions.push({ type: 'RESOLVE_CHOICE', choiceId: choice.id, choiceKind: choice.kind, effectKind: choice.effectKind, stage: choice.stage, decline: true });
       return actions;
     }
     return state.resolutionChoice.options.map((instanceId) => ({ type: 'RESOLVE_CHOICE', choiceId: state.resolutionChoice.id, instanceId }));
@@ -1202,6 +1247,10 @@ export function getLegalActions(state, playerId, cards) {
           if (controlsDifferentNamedSubtypes(state, playerId, 'Persona User', 'Persona User', cardIndex)) for (const costId of player.zones.hand) if (costId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, activationCostInstanceId: costId });
         } else if (program.kind === 'armiger-preparation') {
           if (armigerRequirementMet(state, playerId, cardIndex, program.minimumAttachedEquipment)) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
+        } else if (program.kind === 'union-cross') {
+          if (controlsDifferentNamedSubtypes(state, playerId, 'Keyblade Wielder', 'Keyblade Wielder', cardIndex)) {
+            for (const activationCostInstanceId of player.zones.hand) if (activationCostInstanceId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, activationCostInstanceId });
+          }
         } else if (program.kind === 'stocked-memories') {
           actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'blade-awakening') {
