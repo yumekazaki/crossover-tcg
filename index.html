@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="src/ui/card-browser.css">
   <link rel="stylesheet" href="src/ui/arena-polish.css">
+  <link rel="stylesheet" href="src/ui/overhaul.css">
 </head>
 <body>
   <header class="app-header">
@@ -52,6 +53,7 @@
         <label>Player Two deck<select id="p2-deck"></select></label>
         <button id="start-match" class="button-primary">Start local match</button>
         <button id="reset-match" class="button-quiet" disabled>Reset match</button>
+        <label class="sandbox-toggle"><input id="practice-tools" type="checkbox"><span><strong>Sandbox resource tools</strong><small>Allow manual + / − adjustments in this local practice match. Adjustments are logged.</small></span></label>
         <p id="match-notice" class="notice" role="status"></p>
       </div>
       <div id="match-board" class="match-board" hidden></div>

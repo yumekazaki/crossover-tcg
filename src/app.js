@@ -1,17 +1,19 @@
 import { loadCards, allCards, validateDeck, getArtwork } from './data/cards.js';
 import { createCardBrowser } from './ui/card-browser.js';
+import { renderBattlefield } from './ui/battlefield.js';
 import { createInitialState, dispatch, getLegalActions, assertStateInvariants } from './engine/game.js';
 import { implementedEffectIds } from './engine/effects.js';
 import { supportedTransformationIds } from './engine/transformations.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 let cards = [];
 let samples = [];
 let saved = [];
 let activeDeckId = null;
 let panel;
 let match = null;
+let selectedInstanceId = null;
+const previousResourceValues = new Map();
 
 const deckCopy = (deck) => ({ mainIds: deck.mainIds.slice(), equipmentIds: deck.equipmentIds.slice() });
 const deckCheck = (deck) => validateDeck(deck);
@@ -99,10 +101,12 @@ function startMatch() {
   const state = createInitialState({
     players: [{ id: 'p1', name: 'Player One', deck: { mainIds: p1.mainIds, equipmentIds: p1.equipmentIds } },
       { id: 'p2', name: 'Player Two', deck: { mainIds: p2.mainIds, equipmentIds: p2.equipmentIds } }],
-    chooserId, seed: Math.floor(Math.random() * 0xffffffff), cards
+    chooserId, seed: Math.floor(Math.random() * 0xffffffff), cards,
+    sandboxMode: $('practice-tools').checked
   });
-  match = state; $('match-board').hidden = false; $('reset-match').disabled = false;
-  $('match-notice').textContent = `A random choice selected ${chooserId === 'p1' ? 'Player One' : 'Player Two'} to choose who goes first. Make that choice below. Local shared-device test only.`;
+  selectedInstanceId = null; previousResourceValues.clear();
+  match = state; $('match-board').hidden = false; $('reset-match').disabled = false; $('practice-tools').disabled = true;
+  $('match-notice').textContent = `A random choice selected ${chooserId === 'p1' ? 'Player One' : 'Player Two'} to choose who goes first. Make that choice below. Local shared-device practice only.${state.sandboxMode ? ' Manual resource tools are enabled and changes will be logged.' : ''}`;
   renderMatch();
 }
 function cardName(instanceId) { const instance = match.instances[instanceId]; return cards.find((card) => card.id === instance?.cardId)?.name || instance?.cardId || 'Empty'; }
@@ -110,35 +114,20 @@ function safeDispatch(action) {
   try {
     match = dispatch(match, action, cards);
     assertStateInvariants(match, cards);
+    if (action.type !== 'PRACTICE_ADJUST_RESOURCE') selectedInstanceId = null;
     if (match.phase === 'starting-main-selection') $('match-notice').textContent = `${match.players[match.startingMainOrder[match.startingMainIndex]].name} selects their Starting Main now.`;
     else if (match.phase === 'mulligan') $('match-notice').textContent = `Starting Mains are set. ${match.players[match.mulliganOrder[match.mulliganIndex]].name} may return up to five opening cards.`;
     else if (match.phase === 'main' && action.type === 'MULLIGAN') $('match-notice').textContent = 'Setup complete. The first player begins their Main Phase.';
     renderMatch();
+    if (action.type === 'DECLARE_ATTACK' && action.targetInstanceId) {
+      const target = [...$('match-board').querySelectorAll('[data-instance-id]')].find((node) => node.dataset.instanceId === action.targetInstanceId);
+      target?.classList.add('is-hit-animation');
+      if (target) setTimeout(() => target.classList.remove('is-hit-animation'), 420);
+    }
   }
   catch (error) { const notice = $('match-notice'); notice.textContent = `${error.code || 'ERROR'}: ${error.message}`; notice.classList.add('is-error'); setTimeout(() => notice.classList.remove('is-error'), 4000); }
 }
 function create(tag, className, text) { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; }
-function renderCharacterZone(player, instanceId, label, isCenter = false) {
-  const zone = create('button', `zone-card ${isCenter ? 'center' : instanceId ? '' : 'empty'}`); zone.type = 'button';
-  if (!instanceId) { zone.disabled = true; zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>Open zone</b>`; return zone; }
-  const instance = match.instances[instanceId], card = cards.find((x) => x.id === instance.cardId);
-  const specialsSuppressed = (instance.characterSpecialsSuppressedUntilTurn ?? 0) > match.turnNumber;
-  const artwork = getArtwork(card);
-  zone.setAttribute('aria-label', `${label}: ${card.name}, ${instance.battlefield.currentHp} of ${instance.battlefield.maxHp} HP, ${card.statistics.atk} attack`);
-  zone.classList.add('has-card');
-  if (artwork.src) {
-    const image = create('img', 'zone-card__art'); image.src = artwork.src; image.alt = artwork.label;
-    image.loading = 'lazy'; image.decoding = 'async'; zone.append(image);
-  } else {
-    const mark = create('span', 'zone-card__mark', card.type === 'Character' ? '◇' : '✧'); mark.setAttribute('aria-hidden', 'true'); zone.append(mark);
-  }
-  const tint = create('span', 'zone-card__shade'); tint.setAttribute('aria-hidden', 'true');
-  const info = create('span', 'zone-card__info');
-  info.append(create('span', 'zone-label', label), create('b', '', card.name),
-    create('small', '', `${Number(instance.battlefield.currentHp).toLocaleString()} / ${Number(instance.battlefield.maxHp).toLocaleString()} HP · ${Number(card.statistics.atk).toLocaleString()} ATK${specialsSuppressed ? ' · Specials suppressed' : ''}`));
-  zone.append(tint, info);
-  zone.addEventListener('click', () => showCard(card)); return zone;
-}
 function showCard(card) {
   const content = $('dialog-content'), art = getArtwork(card); content.className = 'dialog-content'; content.replaceChildren();
   content.append(create('p', 'eyebrow', `${card.id} · ${card.franchise} · ${card.game}`));
@@ -168,26 +157,24 @@ function showCard(card) {
   if (art.sourceUrl) { const link = create('a', '', 'Recorded source provenance'); link.href = art.sourceUrl; link.target = '_blank'; link.rel = 'noreferrer'; content.append(link); }
   $('card-dialog').showModal();
 }
-function renderSeat(playerId, revealHand = false) {
-  const player = match.players[playerId], seat = create('article', 'seat'), header = create('div', 'seat-header');
-  const isSelectingMain = match.phase === 'starting-main-selection' && match.startingMainOrder[match.startingMainIndex] === playerId;
-  const name = create('h3', '', `${player.name}${!['first-player-choice', 'starting-main-selection'].includes(match.phase) && match.activePlayerId === playerId ? ' · TURN' : ''}${!['first-player-choice', 'starting-main-selection'].includes(match.phase) && match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}${match.phase === 'first-player-choice' && match.firstPlayerChooserId === playerId ? ' · CHOOSER' : ''}${isSelectingMain ? ' · PICKING STARTING MAIN' : ''}`);
-  const resources = create('div', 'seat-resources'); resources.innerHTML = `<b class="life">${player.life} LIFE</b><b>${player.resources.momentum} M</b><b>${player.resources.light} L</b><b>${player.resources.darkness} D</b>`; header.append(name, resources); seat.append(header);
-  const zones = create('div', 'zones'); zones.append(renderCharacterZone(player, player.center, 'CENTER · MAIN', true));
-  const party = create('div', 'party-zones'); player.party.forEach((id, index) => party.append(renderCharacterZone(player, id, `PARTY ${index + 1}`)));
-  const board = create('div', 'zones'); board.style.display = 'block'; board.append(party); seat.append(zones, board);
-  const attachments = Object.values(match.instances).filter((x) => x.zone === 'attached' && player.party.concat(player.center).includes(x.attachedTo));
-  if (attachments.length) { const row = create('div', 'attached-row'); for (const gear of attachments) { const card = cards.find((x) => x.id === gear.cardId); const suppressed = (gear.abilitiesSuppressedUntilTurn ?? 0) > match.turnNumber; const b = create('button', 'gear-pill'); b.type = 'button'; const art = getArtwork(card); if (art.src) { const image = create('img', 'gear-pill__art'); image.src = art.src; image.alt = ''; image.loading = 'lazy'; b.append(image); } b.append(create('span', '', `⚔ ${card.name} → ${cardName(gear.attachedTo)}${suppressed ? ' · abilities suppressed' : ''}`)); b.addEventListener('click', () => showCard(card)); row.append(b); } seat.append(row); }
-  const hand = create('div', 'hand-area'), label = create('span', 'hand-label', `HAND · ${player.zones.hand.length} CARDS`), list = create('div', 'hand-cards');
-  if (revealHand) for (const instanceId of player.zones.hand) { const card = cards.find((x) => x.id === match.instances[instanceId].cardId); const button = create('button', 'hand-card'); button.type = 'button'; const art = getArtwork(card); if (art.src) { const image = create('img', 'hand-card__art'); image.src = art.src; image.alt = ''; image.loading = 'lazy'; button.append(image); } button.append(create('span', 'hand-card__name', card.name), create('small', '', `${card.type} · ${card.cost.momentum}M`)); button.addEventListener('click', () => showCard(card)); list.append(button); }
-  else for (const _instanceId of player.zones.hand) { const back = create('button', 'hand-card concealed-card', 'Face down'); back.type = 'button'; back.disabled = true; list.append(back); }
-  hand.append(label, list); seat.append(hand);
-  const zonesInfo = create('p', 'seat-footnote', `Main Deck ${player.zones.mainDeck.length} · Continue? ${player.zones.continue.length} · Arsenal ${player.zones.arsenal.length} cards / ${player.registration.equipmentIds.reduce((n, id) => n + cards.find((x) => x.id === id).slots, 0)} slots`); seat.append(zonesInfo);
-  return seat;
-}
 function actionButton(label, callback, klass = '') { const b = create('button', `action-button ${klass}`, label); b.type = 'button'; b.addEventListener('click', callback); return b; }
-function renderActions(actions, actorId, container) {
+function actionUsesInstance(action, instanceId) {
+  if (!instanceId) return false;
+  for (const key of ['instanceId', 'equipmentInstanceId', 'hostInstanceId', 'attackerInstanceId', 'targetInstanceId', 'baseInstanceId', 'formInstanceId', 'partyInstanceId', 'activationCostInstanceId', 'bladeInstanceId']) {
+    if (action[key] === instanceId) return true;
+  }
+  return ['instanceIds', 'targets', 'targetOptions', 'requirementInstanceIds', 'availableChainIds', 'eligibleInstanceIds'].some((key) => action[key]?.includes(instanceId));
+}
+const alwaysAvailableActionTypes = new Set(['PASS', 'PASS_PRIORITY', 'MULLIGAN', 'RESOLVE_CHOICE', 'CHOOSE_FIRST_PLAYER', 'SELECT_STARTING_MAIN', 'ASSIGN_GUARDS', 'BEGIN_COMBAT_RESPONSES']);
+function renderActions(allActions, actorId, container, selectedId = null) {
   container.replaceChildren();
+  const actions = selectedId
+    ? allActions.filter((action) => alwaysAvailableActionTypes.has(action.type) || actionUsesInstance(action, selectedId))
+    : allActions;
+  if (selectedId && actions.length === 0) {
+    const empty = create('p', 'action-empty', 'No legal actions are available for this card right now.');
+    container.append(empty); return;
+  }
   for (const action of actions) {
     if (action.type === 'MULLIGAN') {
       const wrap = create('div', 'guard-choice');
@@ -218,8 +205,8 @@ function renderActions(actions, actorId, container) {
     }
     if (action.type === 'CHOOSE_FIRST_PLAYER') { container.append(actionButton(`Choose ${match.players[action.firstPlayerId].name} to go first`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'SELECT_STARTING_MAIN') { container.append(actionButton(`Choose ${cardName(action.instanceId)} as Starting Main`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
-    if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
-    if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
+    if (action.type === 'PASS') { container.append(actionButton('Pass response', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass phase-primary')); continue; }
+    if (action.type === 'PASS_PRIORITY') { const next = match.phase === 'main' ? 'Battle' : match.phase === 'battle' ? 'End' : 'next turn'; container.append(actionButton(match.phasePasses ? `Confirm pass · advance to ${next}` : 'Pass priority', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass phase-primary')); continue; }
     if (action.type === 'ASSIGN_GUARDS') {
       const wrap = create('div', 'guard-choice'); wrap.append(create('span', '', 'Choose Party Members to guard (2 Momentum each)'));
       const checks = [];
@@ -258,29 +245,99 @@ function renderActions(actions, actorId, container) {
 }
 function logLabel(entry) {
   const p = entry.playerId ? `${match.players[entry.playerId]?.name || entry.playerId}: ` : '';
-  return `${p}${entry.type.replaceAll('_', ' ').toLocaleLowerCase()}${entry.cardId ? ` · ${cards.find((x) => x.id === entry.cardId)?.name || entry.cardId}` : ''}${entry.amount != null ? ` · ${entry.amount.toLocaleString()}` : ''}`;
+  const resourceChange = entry.type === 'PRACTICE_RESOURCE_ADJUSTED' ? ` · ${entry.resource} ${entry.delta > 0 ? '+' : '−'}${Math.abs(entry.delta)}` : '';
+  return `${p}${entry.type.replaceAll('_', ' ').toLocaleLowerCase()}${entry.cardId ? ` · ${cards.find((x) => x.id === entry.cardId)?.name || entry.cardId}` : ''}${resourceChange}${entry.amount != null ? ` · ${entry.amount.toLocaleString()}` : ''}`;
+}
+function phaseMessage(state) {
+  if (state.status === 'finished') return state.winnerId ? `${state.players[state.winnerId].name} wins` : 'The match is a draw';
+  if (state.resolutionChoice) return state.resolutionChoice.prompt;
+  if (state.menu) return `Response Menu · ${state.players[state.menu.priorityPlayerId].name} has priority · ${state.menu.consecutivePasses}/2 passes`;
+  if (state.phase === 'first-player-choice') return `${state.players[state.firstPlayerChooserId].name} chooses who goes first.`;
+  if (state.phase === 'starting-main-selection') return `${state.players[state.startingMainOrder[state.startingMainIndex]].name} chooses a Starting Main.`;
+  if (state.phase === 'mulligan') return `${state.players[state.mulliganOrder[state.mulliganIndex]].name} may redraw up to five cards.`;
+  const priority = state.players[state.priorityPlayerId]?.name || 'A player';
+  if (state.phasePasses) return `One pass recorded. ${priority} must pass to advance the phase.`;
+  return `${priority} has phase priority. Play an action or pass.`;
+}
+function renderPhaseControls(state, actorId, legalActions) {
+  const section = create('section', 'phase-controls');
+  const heading = create('div', 'phase-controls__heading');
+  const headingCopy = create('div'); headingCopy.append(create('p', 'eyebrow', 'TURN FLOW'), create('h3', '', state.menu ? 'Response window' : 'Phase & priority'));
+  heading.append(headingCopy);
+  const phaseName = state.phase.replaceAll('-', ' ');
+  heading.append(create('span', 'phase-controls__current', phaseName.toUpperCase()));
+  section.append(heading, create('p', 'phase-controls__message', phaseMessage(state)));
+  const track = create('div', 'phase-track-ui'); track.setAttribute('aria-label', `Phase: ${phaseName}`);
+  const steps = [['main', 'Main'], ['battle', 'Battle'], ['end', 'End']];
+  const currentIndex = steps.findIndex(([phase]) => phase === state.phase);
+  for (let index = 0; index < steps.length; index += 1) {
+    const [phase, label] = steps[index]; const step = create('span', `phase-track-ui__step${index === currentIndex ? ' is-current' : currentIndex > index ? ' is-complete' : ''}`, label);
+    if (index === currentIndex) step.setAttribute('aria-current', 'step'); track.append(step);
+  }
+  section.append(track);
+  const priorityActions = legalActions.filter((action) => ['PASS', 'PASS_PRIORITY'].includes(action.type));
+  const buttons = create('div', 'phase-controls__actions');
+  if (actorId && priorityActions.length) renderActions(priorityActions, actorId, buttons);
+  else if (state.menu || state.resolutionChoice || state.pendingMenuResolution) buttons.append(create('p', 'action-empty', 'Resolve the current choice or response before continuing.'));
+  else if (state.status !== 'finished') buttons.append(create('p', 'action-empty', 'The other player has priority.'));
+  section.append(buttons);
+  return section;
+}
+function resourceAnimation(field) {
+  for (const item of field.querySelectorAll('.battlefield-resource[data-player-id][data-resource]')) {
+    const key = `${item.dataset.playerId}:${item.dataset.resource}`;
+    const value = Number(item.querySelector('.battlefield-resource__value')?.textContent.replaceAll(',', ''));
+    const previous = previousResourceValues.get(key);
+    if (Number.isFinite(value) && previous !== undefined && value !== previous) {
+      item.classList.remove('is-gained', 'is-spent');
+      item.classList.add(value > previous ? 'is-gained' : 'is-spent');
+    }
+    if (Number.isFinite(value)) previousResourceValues.set(key, value);
+  }
 }
 function renderMatch() {
   if (!match) return;
   const root = $('match-board'); root.replaceChildren();
-  const current = create('div', 'match-topline');
-  current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.phase === 'first-player-choice' ? `First-player choice · ${match.players[match.firstPlayerChooserId].name} is chooser` : match.phase === 'starting-main-selection' ? `Starting Main · ${match.players[match.startingMainOrder[match.startingMainIndex]].name} chooses a Character` : match.status === 'setup' ? `Opening mulligan · ${match.players[match.mulliganOrder[match.mulliganIndex]].name}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
-  current.append(create('span', '', match.phase === 'first-player-choice' ? `${match.players[match.firstPlayerChooserId].name} is choosing who goes first` : match.phase === 'starting-main-selection' ? `${match.players[match.startingMainOrder[match.startingMainIndex]].name} selects a nontransformed Character from their Main Deck` : match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
   const actorId = match.status === 'finished' ? null : match.phase === 'first-player-choice' ? match.firstPlayerChooserId : match.phase === 'starting-main-selection' ? match.startingMainOrder[match.startingMainIndex] : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
-  const seats = create('div', 'match-seats'); seats.append(renderSeat('p1', actorId === 'p1'), renderSeat('p2', actorId === 'p2')); root.append(seats);
+  const legalActions = actorId ? getLegalActions(match, actorId, cards) : [];
+  const statusText = match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw')
+    : match.phase === 'first-player-choice' ? 'FIRST PLAYER CHOICE'
+      : match.phase === 'starting-main-selection' ? 'STARTING MAIN SELECTION'
+        : match.phase === 'mulligan' ? 'OPENING MULLIGAN'
+          : `${match.players[match.activePlayerId].name} · TURN ${match.turnNumber} · ${match.phase.toUpperCase()}`;
+  const statusDetail = phaseMessage(match);
+  if (match.sandboxMode) root.append(create('p', 'sandbox-match-badge', 'LOCAL SANDBOX · RESOURCE ADJUSTMENTS ENABLED'));
+  const battlefield = renderBattlefield({
+    state: match, localPlayerId: 'p1', cards, actorId, legalActions, selectedInstanceId,
+    statusText, statusDetail, onInspect: showCard,
+    onSelectCard: (instanceId) => { selectedInstanceId = selectedInstanceId === instanceId ? null : instanceId; renderMatch(); },
+    sandboxMode: match.sandboxMode && match.status === 'active' && ['main', 'battle', 'end'].includes(match.phase) && !match.menu && !match.pendingMenuResolution && !match.resolutionChoice && !match.combat && !match.pendingTriggers.length,
+    onResourceAdjust: (playerId, resource, delta) => safeDispatch({ type: 'PRACTICE_ADJUST_RESOURCE', playerId, resource, delta })
+  });
+  root.append(battlefield); resourceAnimation(battlefield);
+  root.append(renderPhaseControls(match, actorId, legalActions));
   if (match.resolutionChoice) {
     const prompt = create('section', 'turn-controls');
-    prompt.append(create('strong', '', match.resolutionChoice.prompt));
-    root.append(prompt);
+    prompt.append(create('strong', '', match.resolutionChoice.prompt)); root.append(prompt);
   }
   if (match.resolutionChoice?.kind === 'DECK_REVEAL') {
     const reveal = create('section', 'turn-controls');
-    reveal.append(create('strong', '', 'Public reveal · '), create('span', '', match.resolutionChoice.revealedInstanceIds.map(cardName).join(' · ') || 'No cards were available to reveal.'));
-    root.append(reveal);
+    reveal.append(create('strong', '', 'Public reveal · '), create('span', '', match.resolutionChoice.revealedInstanceIds.map(cardName).join(' · ') || 'No cards were available to reveal.')); root.append(reveal);
   }
   if (match.status !== 'finished') {
-    const controls = create('section', 'turn-controls'); controls.append(create('h3', '', `${match.players[actorId].name} · legal actions`));
-    const actions = create('div', 'action-list'); renderActions(getLegalActions(match, actorId, cards), actorId, actions); controls.append(actions); root.append(controls);
+    const controls = create('section', 'turn-controls'); controls.append(create('h3', '', `${match.players[actorId].name} · ${selectedInstanceId ? 'selected card actions' : 'legal actions'}`));
+    if (selectedInstanceId) {
+      const instance = match.instances[selectedInstanceId], selectedCard = cards.find((card) => card.id === instance?.cardId);
+      const context = create('div', 'selected-action-context');
+      context.append(create('span', '', selectedCard?.name || 'Selected card'));
+      if (selectedCard) context.append(actionButton('Inspect card', () => showCard(selectedCard), 'action-inspect'));
+      context.append(actionButton('Cancel selection', () => { selectedInstanceId = null; renderMatch(); }, 'action-cancel'));
+      controls.append(context);
+    }
+    const phaseActions = new Set(['PASS', 'PASS_PRIORITY']);
+    const actions = create('div', 'action-list');
+    renderActions(legalActions.filter((action) => !phaseActions.has(action.type)), actorId, actions, selectedInstanceId);
+    controls.append(actions); root.append(controls);
   }
   const log = create('section', 'game-log'), title = create('h3', '', 'Match log'), list = create('ol');
   match.log.slice(-30).reverse().forEach((entry) => list.append(create('li', '', logLabel(entry)))); log.append(title, list); root.append(log);
@@ -309,7 +366,7 @@ $('export-deck').addEventListener('click', exportDeck);
 $('import-deck').addEventListener('click', () => $('import-file').click());
 $('import-file').addEventListener('change', async (event) => { try { await importDeck(event.target.files?.[0]); } catch (error) { alert(error.message); } event.target.value = ''; });
 $('start-match').addEventListener('click', startMatch);
-$('reset-match').addEventListener('click', () => { match = null; $('match-board').hidden = true; $('reset-match').disabled = true; $('match-notice').textContent = 'Local match cleared.'; });
+$('reset-match').addEventListener('click', () => { match = null; selectedInstanceId = null; previousResourceValues.clear(); $('match-board').hidden = true; $('reset-match').disabled = true; $('practice-tools').disabled = false; $('match-notice').textContent = 'Local match cleared.'; });
 
 try {
   await loadCards(); cards = allCards(); $('card-count').textContent = cards.length.toLocaleString(); $('library-count').textContent = cards.length.toLocaleString();

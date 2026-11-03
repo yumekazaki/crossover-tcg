@@ -8,6 +8,8 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
   let selectedId = records[0]?.id || null;
   let visibleLimit = 36;
   let notice = '';
+  let sortBy = 'set';
+  let activeDeckSection = 'mainIds';
   let requestNumber = 0;
   let appliedRequest = 0;
   const pending = new Set();
@@ -35,9 +37,19 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
   const reset = button('Reset filters', 'ctcg-browser__quiet', () => {
     Object.keys(filters).forEach(key => { filters[key] = ''; });
     search.value = ''; controls.forEach(control => { control.value = ''; });
+    sortBy = 'set'; sort.value = 'set';
     visibleLimit = 36; renderResults(); search.focus();
   });
   toolbar.append(reset); root.append(toolbar);
+
+  const sortLabel = el('label', 'ctcg-browser__sort');
+  sortLabel.append(el('span', 'ctcg-browser__field-label', 'Sort cards'));
+  const sort = el('select'); sort.setAttribute('aria-label', 'Sort cards');
+  for (const [value, label] of [['set', 'Set order'], ['name', 'Name A–Z'], ['cost', 'Lowest resource cost'], ['attack', 'Highest attack'], ['health', 'Highest HP']]) {
+    const option = el('option', '', label); option.value = value; sort.append(option);
+  }
+  sort.addEventListener('change', () => { sortBy = sort.value; renderResults(); });
+  sortLabel.append(sort); toolbar.insertBefore(sortLabel, reset);
 
   const controls = new Map();
   const filterRow = el('div', 'ctcg-browser__filters');
@@ -121,7 +133,11 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
         if (response?.validation !== undefined) validation = response.validation;
         else if (looksLikeValidation(response)) validation = response;
       }
-      if (thisRequest === requestNumber) notice = `${operation === 'add' ? 'Add' : 'Remove'} request processed for ${card?.name || cardId}.`;
+      if (thisRequest === requestNumber) {
+        const now = copyCount(card || { id: cardId });
+        const deckLabel = section === 'equipment' ? 'Equipment / Transformation Deck' : 'Main Deck';
+        notice = `${operation === 'add' ? 'Added' : 'Removed'} ${card?.name || cardId}${operation === 'add' ? ` to ${deckLabel}` : ` from ${deckLabel}`}. ${now} ${now === 1 ? 'copy' : 'copies'} now in your deck.`;
+      }
     } catch (error) {
       if (thisRequest === requestNumber) notice = error instanceof Error ? error.message : 'The deck update could not be completed.';
     } finally {
@@ -146,6 +162,17 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
       const haystack = [card.name, card.id, card.franchise, card.game, card.type, card.effect_text, card.strategic_purpose, ...(card.subtypes || []), ...(card.archetypes || []), ...(card.affiliations || [])].filter(Boolean).join(' ').toLocaleLowerCase();
       return query.split(/\s+/).every(word => haystack.includes(word));
     });
+    if (sortBy !== 'set') {
+      const setOrder = new Map(records.map((card, index) => [card.id, index]));
+      const valueFor = (card) => sortBy === 'name' ? card.name.toLocaleLowerCase()
+        : sortBy === 'cost' ? ['light', 'darkness', 'momentum'].reduce((sum, key) => sum + Number(card.cost?.[key] || 0), 0)
+          : Number(card.statistics?.[sortBy === 'attack' ? 'atk' : 'hp'] || 0);
+      matches.sort((a, b) => {
+        const av = valueFor(a), bv = valueFor(b);
+        const compared = typeof av === 'string' ? av.localeCompare(bv) : sortBy === 'cost' ? av - bv : bv - av;
+        return compared || setOrder.get(a.id) - setOrder.get(b.id);
+      });
+    }
     resultCount.textContent = `${matches.length} of ${records.length} cards`;
     results.replaceChildren();
     if (!matches.length) {
@@ -173,7 +200,8 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
       const add = button('+ Add', 'ctcg-browser__tile-add', () => act(card.id, 'add'));
       add.dataset.focusKey = `tile-add:${card.id}`;
       add.setAttribute('aria-label', `Add ${card.name} to ${sectionFor(card) === 'equipment' ? 'Equipment/Transformation' : 'Main'} Deck`);
-      add.disabled = typeof onAdd !== 'function' || pending.has(card.id);
+      add.disabled = typeof onAdd !== 'function' || pending.has(card.id) || copyCount(card) >= 3;
+      if (copyCount(card) >= 3) add.title = 'Three-copy limit reached across both decks.';
       tile.append(inspect, add); results.append(tile);
     }
     more.hidden = matches.length <= visibleLimit;
@@ -201,7 +229,8 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     }
     if (card.transformation?.entry_requirement) detail.append(el('h4', 'ctcg-browser__small-heading', 'Transformation entry'), el('p', 'ctcg-browser__detail-copy', card.transformation.entry_requirement));
     const actions = el('div', 'ctcg-browser__detail-actions');
-    const add = button('+ Add to deck', 'ctcg-browser__primary', () => act(card.id, 'add')); add.disabled = typeof onAdd !== 'function' || pending.has(card.id);
+    const add = button('+ Add to deck', 'ctcg-browser__primary', () => act(card.id, 'add')); add.disabled = typeof onAdd !== 'function' || pending.has(card.id) || copyCount(card) >= 3;
+    if (copyCount(card) >= 3) add.title = 'Three-copy limit reached across both decks.';
     add.dataset.focusKey = `detail-add:${card.id}`;
     const remove = button('Remove one', 'ctcg-browser__quiet', () => act(card.id, 'remove')); remove.disabled = typeof onRemove !== 'function' || !copyCount(card) || pending.has(card.id);
     remove.dataset.focusKey = `detail-remove:${card.id}`;
@@ -236,8 +265,27 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     deckPanel.replaceChildren(); const byId = lookup(); const ids = deckIds();
     const mainCount = ids.mainIds.length;
     const equipmentSlots = ids.equipmentIds.reduce((sum, id) => sum + Number(byId.get(id)?.slots ?? 1), 0);
-    const deckHeading = el('div', 'ctcg-browser__section-heading'); deckHeading.append(el('h3', '', 'Your deck'), el('span', 'ctcg-browser__deck-symbol', '◇')); deckPanel.append(deckHeading);
+    const deckHeading = el('div', 'ctcg-browser__section-heading'); deckHeading.append(el('h3', '', currentDeck.name || 'Your deck'), el('span', 'ctcg-browser__deck-symbol', '◇')); deckPanel.append(deckHeading);
     deckPanel.append(button('Browse cards to add', 'ctcg-browser__primary ctcg-browser__browse', () => root.dispatchEvent(new CustomEvent('browse-cards'))));
+    const tabs = el('div', 'ctcg-browser__deck-tabs');
+    tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Deck sections');
+    const mainTab = button(`Main Deck · ${ids.mainIds.length}`, 'ctcg-browser__deck-tab', () => { activeDeckSection = 'mainIds'; renderDeck(); });
+    const equipmentTab = button(`Equipment / Transformation · ${equipmentSlots}/20 slots`, 'ctcg-browser__deck-tab', () => { activeDeckSection = 'equipmentIds'; renderDeck(); });
+    for (const [tab, key] of [[mainTab, 'mainIds'], [equipmentTab, 'equipmentIds']]) {
+      tab.setAttribute('role', 'tab'); tab.setAttribute('aria-selected', String(activeDeckSection === key));
+      tab.tabIndex = activeDeckSection === key ? 0 : -1;
+      tab.setAttribute('aria-controls', `${uniqueId}-${key}`); tab.id = `${uniqueId}-tab-${key}`;
+      if (activeDeckSection === key) tab.classList.add('is-active');
+      tabs.append(tab);
+    }
+    tabs.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const nextSection = activeDeckSection === 'mainIds' ? 'equipmentIds' : 'mainIds';
+      activeDeckSection = nextSection; renderDeck();
+      deckPanel.querySelector(`[role="tab"][aria-controls="${uniqueId}-${nextSection}"]`)?.focus();
+    });
+    deckPanel.append(tabs);
     const totals = el('div', 'ctcg-browser__totals');
     totals.append(metric(String(mainCount), 'Main cards', '40–60 required'), metric(String(equipmentSlots), 'E/T slots', '20 required'));
     deckPanel.append(totals);
@@ -251,7 +299,7 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     const legality = el('div', 'ctcg-browser__validation');
     renderValidation(legality); deckPanel.append(legality);
     for (const [key, label] of [['mainIds', 'Main Deck'], ['equipmentIds', 'Equipment / Transformation']]) {
-      const section = el('section', 'ctcg-browser__deck-section'); section.append(el('h4', '', label));
+      const section = el('section', 'ctcg-browser__deck-section'); section.id = `${uniqueId}-${key}`; section.setAttribute('role', 'tabpanel'); section.setAttribute('aria-labelledby', `${uniqueId}-tab-${key}`); section.hidden = activeDeckSection !== key; section.append(el('h4', '', label));
       if (!ids[key].length) section.append(el('p', 'ctcg-browser__muted', 'No cards added yet.'));
       const quantities = new Map(); ids[key].forEach(id => quantities.set(id, (quantities.get(id) || 0) + 1));
       const list = el('ul', 'ctcg-browser__deck-list');
@@ -260,10 +308,15 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
         const name = button(card?.name || `Unknown card: ${id}`, 'ctcg-browser__deck-card-name', () => { if (card) { selectedId = id; renderResults(); renderDetail(); } });
         name.disabled = !card; name.title = id;
         const count = el('span', 'ctcg-browser__quantity', `×${quantity}`);
+        const add = button('+', 'ctcg-browser__deck-add', () => act(id, 'add', key === 'mainIds' ? 'main' : 'equipment'));
+        add.dataset.focusKey = `deck-add:${key}:${id}`;
+        add.setAttribute('aria-label', `Add another ${card?.name || id} to ${label}`);
+        add.disabled = typeof onAdd !== 'function' || pending.has(id) || copyCount(card || { id }) >= 3;
+        if (copyCount(card || { id }) >= 3) add.title = 'Three-copy limit reached across both decks.';
         const remove = button('−', 'ctcg-browser__deck-remove', () => act(id, 'remove', key === 'mainIds' ? 'main' : 'equipment'));
         remove.dataset.focusKey = `deck-remove:${key}:${id}`;
         remove.setAttribute('aria-label', `Remove one ${card?.name || id} from ${label}`); remove.disabled = typeof onRemove !== 'function' || pending.has(id);
-        row.append(name, count, remove); list.append(row);
+        row.classList.add('ctcg-browser__deck-row'); row.append(name, count, add, remove); list.append(row);
       }
       section.append(list); deckPanel.append(section);
     }
