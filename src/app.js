@@ -178,7 +178,13 @@ function renderActions(actions, actorId, container) {
       wrap.append(actionButton('Return selected cards and redraw', () => safeDispatch({ type: 'MULLIGAN', playerId: actorId, instanceIds: checks.filter((check) => check.checked).map((check) => check.value) }), 'pass'));
       container.append(wrap); continue;
     }
-    if (action.type === 'RESOLVE_CHOICE') { container.append(actionButton(`Discard ${cardName(action.instanceId)} to Continue?`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+    if (action.type === 'RESOLVE_CHOICE') {
+      const label = action.choiceKind === 'STOCKED_MEMORIES'
+        ? action.decline ? 'Skip adding an Ability' : action.stage === 'ADD_ABILITY' ? `Add ${cardName(action.instanceId)} to hand` : action.stage === 'BOTTOM_HAND' ? `Put ${cardName(action.instanceId)} from hand on deck bottom` : `Put ${cardName(action.instanceId)} on deck bottom next`
+        : `Discard ${cardName(action.instanceId)} to Continue?`;
+      container.append(actionButton(label, () => safeDispatch({ ...action, playerId: actorId }), action.decline ? 'pass' : ''));
+      continue;
+    }
     if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'ASSIGN_GUARDS') {
@@ -197,6 +203,7 @@ function renderActions(actions, actorId, container) {
     if (action.type === 'ACTIVATE_ABILITY') {
       if (action.resourceChoice) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 2 ${action.resourceChoice} with ${action.requirementInstanceIds.map(cardName).join(' + ')}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.abilityKind === 'armiger-preparation') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 1 Light + 1 Darkness`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+      if (action.abilityKind === 'stocked-memories') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal the top four cards`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.bladeInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal ${cardName(action.bladeInstanceId)}, discard ${cardName(action.activationCostInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.activationCostInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · put ${cardName(action.activationCostInstanceId)} on deck bottom`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;
@@ -225,6 +232,16 @@ function renderMatch() {
   current.append(create('span', '', match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
   const actorId = match.status === 'finished' ? null : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
   const seats = create('div', 'match-seats'); seats.append(renderSeat('p1', actorId === 'p1'), renderSeat('p2', actorId === 'p2')); root.append(seats);
+  if (match.resolutionChoice) {
+    const prompt = create('section', 'turn-controls');
+    prompt.append(create('strong', '', match.resolutionChoice.prompt));
+    root.append(prompt);
+  }
+  if (match.resolutionChoice?.kind === 'STOCKED_MEMORIES') {
+    const reveal = create('section', 'turn-controls');
+    reveal.append(create('strong', '', 'Public reveal · '), create('span', '', match.resolutionChoice.revealedInstanceIds.map(cardName).join(' · ') || 'No cards were available to reveal.'));
+    root.append(reveal);
+  }
   if (match.status !== 'finished') {
     const controls = create('section', 'turn-controls'); controls.append(create('h3', '', `${match.players[actorId].name} · legal actions`));
     const actions = create('div', 'action-list'); renderActions(getLegalActions(match, actorId, cards), actorId, actions); controls.append(actions); root.append(controls);

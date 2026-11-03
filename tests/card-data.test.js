@@ -18,6 +18,14 @@ test('imports all 500 complete canonical definitions without synthesized fields'
   assert.deepEqual(allCards(), original);
   assert.equal(new Set(allCards().map(c => c.id)).size, 500);
 });
+test('mechanical validation status matches focused engine coverage without implying balance or playtesting', () => {
+  const coveredIds = ['CS1-011', 'CS1-281', 'CS1-285', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  for (const id of coveredIds) {
+    assert.equal(getCard(id).status.mechanically_validated, true, `${id} should be marked mechanically validated`);
+    assert.equal(getCard(id).status.balance_reviewed, false, `${id} has not been balance-reviewed`);
+    assert.equal(getCard(id).status.playtested, false, `${id} has not been playtested`);
+  }
+});
 test('loading is repeatable and synchronous lookups retain canonical identity', async () => {
   const [a, b] = await Promise.all([loadCards(), loadCards()]);
   assert.equal(a.length, 500);

@@ -861,7 +861,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -24159,7 +24159,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -24375,7 +24375,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -25797,7 +25797,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -26076,7 +26076,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -26238,7 +26238,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -27336,7 +27336,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -30346,7 +30346,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -32470,7 +32470,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,
@@ -32632,7 +32632,7 @@
     },
     "status": {
       "designed": true,
-      "mechanically_validated": false,
+      "mechanically_validated": true,
       "balance_reviewed": false,
       "playtested": false,
       "structurally_validated": true,

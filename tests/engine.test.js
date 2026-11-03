@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -51,6 +51,17 @@ function moveCardToHand(state, playerId, cardId) {
   player.zones.mainDeck = player.zones.mainDeck.filter((id) => id !== instanceId);
   player.zones.hand.push(instanceId);
   state.instances[instanceId].zone = 'hand';
+  return instanceId;
+}
+function moveCardToTop(state, playerId, cardId) {
+  const player = state.players[playerId];
+  const instanceId = player.zones.hand.find((id) => state.instances[id].cardId === cardId)
+    ?? player.zones.mainDeck.find((id) => state.instances[id].cardId === cardId);
+  assert.ok(instanceId, `expected ${cardId} in ${playerId}'s hand or Main Deck`);
+  player.zones.hand = player.zones.hand.filter((id) => id !== instanceId);
+  player.zones.mainDeck = player.zones.mainDeck.filter((id) => id !== instanceId);
+  state.instances[instanceId].zone = 'mainDeck';
+  player.zones.mainDeck.unshift(instanceId);
   return instanceId;
 }
 
@@ -222,8 +233,8 @@ test('Armiger Preparation turns a geared Sword Wielder into both resource colors
     return id;
   };
   attachOne(); attachOne(); attachOne();
-  assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'ACTIVATE_ABILITY' && action.abilityKind === 'armiger-preparation'));
   const armigerId = moveCardToHand(s, 'p1', 'CS1-311');
+  assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'ACTIVATE_ABILITY' && action.abilityKind === 'armiger-preparation'));
   const before = { light: s.players.p1.resources.light, darkness: s.players.p1.resources.darkness };
   const activation = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === armigerId);
   assert.ok(activation);
@@ -381,6 +392,66 @@ test('Ability card Cure resolves through the Menu and goes to Continue?', () => 
   assert.equal(s.instances[targetId].battlefield.currentHp, Math.min(target.battlefield.maxHp, before + 5000));
   assert.equal(s.instances[cureId].zone, 'continue');
   assert.ok(s.players.p1.zones.continue.includes(cureId));
+  assertStateInvariants(s, cards);
+});
+
+test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {
+  let s = start(game());
+  const stockedId = moveCardToHand(s, 'p1', 'CS1-285');
+  const topIds = ['CS1-281', 'CS1-316', 'CS1-319', 'CS1-339'].map((id) => moveCardToTop(s, 'p1', id));
+  const activation = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === stockedId);
+  assert.ok(activation);
+  s = dispatch(s, { ...activation, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.resolutionChoice.kind, 'STOCKED_MEMORIES');
+  const revealedIds = [...topIds].reverse();
+  assert.deepEqual(s.resolutionChoice.revealedInstanceIds, revealedIds);
+  assert.deepEqual(s.players.p1.zones.revealed, revealedIds);
+  assert.deepEqual(getLegalActions(s, 'p2', cards), []);
+  const chooseAbility = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'ADD_ABILITY' && action.instanceId === topIds[1]);
+  assert.ok(chooseAbility);
+  s = dispatch(s, { ...chooseAbility, playerId: 'p1' }, cards);
+  assert.equal(s.instances[topIds[1]].zone, 'hand');
+  const handCardId = s.players.p1.zones.hand.find((id) => id !== topIds[1]);
+  assert.ok(handCardId);
+  const bottomHand = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'BOTTOM_HAND' && action.instanceId === handCardId);
+  s = dispatch(s, { ...bottomHand, playerId: 'p1' }, cards);
+  for (const instanceId of [topIds[3], topIds[0], topIds[2]]) {
+    const bottomReveal = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'BOTTOM_REVEALED' && action.instanceId === instanceId);
+    assert.ok(bottomReveal);
+    s = dispatch(s, { ...bottomReveal, playerId: 'p1' }, cards);
+  }
+  assert.equal(s.resolutionChoice, null);
+  assert.equal(s.pendingMenuResolution, null);
+  assert.equal(s.menu, null);
+  assert.deepEqual(s.players.p1.zones.revealed, []);
+  assert.deepEqual(s.players.p1.zones.mainDeck.slice(-4), [handCardId, topIds[3], topIds[0], topIds[2]]);
+  assert.ok(s.players.p1.zones.continue.includes(stockedId));
+  assert.ok(s.log.some((event) => event.type === 'CARDS_REVEALED' && event.cardIds.join(',') === 'CS1-339,CS1-319,CS1-316,CS1-281'));
+  assertStateInvariants(s, cards);
+});
+
+test('Stocked Memories can decline an Ability pickup when the reveal has no Ability', () => {
+  let s = start(game());
+  const stockedId = moveCardToHand(s, 'p1', 'CS1-285');
+  const topIds = ['CS1-004', 'CS1-014', 'CS1-024', 'CS1-023'].map((id) => moveCardToTop(s, 'p1', id));
+  const activation = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === stockedId);
+  s = dispatch(s, { ...activation, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.deepEqual(s.resolutionChoice.options, []);
+  const decline = getLegalActions(s, 'p1', cards).find((action) => action.decline);
+  assert.ok(decline);
+  s = dispatch(s, { ...decline, playerId: 'p1' }, cards);
+  const handId = s.players.p1.zones.hand[0];
+  const bottomHand = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'BOTTOM_HAND' && action.instanceId === handId);
+  assert.ok(bottomHand);
+  s = dispatch(s, { ...bottomHand, playerId: 'p1' }, cards);
+  while (s.resolutionChoice?.stage === 'BOTTOM_REVEALED') {
+    const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.stage === 'BOTTOM_REVEALED');
+    s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  }
+  assert.equal(s.resolutionChoice, null);
+  assert.deepEqual(s.players.p1.zones.mainDeck.slice(-5), [handId, ...[...topIds].reverse()]);
   assertStateInvariants(s, cards);
 });
 
