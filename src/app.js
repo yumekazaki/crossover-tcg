@@ -181,7 +181,7 @@ function renderActions(actions, actorId, container) {
     }
     if (action.type === 'RESOLVE_CHOICE') {
       const label = action.choiceKind === 'DECK_REVEAL'
-        ? action.decline ? action.effectKind === 'union-cross' ? 'Skip Character placement' : 'Skip adding an Ability' : action.stage === 'ADD_ABILITY' ? `Add ${cardName(action.instanceId)} to hand` : action.stage === 'ADD_PARTY' ? `Add ${cardName(action.instanceId)} to Party ${action.partyIndex + 1}` : action.stage === 'BOTTOM_HAND' ? `Put ${cardName(action.instanceId)} from hand on deck bottom` : `Put ${cardName(action.instanceId)} on deck bottom next`
+        ? action.decline ? ['union-cross', 'dorm-study-session'].includes(action.effectKind) ? 'Skip Character placement' : 'Skip adding an Ability' : action.stage === 'ADD_ABILITY' ? `Add ${cardName(action.instanceId)} to hand` : action.stage === 'ADD_PARTY' ? `Add ${cardName(action.instanceId)} to Party ${action.partyIndex + 1}` : action.stage === 'BOTTOM_HAND' ? `Put ${cardName(action.instanceId)} from hand on deck bottom` : `Put ${cardName(action.instanceId)} on deck bottom next`
         : `Discard ${cardName(action.instanceId)} to Continue?`;
       container.append(actionButton(label, () => safeDispatch({ ...action, playerId: actorId }), action.decline ? 'pass' : ''));
       continue;
@@ -206,6 +206,7 @@ function renderActions(actions, actorId, container) {
       if (action.abilityKind === 'armiger-preparation') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 1 Light + 1 Darkness`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.abilityKind === 'stocked-memories') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal the top four cards`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.abilityKind === 'union-cross') { container.append(actionButton(`Activate ${cardName(action.instanceId)} · discard ${cardName(action.activationCostInstanceId)} · reveal top five`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+      if (action.abilityKind === 'dorm-study-session') { container.append(actionButton(`Activate ${cardName(action.instanceId)}${action.activationCostInstanceId ? ` · discard ${cardName(action.activationCostInstanceId)}` : ''} · reveal top five`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.bladeInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · reveal ${cardName(action.bladeInstanceId)}, discard ${cardName(action.activationCostInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       if (action.activationCostInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · put ${cardName(action.activationCostInstanceId)} on deck bottom`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;

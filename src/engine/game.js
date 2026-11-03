@@ -317,7 +317,8 @@ function beginDeckRevealChoice(state, select, program, cardIndex) {
     const card = cardIndex.get(state.instances[id].cardId);
     return card?.type === program.addType
       && (!program.excludeTransformations || !card.transformation)
-      && (!program.addSubtype || (card.subtypes ?? []).includes(program.addSubtype));
+      && (!program.addSubtype || (card.subtypes ?? []).includes(program.addSubtype))
+      && (!program.addAnySubtype || program.addAnySubtype.some((subtype) => (card.subtypes ?? []).includes(subtype)));
   });
   const addStage = program.addTo === 'party' ? 'ADD_PARTY' : 'ADD_ABILITY';
   state.resolutionChoice = {
@@ -326,6 +327,7 @@ function beginDeckRevealChoice(state, select, program, cardIndex) {
     options, canDecline: true, prompt: 'Choose an Ability among the revealed cards to add to hand, or skip that optional instruction.'
   };
   if (program.addTo === 'party') state.resolutionChoice.prompt = 'Choose a revealed untransformed Sword Wielder to Add to an empty Party Zone, or skip that optional instruction.';
+  if (program.kind === 'dorm-study-session') state.resolutionChoice.prompt = 'Choose a revealed untransformed Support or Healer to Add to an empty Party Zone, or skip that optional instruction.';
   addLog(state, { type: 'CARDS_REVEALED', playerId: player.id, sourceCardId: select.cardId, instanceIds: revealedInstanceIds, cardIds: revealedInstanceIds.map((id) => state.instances[id].cardId) });
 }
 
@@ -533,7 +535,7 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
         addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: card.id, resource: 'darkness', amount: program.gain.darkness });
         addLog(state, { type: 'EQUIPMENT_ABILITY_SUPPRESSION_ARMED', playerId: player.id, sourceCardId: card.id, untilNextTurn: true });
       }
-      if (instance && ['stocked-memories', 'union-cross'].includes(program?.kind)) beginDeckRevealChoice(state, select, program, cardIndex);
+      if (instance && ['stocked-memories', 'union-cross', 'dorm-study-session'].includes(program?.kind)) beginDeckRevealChoice(state, select, program, cardIndex);
       if (instance && program?.kind === 'blade-awakening') {
         const player = state.players[select.playerId];
         const blade = state.instances[select.bladeInstanceId];
@@ -817,13 +819,15 @@ export function dispatch(stateInput, action, cards) {
           const eligible = added?.zone === 'revealed' && player.zones.revealed.includes(added.instanceId)
             && added.ownerId === player.id && addedCard?.type === program.addType
             && (!program.excludeTransformations || !addedCard.transformation)
-            && (!program.addSubtype || (addedCard.subtypes ?? []).includes(program.addSubtype));
+            && (!program.addSubtype || (addedCard.subtypes ?? []).includes(program.addSubtype))
+            && (!program.addAnySubtype || program.addAnySubtype.some((subtype) => (addedCard.subtypes ?? []).includes(subtype)));
           if (!eligible) fail('ILLEGAL_RESOLUTION_CHOICE', 'The selected Character no longer meets the printed deck-placement requirements.');
           player.zones.revealed = player.zones.revealed.filter((id) => id !== added.instanceId);
           choice.remainingRevealedIds = choice.remainingRevealedIds.filter((id) => id !== added.instanceId);
           added.zone = 'party'; added.controllerId = player.id;
           added.battlefield = { currentHp: addedCard.statistics.hp, maxHp: addedCard.statistics.hp, position: `party-${action.partyIndex}` };
           if (program.suppressCharacterSpecials) added.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+          if (program.preventAttacks) added.cannotAttackUntilTurn = state.turnNumber + 2;
           player.party[action.partyIndex] = added.instanceId;
           addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: added.instanceId, cardId: added.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: added.characterSpecialsSuppressedUntilTurn ?? null });
         }
@@ -1077,6 +1081,20 @@ export function dispatch(stateInput, action, cards) {
       state.instances[costId].zone = 'continue';
       player.zones.continue.push(costId);
       addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'discard-hand-card', instanceId: costId });
+    } else if (program.kind === 'dorm-study-session') {
+      if (hasControlledSubtype(state, player.id, program.conditionalActivationCost.ifControlledSubtype, cardIndex)) {
+        const costId = action.activationCostInstanceId;
+        if (!costId || costId === instance.instanceId || !player.zones.hand.includes(costId)
+          || cardIndex.get(state.instances[costId]?.cardId)?.type !== program.conditionalActivationCost.handCardType) {
+          fail('ACTIVATION_COST_REQUIRED', 'Because you control a Persona User, discard a Character card from your hand as Dorm Study Session’s activation cost.');
+        }
+        player.zones.hand = player.zones.hand.filter((id) => id !== costId);
+        state.instances[costId].zone = 'continue';
+        player.zones.continue.push(costId);
+        addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'discard-character', instanceId: costId });
+      } else if (action.activationCostInstanceId) {
+        fail('ILLEGAL_ACTIVATION_COST', 'Dorm Study Session has no discard cost unless you control a Persona User.');
+      }
     } else if (program.kind === 'blade-awakening') {
       const blade = state.instances[action.bladeInstanceId];
       const bladeCard = blade && cardIndex.get(blade.cardId);
@@ -1118,13 +1136,14 @@ export function dispatch(stateInput, action, cards) {
     if (state.turnNumber === 1 && state.activePlayerId === state.playerOrder[0]) fail('FIRST_TURN_ATTACK', 'The first player cannot declare attacks during their first turn.');
     const attacker = state.instances[action.attackerInstanceId], target = state.instances[action.targetInstanceId];
     if (!attacker?.battlefield || attacker.controllerId !== player.id || !target?.battlefield || target.controllerId === player.id) fail('ILLEGAL_ATTACK', 'Choose your Character as attacker and an opposing Character as target.');
+    if (attacker.cannotAttackUntilTurn != null && state.turnNumber < attacker.cannotAttackUntilTurn) fail('ATTACK_SUPPRESSED', 'This Character cannot attack until its restriction expires.');
     if (attacker.usage.attackedThisTurn) fail('ATTACK_USED', 'This Character has already attacked this turn.');
     if (attacker.instanceId === player.center && player.turn.freeMainAttackUsed) fail('ATTACK_ALLOWANCE_USED', 'Your Main Character’s free attack allowance was already used.');
     if (attacker.instanceId !== player.center && player.turn.freePartyAttackUsed) fail('ATTACK_ALLOWANCE_USED', 'Your Party Member free attack allowance was already used.');
     const extra = action.chainInstanceIds ?? [];
     if (extra.includes(attacker.instanceId) || new Set(extra).size !== extra.length) fail('INVALID_CHAIN', 'Chain participants must be distinct.');
     const extras = extra.map((id) => state.instances[id]);
-    if (extras.some((x) => !x?.battlefield || x.controllerId !== player.id || x.usage.attackedThisTurn)) fail('INVALID_CHAIN', 'Each extra attacker must be an unused allied Character.');
+    if (extras.some((x) => !x?.battlefield || x.controllerId !== player.id || x.usage.attackedThisTurn || (x.cannotAttackUntilTurn != null && state.turnNumber < x.cannotAttackUntilTurn))) fail('INVALID_CHAIN', 'Each extra attacker must be an unused allied Character.');
     const extraCost = 2 * extras.length;
     if (player.resources.momentum < extraCost) fail('INSUFFICIENT_RESOURCE', 'Pay 2 Momentum for each additional attacker before responses.');
     player.resources.momentum -= extraCost;
@@ -1251,6 +1270,12 @@ export function getLegalActions(state, playerId, cards) {
           if (controlsDifferentNamedSubtypes(state, playerId, 'Keyblade Wielder', 'Keyblade Wielder', cardIndex)) {
             for (const activationCostInstanceId of player.zones.hand) if (activationCostInstanceId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, activationCostInstanceId });
           }
+        } else if (program.kind === 'dorm-study-session') {
+          if (hasControlledSubtype(state, playerId, program.conditionalActivationCost.ifControlledSubtype, cardIndex)) {
+            for (const activationCostInstanceId of player.zones.hand) {
+              if (activationCostInstanceId !== id && cardIndex.get(state.instances[activationCostInstanceId]?.cardId)?.type === 'Character') actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, activationCostInstanceId });
+            }
+          } else actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'stocked-memories') {
           actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'blade-awakening') {
@@ -1280,10 +1305,10 @@ export function getLegalActions(state, playerId, cards) {
   if (state.phase === 'battle' && !(state.turnNumber === 1 && state.activePlayerId === state.playerOrder[0])) {
     const enemies = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => [state.players[id].center, ...state.players[id].party].filter(Boolean));
     const attackers = [];
-    if (!player.turn.freeMainAttackUsed && !state.instances[player.center].usage.attackedThisTurn) attackers.push(player.center);
-    if (!player.turn.freePartyAttackUsed) attackers.push(...player.party.filter((id) => id && !state.instances[id].usage.attackedThisTurn));
+    if (!player.turn.freeMainAttackUsed && !state.instances[player.center].usage.attackedThisTurn && !(state.instances[player.center].cannotAttackUntilTurn != null && state.turnNumber < state.instances[player.center].cannotAttackUntilTurn)) attackers.push(player.center);
+    if (!player.turn.freePartyAttackUsed) attackers.push(...player.party.filter((id) => id && !state.instances[id].usage.attackedThisTurn && !(state.instances[id].cannotAttackUntilTurn != null && state.turnNumber < state.instances[id].cannotAttackUntilTurn)));
     for (const attackerInstanceId of attackers) for (const targetInstanceId of enemies) {
-      actions.push({ type: 'DECLARE_ATTACK', attackerInstanceId, targetInstanceId, availableChainIds: [player.center, ...player.party].filter((id) => id && id !== attackerInstanceId && !state.instances[id].usage.attackedThisTurn && player.resources.momentum >= 2) });
+      actions.push({ type: 'DECLARE_ATTACK', attackerInstanceId, targetInstanceId, availableChainIds: [player.center, ...player.party].filter((id) => id && id !== attackerInstanceId && !state.instances[id].usage.attackedThisTurn && !(state.instances[id].cannotAttackUntilTurn != null && state.turnNumber < state.instances[id].cannotAttackUntilTurn) && player.resources.momentum >= 2) });
     }
   }
   return actions;

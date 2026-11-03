@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -508,6 +508,52 @@ test('Union Cross pays a hand card, deploys a revealed Sword Wielder outside sta
   assert.equal(s.turnNumber, 3);
   assert.equal(s.instances[addedId].characterSpecialsSuppressedUntilTurn, undefined);
   assertStateInvariants(s, cards);
+});
+
+test('Dorm Study Session applies its conditional Character cost and deploys only an eligible Support or Healer with Special and attack suppression', () => {
+  let s = start(game('CS1-001'));
+  const dormId = moveCardToHand(s, 'p1', 'CS1-320');
+  const heldCharacter = moveCardToHand(s, 'p1', 'CS1-002');
+  const noCostAction = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === dormId);
+  assert.ok(noCostAction, 'without a Persona User, no discard cost is required');
+  assert.equal(noCostAction.activationCostInstanceId, undefined);
+  assert.throws(() => dispatch(s, { ...noCostAction, playerId: 'p1', activationCostInstanceId: heldCharacter }, cards), (error) => error.code === 'ILLEGAL_ACTIVATION_COST');
+  assert.ok(s.players.p1.zones.hand.includes(heldCharacter), 'illegal conditional cost is not paid');
+
+  const topIds = ['CS1-003', 'CS1-014', 'CS1-004', 'CS1-012', 'CS1-035'].map((id) => moveCardToTop(s, 'p1', id));
+  s = dispatch(s, { ...noCostAction, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.resolutionChoice.effectKind, 'dorm-study-session');
+  const eligibleNames = s.resolutionChoice.options.map((id) => cards.find((card) => card.id === s.instances[id].cardId).name);
+  assert.ok(eligibleNames.includes('Kairi'));
+  assert.ok(eligibleNames.includes('Namine'));
+  assert.ok(eligibleNames.includes('Donald Duck'));
+  assert.ok(!eligibleNames.includes('Roxas'));
+  const selected = topIds[0];
+  const add = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'ADD_PARTY' && action.instanceId === selected);
+  assert.ok(add);
+  s = dispatch(s, { ...add, playerId: 'p1' }, cards);
+  assert.equal(s.instances[selected].characterSpecialsSuppressedUntilTurn, s.turnNumber + 2);
+  assert.equal(s.instances[selected].cannotAttackUntilTurn, s.turnNumber + 2);
+  while (s.resolutionChoice?.stage === 'BOTTOM_REVEALED') {
+    const bottom = getLegalActions(s, 'p1', cards).find((action) => action.stage === 'BOTTOM_REVEALED');
+    s = dispatch(s, { ...bottom, playerId: 'p1' }, cards);
+  }
+  s.phase = 'battle'; s.turnNumber = 2; s.activePlayerId = 'p1'; s.priorityPlayerId = 'p1';
+  assert.ok(!getLegalActions(s, 'p1', cards).some((action) => action.type === 'DECLARE_ATTACK' && action.attackerInstanceId === selected));
+  assert.throws(() => dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p1', attackerInstanceId: selected, targetInstanceId: s.players.p2.center }, cards), (error) => error.code === 'ATTACK_SUPPRESSED');
+  s.turnNumber = 3;
+  assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'DECLARE_ATTACK' && action.attackerInstanceId === selected));
+
+  let personaState = start(game('CS1-060'));
+  const personaDormId = moveCardToHand(personaState, 'p1', 'CS1-320');
+  const characterCost = moveCardToHand(personaState, 'p1', 'CS1-002');
+  const personaAction = getLegalActions(personaState, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === personaDormId && action.activationCostInstanceId === characterCost);
+  assert.ok(personaAction, 'a controlled Persona User makes a Character discard mandatory');
+  personaState = dispatch(personaState, { ...personaAction, playerId: 'p1' }, cards);
+  assert.ok(personaState.players.p1.zones.continue.includes(characterCost));
+  assert.ok(!personaState.players.p1.zones.hand.includes(characterCost));
+  assertStateInvariants(personaState, cards);
 });
 
 test('Character without a registered effect program is blocked explicitly', () => {

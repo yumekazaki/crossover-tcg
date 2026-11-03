@@ -35,6 +35,12 @@ const programs = {
     excludeTransformations: true, addTo: 'party', optionalAdd: true, suppressCharacterSpecials: true,
     remainderToDeckBottom: true, perNamePerTurn: true
   },
+  'CS1-320': {
+    kind: 'dorm-study-session', timing: 'main', conditionalActivationCost: { ifControlledSubtype: 'Persona User', handCardType: 'Character', destination: 'continue' },
+    revealCount: 5, addType: 'Character', addAnySubtype: ['Support', 'Healer'], excludeTransformations: true,
+    addTo: 'party', optionalAdd: true, suppressCharacterSpecials: true, preventAttacks: true,
+    remainderToDeckBottom: true, perNamePerTurn: true
+  },
   'CS1-394': {
     kind: 'curaga-response', timing: 'opponent-attack-response', targetCount: 2,
     requires: ['Healer'], amount: 2500, opponentSpeedReward: { resource: 'momentum', amount: 1 }, perNamePerTurn: true
