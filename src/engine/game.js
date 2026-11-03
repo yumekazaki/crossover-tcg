@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 31955)
-Total output lines: 1697
-
 import { getEffectProgram, getEquipmentProgram, getSpecialProgram, getTriggerProgram } from './effects.js';
 import { supportedTransformationIds, transformationRequirementMet } from './transformations.js';
 
@@ -656,7 +653,630 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
           returnAttachedEquipment(state, target.instanceId);
           player.party[partyIndex] = null;
           target.zone = 'retired'; target.battlefield = null; target.attachedTo = null;
-          const returnedId = `${player.id}-C${String(state.nextInstanc…11955 tokens truncated…gth + 1}`, kind: 'SWITCH_CENTER', playerId: player.id, partyInstanceId: incoming.instanceId });
+          const returnedId = `${player.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+          const returned = createInstance({ id: returnedId, cardId: target.cardId, ownerId: target.ownerId, physicalCopyId: target.physicalCopyId, zone: 'hand', usage: target.usage });
+          state.instances[returnedId] = returned;
+          player.zones.hand.push(returnedId);
+          addLog(state, { type: 'CHARACTER_RETURNED_TO_HAND', playerId: player.id, sourceCardId: sourceCard.id, instanceId: returnedId, physicalCopyId: target.physicalCopyId, clearedDamage: true, equipmentRefund: false });
+          const requiredSubtypes = targetCard.combat_subtypes ?? [];
+          const candidates = player.zones.hand.filter((id) => {
+            const candidate = cardIndex.get(state.instances[id]?.cardId);
+            return candidate?.type === 'Character' && !candidate.transformation && (candidate.combat_subtypes ?? []).some((tag) => requiredSubtypes.includes(tag));
+          });
+          if (candidates.length) {
+            state.resolutionChoice = { id: `RC${state.log.length + 1}`, kind: 'ASHLEY_REPLACEMENT', playerId: player.id, sourceCardId: sourceCard.id, sourceInstanceId: source.instanceId,
+              returnedInstanceId: returnedId, physicalCopyId: target.physicalCopyId, requiredSubtypes, partyIndex, options: candidates, canDecline: true,
+              prompt: 'You may reveal a Character from your hand with a universal combat subtype matching the returned Party Member and Add it to that empty Party Zone.' };
+            state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), originalSelectCount };
+            state.priorityPlayerId = player.id;
+            return;
+          }
+          addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, returnedInstanceId: returnedId, replacementAdded: false });
+        } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId, reason: 'The target is no longer an eligible damaged Party Member.' });
+      } else if (source?.cardId === select.cardId && program?.kind === 'grace-intel') {
+        beginDeckRevealChoice(state, select, program, cardIndex);
+        state.resolutionChoice.sourceInstanceId = select.instanceId;
+        state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), originalSelectCount };
+        state.priorityPlayerId = select.playerId;
+        addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVING', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId });
+        return;
+      } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.instanceId, sourceInstanceId: select.instanceId, cardId: select.cardId });
+    } else {
+      addLog(state, { type: 'UNSUPPORTED_SELECT_SKIPPED', selectId: select.id, reason: 'No registered effect program.' });
+    }
+    if (state.status === 'finished') break;
+  }
+  state.pendingMenuResolution = null;
+  state.priorityPlayerId = state.activePlayerId;
+  addLog(state, { type: 'MENU_RESOLVED', menuId, selectCount: originalSelectCount });
+  for (const select of selections) {
+    const program = select.kind === 'CARD_EFFECT' && getEffectProgram(select.cardId);
+    if (program?.kind === 'curaga-response' && select.opponentSpeedActivated) {
+      state.players[select.playerId].resources.momentum += program.opponentSpeedReward.amount;
+      addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: select.cardId, resource: 'momentum', amount: program.opponentSpeedReward.amount, afterMenuId: menuId });
+    }
+  }
+  openNextTriggerMenu(state);
+}
+
+function hasControlledSubtype(state, playerId, subtype, cardIndex) {
+  return [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean)
+    .some((id) => (cardIndex.get(state.instances[id]?.cardId)?.subtypes ?? []).includes(subtype));
+}
+
+function controlsDifferentNamedSubtypes(state, playerId, firstTag, secondTag, cardIndex) {
+  const controlled = [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean)
+    .map((id) => state.instances[id]).filter((x) => x?.battlefield);
+  return controlled.some((first) => (cardIndex.get(first.cardId)?.subtypes ?? []).includes(firstTag)
+    && controlled.some((second) => second.instanceId !== first.instanceId
+      && cardIndex.get(second.cardId)?.name !== cardIndex.get(first.cardId)?.name
+      && (cardIndex.get(second.cardId)?.subtypes ?? []).includes(secondTag)));
+}
+
+function armigerRequirementMet(state, playerId, cardIndex, minimum = 3) {
+  return [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean).some((hostId) => {
+    const host = state.instances[hostId];
+    if (!host?.battlefield || !(cardIndex.get(host.cardId)?.subtypes ?? []).includes('Sword Wielder')) return false;
+    return Object.values(state.instances).filter((gear) => gear.zone === 'attached' && gear.attachedTo === hostId && gear.controllerId === playerId).length >= minimum;
+  });
+}
+
+function passiveEquipmentAttackBonus(state, hostId, cardIndex) {
+  let bonus = 0;
+  for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === hostId)) {
+    if ((gear.abilitiesSuppressedUntilTurn ?? 0) > state.turnNumber) continue;
+    const program = getEquipmentProgram(gear.cardId);
+    const host = state.instances[hostId];
+    if (program?.passiveAttackBonus && (!program.requiresDamage || host.battlefield.currentHp < host.battlefield.maxHp)) bonus += program.passiveAttackBonus;
+  }
+  return bonus;
+}
+
+function resolveDamageTransaction(state, cardIndex, assignments, { origin, sourcePlayerId = null, sourceCardId = null }) {
+  const amounts = new Map();
+  for (const assignment of assignments) {
+    const target = state.instances[assignment.targetId];
+    if (!target?.battlefield || !Number.isFinite(assignment.amount)) continue;
+    const amount = Math.max(0, Math.floor(assignment.amount));
+    amounts.set(target.instanceId, (amounts.get(target.instanceId) ?? 0) + amount);
+  }
+  const affected = [...amounts].map(([targetId, amount]) => ({ target: state.instances[targetId], amount }));
+  for (const { target, amount } of affected) {
+    target.battlefield.currentHp -= amount;
+    addLog(state, { type: origin === 'combat' ? 'COMBAT_DAMAGE' : 'EFFECT_DAMAGE', sourcePlayerId, sourceCardId, targetId: target.instanceId, amount, remainingHp: target.battlefield.currentHp });
+  }
+
+  const defeated = affected.map(({ target }) => target).filter((target) => target.battlefield.currentHp <= 0);
+  const defeatRecords = defeated.map((victim) => {
+    const owner = state.players[victim.controllerId];
+    return { victim, owner, isMain: owner.center === victim.instanceId, lastKnown: snapshotCharacter(state, victim, cardIndex) };
+  });
+  const lastKnownCharacters = state.playerOrder.flatMap((playerId) => {
+    const owner = state.players[playerId];
+    return [owner.center, ...owner.party].filter(Boolean).map((id) => snapshotCharacter(state, state.instances[id], cardIndex));
+  });
+
+  if (origin === 'combat' && defeatRecords.length) {
+    const lifeLoss = new Map();
+    let momentumGain = 0;
+    for (const { owner, isMain } of defeatRecords) {
+      const amount = isMain ? 2 : 1;
+      lifeLoss.set(owner.id, (lifeLoss.get(owner.id) ?? 0) + amount);
+      momentumGain += amount;
+    }
+    for (const [ownerId, amount] of lifeLoss) state.players[ownerId].life = Math.max(0, state.players[ownerId].life - amount);
+    if (sourcePlayerId) state.players[sourcePlayerId].resources.momentum += momentumGain;
+  }
+
+  for (const { victim, owner, isMain } of defeatRecords) {
+    returnAttachedEquipment(state, victim.instanceId);
+    if (victim.transformState) {
+      const underlay = state.instances[victim.transformState.underlayId];
+      if (!underlay || underlay.zone !== 'underlay') fail('TRANSFORMATION_UNDERLAY_MISSING', 'A transformed Character must retain its exact base underlay.');
+      if (isMain) {
+        const reserve = state.instances[victim.transformState.reservedBaseId];
+        if (!reserve || reserve.zone !== 'baseReserve' || reserve.cardId !== underlay.cardId) fail('TRANSFORMATION_RESERVE_MISSING', 'A transformed Main must have its reserved exact base copy.');
+        owner.zones.baseReserve = owner.zones.baseReserve.filter((id) => id !== reserve.instanceId);
+        const restoredId = owner.id + '-C' + String(state.nextInstanceNumber++).padStart(4, '0');
+        const restored = createInstance({ id: restoredId, physicalCopyId: reserve.physicalCopyId, cardId: reserve.cardId, ownerId: reserve.ownerId, zone: 'center', usage: victim.usage });
+        restored.battlefield = { currentHp: maxHp(restored, cardIndex, true), maxHp: maxHp(restored, cardIndex, true), position: 'center' };
+        state.instances[restoredId] = restored;
+        reserve.zone = 'retired'; reserve.reservedFrom = null;
+        owner.center = restoredId;
+        victim.zone = 'continue'; victim.battlefield = null; victim.transformState = null;
+        owner.zones.continue.push(victim.instanceId);
+        underlay.zone = 'continue'; underlay.underlayFor = null; owner.zones.continue.push(underlay.instanceId);
+        addLog(state, { type: 'TRANSFORMED_MAIN_RESTORED', defeatedFormId: victim.instanceId, baseUnderlayId: underlay.instanceId, instanceId: restoredId, physicalCopyId: restored.physicalCopyId });
+      } else {
+        owner.party = owner.party.map((id) => id === victim.instanceId ? null : id);
+        victim.zone = 'continue'; victim.battlefield = null; victim.transformState = null;
+        underlay.zone = 'continue'; underlay.underlayFor = null;
+        owner.zones.continue.push(victim.instanceId, underlay.instanceId);
+        addLog(state, { type: 'TRANSFORMED_PARTY_DEFEATED', formId: victim.instanceId, baseUnderlayId: underlay.instanceId });
+      }
+    } else if (isMain) {
+      const oldId = victim.instanceId;
+      const replacementId = owner.id + '-C' + String(state.nextInstanceNumber++).padStart(4, '0');
+      const replacement = createInstance({ id: replacementId, physicalCopyId: victim.physicalCopyId, cardId: victim.cardId, ownerId: victim.ownerId, zone: 'center', usage: victim.usage });
+      replacement.battlefield = { currentHp: maxHp(replacement, cardIndex, true), maxHp: maxHp(replacement, cardIndex, true), position: 'center' };
+      state.instances[replacementId] = replacement;
+      victim.zone = 'retired'; victim.battlefield = null;
+      owner.center = replacementId;
+      addLog(state, { type: 'MAIN_REVIVED', oldInstanceId: oldId, instanceId: replacementId, physicalCopyId: replacement.physicalCopyId });
+    } else {
+      owner.party = owner.party.map((id) => id === victim.instanceId ? null : id);
+      victim.zone = 'continue'; victim.battlefield = null;
+      owner.zones.continue.push(victim.instanceId);
+    }
+    addLog(state, { type: origin === 'combat' ? 'BATTLE_DEFEAT' : 'EFFECT_DEFEAT', victimId: victim.instanceId, playerId: owner.id, mainCharacter: isMain, sourceCardId });
+  }
+  if (defeatRecords.length) {
+    const event = {
+      id: 'E' + String(state.nextEventNumber++).padStart(4, '0'), type: 'character-defeated', turn: state.turnNumber, origin,
+      defeated: defeatRecords.map(({ owner, isMain, lastKnown }) => ({ ...lastKnown, controllerId: owner.id, wasMain: isMain }))
+    };
+    collectEventTriggers(state, event, lastKnownCharacters, cardIndex);
+  }
+  const down = state.playerOrder.filter((id) => state.players[id].life <= 0);
+  if (down.length) { state.status = 'finished'; state.winnerId = down.length === 2 ? null : state.playerOrder.find((id) => !down.includes(id)); }
+  return defeatRecords.map(({ victim }) => victim.instanceId);
+}
+
+function resolveCombat(state, cardIndex) {
+  const combat = state.combat;
+  if (!combat) return;
+  const target = state.instances[combat.targetId];
+  const initiator = state.players[combat.initiatorId];
+  if (!target?.battlefield || target.controllerId === combat.initiatorId) {
+    addLog(state, { type: 'COMBAT_FAILED', targetId: combat.targetId });
+    state.combat = null;
+    return;
+  }
+  const participants = combat.attackerIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId === combat.initiatorId && !x.usage.attackedThisTurn);
+  if (!participants.length) { state.combat = null; return; }
+  const total = participants.reduce((sum, instance) => sum + (cardIndex.get(instance.cardId)?.statistics?.atk ?? 0) + passiveEquipmentAttackBonus(state, instance.instanceId, cardIndex), 0);
+  const recipients = [target, ...combat.guardIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId !== combat.initiatorId)];
+  if (recipients.length === 0) { state.combat = null; return; }
+  const share = Math.floor(total / recipients.length), remainder = total % recipients.length;
+  const damageAssignments = recipients.map((recipient, index) => {
+    let amount = share + (index === 0 ? remainder : 0);
+    for (const gear of attachedEquipment(state, recipient.instanceId)) {
+      const program = getEquipmentProgram(gear.cardId);
+      if (program?.combatDamageReduction) amount = Math.max(0, amount - program.combatDamageReduction);
+    }
+    return { targetId: recipient.instanceId, amount };
+  });
+  participants.forEach((instance) => { instance.usage.attackedThisTurn = true; });
+  const declaredLead = combat.attackerIds[0];
+  if (declaredLead === initiator.center) initiator.turn.freeMainAttackUsed = true;
+  else initiator.turn.freePartyAttackUsed = true;
+  resolveDamageTransaction(state, cardIndex, damageAssignments, { origin: 'combat', sourcePlayerId: initiator.id });
+  state.combat = null;
+}
+
+function attachedEquipment(state, hostId) {
+  return Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === hostId);
+}
+
+function returnAttachedEquipment(state, hostId, specificId = null) {
+  for (const gear of attachedEquipment(state, hostId).filter((x) => !specificId || x.instanceId === specificId)) {
+    gear.zone = 'arsenal'; gear.attachedTo = null; gear.controllerId = gear.ownerId;
+    state.players[gear.ownerId].zones.arsenal.push(gear.instanceId);
+  }
+}
+
+function restorePendingTransformation(state, select) {
+  const player = state.players[select.playerId], form = state.instances[select.formInstanceId];
+  if (form?.zone === 'pending') { form.zone = 'arsenal'; player.zones.arsenal.push(form.instanceId); }
+  if (select.reservedBaseId) {
+    const reserved = state.instances[select.reservedBaseId];
+    if (!reserved || reserved.zone !== 'baseReserve') return;
+    player.zones.baseReserve = player.zones.baseReserve.filter((id) => id !== reserved.instanceId);
+    const origin = reserved.reservedFrom?.zone;
+    reserved.reservedFrom = null;
+    if (origin === 'hand') { reserved.zone = 'hand'; player.zones.hand.push(reserved.instanceId); }
+    else if (origin === 'continue') { reserved.zone = 'continue'; player.zones.continue.push(reserved.instanceId); }
+    else {
+      reserved.zone = 'mainDeck'; player.zones.mainDeck.push(reserved.instanceId);
+      const rng = makeRng((state.randomSeed + state.log.length + reserved.instanceId.length) >>> 0);
+      player.zones.mainDeck = shuffle(player.zones.mainDeck, rng);
+    }
+  }
+}
+
+/** Pure reducer: validates the action, returns a new state, and throws RuleError on illegal actions. */
+export function dispatch(stateInput, action, cards) {
+  const state = clone(stateInput);
+  const cardIndex = indexCards(cards);
+  const player = state.players[action.playerId];
+  if (!player) fail('UNKNOWN_PLAYER', 'Action player is not in this game.');
+
+  // Manual counters are an opt-in local practice aid, not a normal game action.
+  // Any authoritative/competitive game must create state with sandboxMode false.
+  if (action.type === 'PRACTICE_ADJUST_RESOURCE') {
+    if (!state.sandboxMode) fail('SANDBOX_TOOLS_DISABLED', 'Manual resource adjustment is disabled for this match.');
+    if (state.status !== 'active' || !['main', 'battle', 'end'].includes(state.phase)
+      || state.menu || state.pendingMenuResolution || state.resolutionChoice || state.combat || state.pendingTriggers.length) {
+      fail('SANDBOX_RESOURCE_WINDOW', 'Manual resources can only change during a clear Practice phase window.');
+    }
+    if (!['light', 'darkness', 'momentum'].includes(action.resource)) fail('SANDBOX_RESOURCE', 'Choose Light, Darkness, or Momentum.');
+    if (!Number.isInteger(action.delta) || ![-1, 1].includes(action.delta)) fail('SANDBOX_DELTA', 'Practice tools change one resource at a time.');
+    const before = player.resources[action.resource];
+    const after = before + action.delta;
+    if (!Number.isSafeInteger(after) || after < 0) fail('SANDBOX_RESOURCE_RANGE', 'Resources cannot go below zero or exceed the safe integer range.');
+    player.resources[action.resource] = after;
+    addLog(state, { type: 'PRACTICE_RESOURCE_ADJUSTED', playerId: player.id, resource: action.resource, delta: action.delta, before, after });
+    return state;
+  }
+
+  if (state.phase === 'first-player-choice') {
+    if (action.type !== 'CHOOSE_FIRST_PLAYER') fail('SETUP_ONLY', 'The selected chooser must choose who goes first before mulligans.');
+    if (action.playerId !== state.firstPlayerChooserId) fail('CHOOSER_ONLY', 'Only the randomly selected chooser may choose who goes first.');
+    if (!state.playerOrder.includes(action.firstPlayerId)) fail('FIRST_PLAYER', 'Choose one of the registered players to go first.');
+    const secondPlayerId = state.playerOrder.find((id) => id !== action.firstPlayerId);
+    state.playerOrder = [action.firstPlayerId, secondPlayerId];
+    state.activePlayerId = action.firstPlayerId;
+    state.priorityPlayerId = action.firstPlayerId;
+    state.startingMainOrder = [...state.playerOrder];
+    state.startingMainIndex = 0;
+    state.activePlayerId = state.startingMainOrder[0];
+    state.priorityPlayerId = state.activePlayerId;
+    state.phase = 'starting-main-selection';
+    addLog(state, { type: 'FIRST_PLAYER_CHOSEN', chooserId: action.playerId, firstPlayerId: action.firstPlayerId });
+    return state;
+  }
+
+  if (state.phase === 'starting-main-selection') {
+    if (action.type !== 'SELECT_STARTING_MAIN') fail('SETUP_ONLY', 'Both players must select a starting Main before opening hands are dealt.');
+    const expected = state.startingMainOrder[state.startingMainIndex];
+    if (action.playerId !== expected) fail('STARTING_MAIN_ORDER', 'Players select starting Mains in first-player order.');
+    const instance = state.instances[action.instanceId];
+    const card = instance && cardIndex.get(instance.cardId);
+    if (!instance || instance.ownerId !== player.id || instance.zone !== 'mainDeck' || !player.zones.mainDeck.includes(instance.instanceId)
+      || card?.type !== 'Character' || card.transformation) fail('ILLEGAL_STARTER', 'Choose one nontransformed Character physical copy from your registered Main Deck.');
+    player.zones.mainDeck = player.zones.mainDeck.filter((id) => id !== instance.instanceId);
+    instance.zone = 'center';
+    instance.battlefield = { currentHp: maxHp(instance, cardIndex, true), maxHp: maxHp(instance, cardIndex, true), position: 'center' };
+    player.center = instance.instanceId;
+    addLog(state, { type: 'STARTING_MAIN_SELECTED', playerId: player.id, instanceId: instance.instanceId, cardId: instance.cardId });
+    state.startingMainIndex += 1;
+    if (state.startingMainIndex === state.startingMainOrder.length) {
+      const rng = makeRng(state.randomSeed);
+      for (const playerId of state.playerOrder) {
+        const startingPlayer = state.players[playerId];
+        startingPlayer.zones.mainDeck = shuffle(startingPlayer.zones.mainDeck, rng);
+        for (let i = 0; i < 5; i += 1) {
+          const drawnId = startingPlayer.zones.mainDeck.shift();
+          if (!drawnId) fail('STARTING_HAND_UNAVAILABLE', 'A validated Main Deck must provide five opening cards.');
+          state.instances[drawnId].zone = 'hand';
+          startingPlayer.zones.hand.push(drawnId);
+        }
+      }
+      state.mulliganOrder = [...state.playerOrder];
+      state.mulliganIndex = 0;
+      state.activePlayerId = state.playerOrder[0];
+      state.priorityPlayerId = state.activePlayerId;
+      state.phase = 'mulligan';
+      addLog(state, { type: 'OPENING_HANDS_DEALT', playerOrder: [...state.playerOrder], handSize: 5 });
+    } else {
+      state.activePlayerId = state.startingMainOrder[state.startingMainIndex];
+      state.priorityPlayerId = state.activePlayerId;
+    }
+    return state;
+  }
+
+  if (state.phase === 'mulligan') {
+    if (action.type !== 'MULLIGAN') fail('SETUP_ONLY', 'Complete both mulligan choices before taking game actions.');
+    const expected = state.mulliganOrder[state.mulliganIndex];
+    if (action.playerId !== expected) fail('MULLIGAN_ORDER', 'Mulligans resolve in starting-player order.');
+    const returned = action.instanceIds ?? [];
+    if (returned.length > 5 || new Set(returned).size !== returned.length || returned.some((id) => !player.zones.hand.includes(id))) fail('INVALID_MULLIGAN', 'Choose up to five distinct cards from your hand.');
+    const rng = makeRng((state.randomSeed + state.log.length + returned.length) >>> 0);
+    player.zones.hand = player.zones.hand.filter((id) => !returned.includes(id));
+    returned.forEach((id) => { state.instances[id].zone = 'mainDeck'; });
+    player.zones.mainDeck = shuffle([...player.zones.mainDeck, ...returned], rng);
+    for (let i = 0; i < returned.length; i += 1) {
+      if (!player.zones.mainDeck.length) { player.life = 0; state.status = 'finished'; state.winnerId = state.playerOrder.find((id) => id !== player.id); break; }
+      const id = player.zones.mainDeck.shift(); state.instances[id].zone = 'hand'; player.zones.hand.push(id);
+    }
+    addLog(state, { type: 'MULLIGAN', playerId: player.id, count: returned.length });
+    state.mulliganIndex += 1;
+    if (state.mulliganIndex >= 2 && state.status !== 'finished') { state.phase = 'main'; state.priorityPlayerId = state.activePlayerId; state.status = 'active'; }
+    return state;
+  }
+
+  if (state.resolutionChoice) {
+    const choice = state.resolutionChoice;
+    if (action.type !== 'RESOLVE_CHOICE' || action.playerId !== choice.playerId) fail('RESOLUTION_CHOICE_REQUIRED', 'The responsible player must make the pending resolution choice before play can continue.');
+    if (choice.kind === 'ASHLEY_REPLACEMENT') {
+      if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This Character replacement choice is no longer active.');
+      if (action.decline) {
+        if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This replacement cannot be declined.');
+        addLog(state, { type: 'ASHLEY_REPLACEMENT_DECLINED', playerId: player.id, sourceCardId: choice.sourceCardId, returnedInstanceId: choice.returnedInstanceId });
+      } else {
+        const candidate = state.instances[action.instanceId];
+        const card = candidate && cardIndex.get(candidate.cardId);
+        if (!choice.options.includes(action.instanceId) || candidate?.zone !== 'hand' || !player.zones.hand.includes(candidate.instanceId)
+          || card?.type !== 'Character' || card.transformation || !(card.combat_subtypes ?? []).some((tag) => choice.requiredSubtypes.includes(tag))
+          || player.party[choice.partyIndex] !== null) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose a matching untransformed Character from hand and the still-empty Party Zone.');
+        player.zones.hand = player.zones.hand.filter((id) => id !== candidate.instanceId);
+        candidate.zone = 'party'; candidate.controllerId = player.id;
+        candidate.battlefield = { currentHp: card.statistics.hp, maxHp: card.statistics.hp, position: `party-${choice.partyIndex}` };
+        candidate.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+        player.party[choice.partyIndex] = candidate.instanceId;
+        const sharesFranchise = [player.center, ...player.party].filter((id) => id && id !== candidate.instanceId)
+          .some((id) => cardIndex.get(state.instances[id]?.cardId)?.franchise === card.franchise);
+        if (sharesFranchise) player.resources.momentum += 1;
+        addLog(state, { type: 'CHARACTER_REVEALED', playerId: player.id, sourceCardId: choice.sourceCardId, instanceId: candidate.instanceId, cardId: candidate.cardId });
+        addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: candidate.instanceId, cardId: candidate.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: candidate.characterSpecialsSuppressedUntilTurn });
+        if (sharesFranchise) addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: choice.sourceCardId, resource: 'momentum', amount: 1 });
+      }
+      state.resolutionChoice = null;
+      addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: choice.id, sourceInstanceId: choice.sourceInstanceId, cardId: choice.sourceCardId, returnedInstanceId: choice.returnedInstanceId, replacementAdded: !action.decline, momentumGained: !action.decline && [player.center, ...player.party].filter(Boolean).some((id) => id !== action.instanceId && cardIndex.get(state.instances[id]?.cardId)?.franchise === cardIndex.get(state.instances[action.instanceId]?.cardId)?.franchise) });
+      resumePausedMenuResolution(state, cardIndex);
+      return state;
+    }
+    if (choice.kind === 'DECK_REVEAL') {
+      if (action.choiceId !== choice.id) fail('ILLEGAL_RESOLUTION_CHOICE', 'This choice is no longer active.');
+      if (choice.stage === 'GRACE_RESOURCE') {
+        if (!choice.options.includes(action.resourceChoice)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose Light or Darkness.');
+        player.resources[action.resourceChoice] += 1;
+        addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: choice.sourceCardId, resource: action.resourceChoice, amount: 1 });
+        if (beginGraceAllyChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'GRACE_ALLY') {
+        const selected = choice.options.find((option) => option.instanceId === action.instanceId && option.subtype === action.subtype);
+        const target = selected && state.instances[selected.instanceId];
+        const targetCard = target && cardIndex.get(target.cardId);
+        const sourceFranchise = cardIndex.get(choice.sourceCardId)?.franchise;
+        if (!selected || !target?.battlefield || target.controllerId !== player.id || targetCard?.franchise === sourceFranchise || !(targetCard.combat_subtypes ?? []).includes(selected.subtype)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose an allied Character from a different franchise and one of its printed universal subtypes.');
+        player.turn.nextAbilityMomentumDiscount = { subtype: selected.subtype, sourceCardId: choice.sourceCardId, amount: 1 };
+        state.resolutionChoice = null;
+        addLog(state, { type: 'ABILITY_MOMENTUM_DISCOUNT_SET', playerId: player.id, sourceCardId: choice.sourceCardId, characterInstanceId: target.instanceId, subtype: selected.subtype, amount: 1, expiresAtEndOfTurn: true });
+        addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', sourceInstanceId: choice.sourceInstanceId, cardId: choice.sourceCardId, discountSubtype: selected.subtype });
+        resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'ADD_ABILITY') {
+        if (action.decline) {
+          if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This effect choice cannot be declined.');
+        } else {
+          if (!choice.options.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose a revealed Ability or decline the optional add.');
+          const revealed = state.instances[action.instanceId];
+          if (revealed?.zone !== 'revealed' || !player.zones.revealed.includes(revealed.instanceId) || cardIndex.get(revealed.cardId)?.type !== 'Ability') fail('ILLEGAL_RESOLUTION_CHOICE', 'The selected Ability is no longer among the revealed cards.');
+          player.zones.revealed = player.zones.revealed.filter((id) => id !== revealed.instanceId);
+          choice.remainingRevealedIds = choice.remainingRevealedIds.filter((id) => id !== revealed.instanceId);
+          revealed.zone = 'hand';
+          player.zones.hand.push(revealed.instanceId);
+          addLog(state, { type: 'CARD_ADDED_TO_HAND', playerId: player.id, instanceId: revealed.instanceId, cardId: revealed.cardId, sourceCardId: choice.sourceCardId });
+          if (choice.effectKind === 'grace-intel') {
+            const ability = cardIndex.get(revealed.cardId);
+            const requirementTags = [...(ability.requirements?.all ?? []), ...(ability.requirements?.any ?? [])];
+            choice.grantResourceIfAdded = requirementTags.some((tag) => ['Healer', 'Support'].includes(tag));
+          }
+        }
+        if (choice.effectKind === 'stocked-memories' && player.zones.hand.length) {
+          choice.stage = 'BOTTOM_HAND';
+          choice.options = [...player.zones.hand];
+          choice.canDecline = false;
+          choice.prompt = 'Choose one card from your hand to place on the bottom of your Main Deck.';
+        } else if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'ADD_PARTY') {
+        const program = getEffectProgram(choice.sourceCardId);
+        if (action.decline) {
+          if (!choice.canDecline) fail('ILLEGAL_RESOLUTION_CHOICE', 'This Character placement cannot be declined.');
+        } else {
+          if (!choice.options.includes(action.instanceId) || !Number.isInteger(action.partyIndex) || player.party[action.partyIndex] !== null) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose an eligible revealed Character and an empty Party Zone.');
+          const added = state.instances[action.instanceId];
+          const addedCard = added && cardIndex.get(added.cardId);
+          const eligible = added?.zone === 'revealed' && player.zones.revealed.includes(added.instanceId)
+            && added.ownerId === player.id && addedCard?.type === program.addType
+            && (!program.excludeTransformations || !addedCard.transformation)
+            && (!program.addSubtype || (addedCard.subtypes ?? []).includes(program.addSubtype))
+            && (!program.addAnySubtype || program.addAnySubtype.some((subtype) => (addedCard.subtypes ?? []).includes(subtype)));
+          if (!eligible) fail('ILLEGAL_RESOLUTION_CHOICE', 'The selected Character no longer meets the printed deck-placement requirements.');
+          player.zones.revealed = player.zones.revealed.filter((id) => id !== added.instanceId);
+          choice.remainingRevealedIds = choice.remainingRevealedIds.filter((id) => id !== added.instanceId);
+          added.zone = 'party'; added.controllerId = player.id;
+          added.battlefield = { currentHp: addedCard.statistics.hp, maxHp: addedCard.statistics.hp, position: `party-${action.partyIndex}` };
+          if (program.suppressCharacterSpecials) added.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+          if (program.preventAttacks) added.cannotAttackUntilTurn = state.turnNumber + 2;
+          player.party[action.partyIndex] = added.instanceId;
+          addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: added.instanceId, cardId: added.cardId, byCardId: choice.sourceCardId, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: added.characterSpecialsSuppressedUntilTurn ?? null });
+        }
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'BOTTOM_HAND') {
+        if (!choice.options.includes(action.instanceId) || !player.zones.hand.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose a current card from your hand.');
+        player.zones.hand = player.zones.hand.filter((id) => id !== action.instanceId);
+        const bottomed = state.instances[action.instanceId];
+        bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
+        addLog(state, { type: 'CARD_BOTTOMED_FROM_HAND', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      if (choice.stage === 'BOTTOM_REVEALED') {
+        if (!choice.options.includes(action.instanceId) || !player.zones.revealed.includes(action.instanceId) || !choice.remainingRevealedIds.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose one of the remaining revealed cards to place on the Main Deck bottom.');
+        player.zones.revealed = player.zones.revealed.filter((id) => id !== action.instanceId);
+        choice.remainingRevealedIds = choice.remainingRevealedIds.filter((id) => id !== action.instanceId);
+        const bottomed = state.instances[action.instanceId];
+        bottomed.zone = 'mainDeck'; player.zones.mainDeck.push(bottomed.instanceId);
+        addLog(state, { type: 'CARD_BOTTOMED_FROM_REVEAL', playerId: player.id, instanceId: bottomed.instanceId, cardId: bottomed.cardId, sourceCardId: choice.sourceCardId });
+        if (setDeckBottomOrderChoice(state, choice, cardIndex)) resumePausedMenuResolution(state, cardIndex);
+        return state;
+      }
+      fail('ILLEGAL_RESOLUTION_CHOICE', 'Unknown deck-reveal choice step.');
+    }
+    if (choice.kind !== 'DISCARD_ONE' || !choice.options.includes(action.instanceId) || !player.zones.hand.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose one card currently in your hand to discard.');
+    player.zones.hand = player.zones.hand.filter((id) => id !== action.instanceId);
+    state.instances[action.instanceId].zone = 'continue';
+    player.zones.continue.push(action.instanceId);
+    state.resolutionChoice = null;
+    addLog(state, { type: 'CARD_DISCARDED', playerId: player.id, instanceId: action.instanceId, triggerId: choice.triggerId });
+    addLog(state, { type: 'TRIGGER_RESOLVED', triggerId: choice.triggerId, cardId: choice.cardId, controllerId: player.id });
+    resumePausedMenuResolution(state, cardIndex);
+    return state;
+  }
+  if (action.type === 'RESOLVE_CHOICE') fail('NO_RESOLUTION_CHOICE', 'There is no pending resolution choice.');
+
+  if (state.status !== 'active' && action.type !== 'START_GAME') fail('GAME_NOT_ACTIVE', 'The game is not active.');
+  if (state.menu) {
+    if (state.combat?.guardWindow) {
+      if (action.playerId !== state.combat.defenderId) fail('NO_PRIORITY', 'Only the defender may declare guards in the combat declaration window.');
+      if (action.type === 'ASSIGN_GUARDS') {
+        if (state.combat.guardsDeclared) fail('GUARDS_ALREADY_DECLARED', 'All Allied Guards are declared at once before responses begin.');
+        const chosen = action.guardInstanceIds ?? [];
+        if (new Set(chosen).size !== chosen.length) fail('INVALID_GUARDS', 'Choose distinct Party Members.');
+        const legal = chosen.map((id) => state.instances[id]);
+        if (legal.some((instance) => !instance?.battlefield || instance.controllerId !== player.id || instance.battlefield.position === 'center' || instance.instanceId === state.combat.targetId || state.combat.attackerIds.includes(instance.instanceId))) fail('INVALID_GUARDS', 'Allied Guards must be distinct Party Members, excluding the original target and Chain attackers.');
+        const cost = legal.length * 2;
+        if (player.resources.momentum < cost) fail('INSUFFICIENT_RESOURCE', 'Pay 2 Momentum for each Allied Guard before responses.');
+        player.resources.momentum -= cost;
+        state.combat.guardIds = [...chosen];
+        state.combat.guardsDeclared = true;
+        addLog(state, { type: 'ALLIED_GUARDS_DECLARED', playerId: player.id, guardInstanceIds: chosen, cost });
+        return state;
+      }
+      if (action.type === 'BEGIN_COMBAT_RESPONSES') {
+        state.combat.guardsDeclared = true;
+        state.combat.guardWindow = false;
+        state.menu.priorityPlayerId = state.combat.initiatorId;
+        state.menu.consecutivePasses = 0;
+        state.priorityPlayerId = state.combat.initiatorId;
+        addLog(state, { type: 'COMBAT_RESPONSES_BEGIN', playerId: state.combat.initiatorId });
+        return state;
+      }
+      fail('GUARD_WINDOW_ACTION', 'Only Allied Guard declarations or response-window confirmation are legal before responses.');
+    }
+    if (action.playerId !== state.menu.priorityPlayerId) fail('NO_PRIORITY', 'Only the player with priority may act in this Menu.');
+    if (action.type === 'PASS') {
+      state.menu.consecutivePasses += 1;
+      if (state.menu.consecutivePasses >= 2) resolveMenu(state, cardIndex);
+      else state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      state.priorityPlayerId = state.menu?.priorityPlayerId ?? state.activePlayerId;
+      return state;
+    }
+    if (action.type === 'ASSIGN_GUARDS') {
+      fail('GUARD_WINDOW_CLOSED', 'All Allied Guards must be declared before response actions begin.');
+    }
+    if (action.type === 'ACTIVATE_SPEED') {
+      const instance = state.instances[action.instanceId];
+      const card = instance && cardIndex.get(instance.cardId);
+      const program = card && getEffectProgram(card.id);
+      if (!instance || instance.zone !== 'hand' || card?.type !== 'Speed Ability' || !program) fail('ILLEGAL_SPEED', 'This Speed Ability has no registered, tested response program in the current engine slice.');
+      if (player.turn.nameLimits[card.name]) fail('NAME_LIMIT', `${card.name} is limited to one activation per turn.`);
+      const targets = action.targets ?? [];
+      let responseToSelectId = null;
+      if (program.kind === 'heal') {
+        if (program.timing !== 'opponent-attack-response' || !state.combat || state.combat.initiatorId === player.id || state.combat.targetId !== targets[0]) fail('WRONG_TIMING', `${card.name} may be activated only when an opponent attacks its eligible target.`);
+        const target = state.instances[targets[0]];
+        if (!target?.battlefield || target.controllerId !== player.id || target.battlefield.currentHp >= target.battlefield.maxHp / 2) fail('ILLEGAL_TARGET', 'The target must be your attacked Character below half its maximum HP.');
+        if (!(program.requires ?? []).every((tag) => hasControlledSubtype(state, player.id, tag, cardIndex))) fail('REQUIREMENT_FAILED', 'You do not control the required subtype.');
+      } else if (program.kind === 'curaga-response') {
+        const defenders = state.combat && state.combat.initiatorId !== player.id ? [state.combat.targetId, ...state.combat.guardIds] : [];
+        if (program.timing !== 'opponent-attack-response' || targets.length !== 2 || targets[0] === targets[1]) fail('WRONG_TIMING', `${card.name} requires two different allies in the current combat.`);
+        const [healer, other] = targets.map((id) => state.instances[id]);
+        if (!healer?.battlefield || healer.controllerId !== player.id || !defenders.includes(healer.instanceId) || !(cardIndex.get(healer.cardId)?.subtypes ?? []).includes('Healer')
+          || !other?.battlefield || other.controllerId !== player.id || !defenders.includes(other.instanceId)) fail('ILLEGAL_TARGET', 'Choose your Healer and a different allied Character involved in this combat.');
+      } else if (program.kind === 'soul-sever') {
+        const parent = state.menu.selects.find((entry) => {
+          if (entry.kind !== 'CARD_EFFECT' || entry.playerId === player.id || entry.id !== action.responseToSelectId || !entry.targets?.includes(targets[0])) return false;
+          const healingProgram = getEffectProgram(entry.cardId);
+          return healingProgram?.kind === 'heal' || healingProgram?.kind === 'curaga-response';
+        });
+        if (program.timing !== 'opponent-speed-response' || !parent) fail('WRONG_TIMING', `${card.name} can only interrupt an opponent's pending combat healing effect.`);
+        responseToSelectId = parent.id;
+      } else fail('WRONG_TIMING', `${card.name} has no supported response timing.`);
+      const cost = card.cost ?? { momentum: 0, light: 0, darkness: 0 };
+      for (const key of ['momentum', 'light', 'darkness']) if ((player.resources[key] ?? 0) < (cost[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
+      for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= cost[key] ?? 0;
+      player.resources.momentum += 1;
+      player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1);
+      instance.zone = 'pending';
+      player.turn.nameLimits[card.name] = true;
+      for (const pending of state.menu.selects) {
+        if (pending.kind === 'CARD_EFFECT' && pending.cardId === 'CS1-394' && pending.playerId !== player.id) pending.opponentSpeedActivated = true;
+      }
+      state.menu.selects.push({ id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets, ...(responseToSelectId ? { responseToSelectId } : {}) });
+      state.menu.consecutivePasses = 0;
+      state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      state.priorityPlayerId = state.menu.priorityPlayerId;
+      addLog(state, { type: 'SPEED_ABILITY_ACTIVATED', playerId: player.id, cardId: card.id, instanceId: instance.instanceId });
+      return state;
+    }
+    fail('MENU_ACTION_UNSUPPORTED', 'This action is not implemented in the current engine slice.');
+  }
+
+  if (action.type === 'PASS_PRIORITY') {
+    if (action.playerId !== state.priorityPlayerId) fail('NO_PRIORITY', 'Only the player with empty-window priority may pass.');
+    if (state.phasePasses === 0) {
+      state.phasePasses = 1;
+      state.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      addLog(state, { type: 'PHASE_PRIORITY_PASSED', playerId: action.playerId, consecutivePasses: 1 });
+      return state;
+    }
+    addLog(state, { type: 'PHASE_PRIORITY_PASSED', playerId: action.playerId, consecutivePasses: 2 });
+    advancePhase(state, cardIndex);
+    return state;
+  }
+  if (action.playerId !== state.activePlayerId || action.playerId !== state.priorityPlayerId) fail('NOT_ACTIVE_PLAYER', 'Only the active player may act outside a Menu.');
+  if (action.type === 'ADVANCE_PHASE') fail('PHASE_REQUIRES_PASSES', 'Both players must pass on the empty phase window before the phase advances.');
+  if (action.type === 'ADD_TO_PARTY') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Standard deployment is a Main Phase action.');
+    if (player.turn.standardAddUsed) fail('ADD_USED', 'Standard Add to Party was already used this turn.');
+    const instance = state.instances[action.instanceId];
+    const card = instance && cardIndex.get(instance.cardId);
+    const partyIndex = action.partyIndex ?? emptyPartyIndex(player);
+    if (!instance || instance.zone !== 'hand' || instance.controllerId !== player.id || card?.type !== 'Character' || card.transformation) fail('ILLEGAL_ADD', 'Choose a base Character from your hand.');
+    if (partyIndex < 0 || partyIndex >= 6 || player.party[partyIndex] !== null) fail('PARTY_ZONE_FULL', 'Choose an empty Party Zone.');
+    player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1); instance.zone = 'pending';
+    player.turn.standardAddUsed = true;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'ADD_TO_PARTY', playerId: player.id, instanceId: instance.instanceId, partyIndex });
+    return state;
+  }
+  if (action.type === 'ACTIVATE_SPECIAL') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Character Specials with Main timing activate in your Main Phase.');
+    const source = state.instances[action.instanceId], sourceCard = source && cardIndex.get(source.cardId);
+    const program = sourceCard && getSpecialProgram(sourceCard.id);
+    if (!source?.battlefield || source.controllerId !== player.id || sourceCard?.type !== 'Character' || !program || program.timing !== 'main') fail('ILLEGAL_SPECIAL', 'Choose a controlled Character with a registered Main Phase Special.');
+    if ((source.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) fail('SPECIAL_SUPPRESSED', 'This Character’s Specials are suppressed.');
+    if (player.turn.nameLimits[sourceCard.name]) fail('NAME_LIMIT', `${sourceCard.name} is limited to one Special activation per turn.`);
+    const targets = action.targets ?? [];
+    if (program.kind === 'axel-party-blast') {
+      if (targets.length < program.targetCount.min || targets.length > program.targetCount.max || new Set(targets).size !== targets.length
+        || targets.some((id) => { const target = state.instances[id]; return !target?.battlefield || target.controllerId === player.id || !state.players[target.controllerId].party.includes(target.instanceId); })) fail('ILLEGAL_TARGET', 'Choose up to two distinct opposing Party Characters.');
+    } else if (program.kind === 'ashley-rescue') {
+      const target = state.instances[targets[0]];
+      if (targets.length !== 1 || !target?.battlefield || target.instanceId === source.instanceId || target.controllerId !== player.id || !player.party.includes(target.instanceId)
+        || cardIndex.get(target.cardId)?.transformation || target.battlefield.maxHp - target.battlefield.currentHp < program.minimumMissingHp) fail('ILLEGAL_TARGET', 'Choose an allied untransformed Party Member with at least 4000 missing HP.');
+    } else if (program.kind === 'grace-intel') {
+      if (targets.length) fail('ILLEGAL_TARGET', 'Grace’s Special has no Character targets.');
+    } else fail('UNIMPLEMENTED_SPECIAL', 'This Character Special has no registered resolution program.');
+    const costId = action.activationCostInstanceId;
+    if (program.activationCost?.handCardToContinue && (!costId || costId === source.instanceId || !player.zones.hand.includes(costId))) fail('ACTIVATION_COST_REQUIRED', 'Discard one card from your hand as Axel’s activation cost.');
+    if (program.activationCost?.handCardToContinue) {
+      player.zones.hand = player.zones.hand.filter((id) => id !== costId);
+      state.instances[costId].zone = 'continue';
+      player.zones.continue.push(costId);
+      addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: sourceCard.id, cost: 'discard-hand-card', instanceId: costId });
+    }
+    player.turn.nameLimits[sourceCard.name] = true;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CHARACTER_SPECIAL', playerId: player.id, instanceId: source.instanceId, cardId: sourceCard.id, targets });
+    return state;
+  }
+  if (action.type === 'SWITCH_CENTER') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Center switching is a Main Phase action.');
+    if (player.turn.freeCenterSwitchUsed) fail('CENTER_SWITCH_USED', 'Your free Center switch was already used this turn.');
+    const incoming = state.instances[action.partyInstanceId];
+    const outgoing = state.instances[player.center];
+    if (!incoming?.battlefield || incoming.controllerId !== player.id || !player.party.includes(incoming.instanceId)) fail('ILLEGAL_SWITCH_TARGET', 'Choose an untransformed Character from your Party.');
+    if (cardIndex.get(incoming.cardId)?.transformation || cardIndex.get(outgoing.cardId)?.transformation) fail('TRANSFORMED_SWITCH', 'Transformed Characters cannot use the standard Center switch.');
+    player.turn.freeCenterSwitchUsed = true;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'SWITCH_CENTER', playerId: player.id, partyInstanceId: incoming.instanceId });
     return state;
   }
   if (action.type === 'PARTY_SWAP') {
