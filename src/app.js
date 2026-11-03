@@ -1,9 +1,9 @@
-import { loadCards, allCards, validateDeck, getArtwork } from './data/cards.js';
-import { createCardBrowser } from './ui/card-browser.js';
-import { renderBattlefield } from './ui/battlefield.js';
-import { createInitialState, dispatch, getLegalActions, assertStateInvariants } from './engine/game.js';
-import { implementedEffectIds } from './engine/effects.js';
-import { supportedTransformationIds } from './engine/transformations.js';
+import { loadCards, allCards, validateDeck, getArtwork } from './data/cards.js?v=20261103-interactionfix2';
+import { createCardBrowser } from './ui/card-browser.js?v=20261103-interactionfix2';
+import { renderBattlefield } from './ui/battlefield.js?v=20261103-interactionfix2';
+import { createInitialState, dispatch, getLegalActions, assertStateInvariants } from './engine/game.js?v=20261103-interactionfix2';
+import { implementedEffectIds } from './engine/effects.js?v=20261103-interactionfix2';
+import { supportedTransformationIds } from './engine/transformations.js?v=20261103-interactionfix2';
 
 const $ = (id) => document.getElementById(id);
 let cards = [];
