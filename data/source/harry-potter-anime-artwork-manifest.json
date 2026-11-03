@@ -62,5 +62,117 @@
     "creator": "AI-generated for the Crossover TCG project",
     "permission": "Project-generated asset; no third-party source art used",
     "sha256": "d2547dd8005f8b5363b68b31a135699c60fa7b1891c4ac5bdc86394f712f0c3e"
+  },
+  {
+    "card_id": "HPA-009",
+    "card_name": "Hermione Granger, Library Strategist",
+    "file": "public/artwork/HPAN-009.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "56502be3015368ed6664ccad720c509ed09bcf4f25d192055b0a66adb20f8f5f"
+  },
+  {
+    "card_id": "HPA-010",
+    "card_name": "Hermione Granger, First to the Answer",
+    "file": "public/artwork/HPAN-010.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "5358fdb747bdf60ce428aa7d5e839a6ea612ee680176f4cb9b2ad93147fb5c9d"
+  },
+  {
+    "card_id": "HPA-011",
+    "card_name": "Ron Weasley, Loyal Interceptor",
+    "file": "public/artwork/HPAN-011.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "ac578fd3c95335706bfaeb2356874deb732e6fd6edb14282443c7e08c3e2cf04"
+  },
+  {
+    "card_id": "HPA-012",
+    "card_name": "Ron Weasley, Knight's Gambit",
+    "file": "public/artwork/HPAN-012.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "9ac4be3bfc67b318fa6baa5d7cdf49b5d30c1599b2f2b7e2b89ecc11102d871b"
+  },
+  {
+    "card_id": "HPA-013",
+    "card_name": "Hermione & Ron, Study Group",
+    "file": "public/artwork/HPAN-013.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "90aadefcede6bf02c7decd936113472fcd72f14fafd0f23a1d195a21118f03f1"
+  },
+  {
+    "card_id": "HPA-014",
+    "card_name": "Voldemort, Horcrux Anchor",
+    "file": "public/artwork/HPAN-014.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "b8b61b237b59ac487cdbb8eb835788cbaab538c15e618f1bd29c6f26a34f2b19"
+  },
+  {
+    "card_id": "HPA-015",
+    "card_name": "Voldemort, the Dark Lord's Return",
+    "file": "public/artwork/HPAN-015.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "4f2d082b3c60a33243f634160526570f6b2f4abff11bf8c96dc8e54682d19588"
+  },
+  {
+    "card_id": "HPA-016",
+    "card_name": "Albus Dumbledore, Headmaster's Plan",
+    "file": "public/artwork/HPAN-016.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "f0b66983060edd1210e98d210a2a8c0d7119ec369761b48e75a3ec5076370d5f"
+  },
+  {
+    "card_id": "HPA-017",
+    "card_name": "Severus Snape, Double Agent",
+    "file": "public/artwork/HPAN-017.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "a7096c7922344e9743549621e5c7dd2eee3779e42b15583a0d037a2de90853c9"
+  },
+  {
+    "card_id": "HPA-018",
+    "card_name": "Luna Lovegood, Unexpected Clarity",
+    "file": "public/artwork/HPAN-018.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "4f26334e7a6c09f102d637cf06195e2649bc959e467d324e38d42401189d3be5"
+  },
+  {
+    "card_id": "HPA-019",
+    "card_name": "Neville Longbottom, Courage Blossoms",
+    "file": "public/artwork/HPAN-019.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "9b50e1cf7b277b14d8bc1e2470428f9542ff7eaf0d5fc8d76758731a0c3ddb08"
+  },
+  {
+    "card_id": "HPA-020",
+    "card_name": "Ginny Weasley, Fast Counter",
+    "file": "public/artwork/HPAN-020.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "2191e14dc9e1881020f0d26cdf75a9c4b21d11a4e923295a3329e588a343a741"
+  },
+  {
+    "card_id": "HPA-021",
+    "card_name": "Cedric Diggory, Fair Duelist",
+    "file": "public/artwork/HPAN-021.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "bce48c9968ff8df75f89d0b137fe49e2e897a8b61a68b2e50ca88758581f4542"
+  },
+  {
+    "card_id": "HPA-022",
+    "card_name": "Rubeus Hagrid, Keeper of Creatures",
+    "file": "public/artwork/HPAN-022.jpg",
+    "creator": "AI-generated for the Crossover TCG project",
+    "permission": "Project-generated asset; no third-party source art used",
+    "sha256": "64dbee45c00058392aeb83ef25d5193349019e9c7cda188b5ef60897fdb4f1f3"
   }
 ]

@@ -680,9 +680,15 @@
       "reference": "Hermione Granger, Library Strategist"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Hermione Granger, Library Strategist"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Hermione Granger, Library Strategist",
+      "asset_path": "artwork/HPAN-009.jpg",
+      "local_asset_path": "artwork/HPAN-009.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -754,9 +760,15 @@
       "reference": "Hermione Granger, First to the Answer"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Hermione Granger, First to the Answer"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Hermione Granger, First to the Answer",
+      "asset_path": "artwork/HPAN-010.jpg",
+      "local_asset_path": "artwork/HPAN-010.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -826,9 +838,15 @@
       "reference": "Ron Weasley, Loyal Interceptor"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Ron Weasley, Loyal Interceptor"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Ron Weasley, Loyal Interceptor",
+      "asset_path": "artwork/HPAN-011.jpg",
+      "local_asset_path": "artwork/HPAN-011.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -897,9 +915,15 @@
       "reference": "Ron Weasley, Knight's Gambit"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Ron Weasley, Knight's Gambit"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Ron Weasley, Knight's Gambit",
+      "asset_path": "artwork/HPAN-012.jpg",
+      "local_asset_path": "artwork/HPAN-012.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -973,9 +997,15 @@
       "reference": "Hermione & Ron, Study Group"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Hermione & Ron, Study Group"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Hermione & Ron, Study Group",
+      "asset_path": "artwork/HPAN-013.jpg",
+      "local_asset_path": "artwork/HPAN-013.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1046,9 +1076,15 @@
       "reference": "Voldemort, Horcrux Anchor"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Voldemort, Horcrux Anchor"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Voldemort, Horcrux Anchor",
+      "asset_path": "artwork/HPAN-014.jpg",
+      "local_asset_path": "artwork/HPAN-014.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1121,9 +1157,15 @@
       "reference": "Voldemort, the Dark Lord's Return"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Voldemort, the Dark Lord's Return"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Voldemort, the Dark Lord's Return",
+      "asset_path": "artwork/HPAN-015.jpg",
+      "local_asset_path": "artwork/HPAN-015.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1194,9 +1236,15 @@
       "reference": "Albus Dumbledore, Headmaster's Plan"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Albus Dumbledore, Headmaster's Plan"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Albus Dumbledore, Headmaster's Plan",
+      "asset_path": "artwork/HPAN-016.jpg",
+      "local_asset_path": "artwork/HPAN-016.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1266,9 +1314,15 @@
       "reference": "Severus Snape, Double Agent"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Severus Snape, Double Agent"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Severus Snape, Double Agent",
+      "asset_path": "artwork/HPAN-017.jpg",
+      "local_asset_path": "artwork/HPAN-017.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1340,9 +1394,15 @@
       "reference": "Luna Lovegood, Unexpected Clarity"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Luna Lovegood, Unexpected Clarity"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Luna Lovegood, Unexpected Clarity",
+      "asset_path": "artwork/HPAN-018.jpg",
+      "local_asset_path": "artwork/HPAN-018.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1414,9 +1474,15 @@
       "reference": "Neville Longbottom, Courage Blossoms"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Neville Longbottom, Courage Blossoms"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Neville Longbottom, Courage Blossoms",
+      "asset_path": "artwork/HPAN-019.jpg",
+      "local_asset_path": "artwork/HPAN-019.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1489,9 +1555,15 @@
       "reference": "Ginny Weasley, Fast Counter"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Ginny Weasley, Fast Counter"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Ginny Weasley, Fast Counter",
+      "asset_path": "artwork/HPAN-020.jpg",
+      "local_asset_path": "artwork/HPAN-020.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1561,9 +1633,15 @@
       "reference": "Cedric Diggory, Fair Duelist"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Cedric Diggory, Fair Duelist"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Cedric Diggory, Fair Duelist",
+      "asset_path": "artwork/HPAN-021.jpg",
+      "local_asset_path": "artwork/HPAN-021.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,
@@ -1633,9 +1711,15 @@
       "reference": "Rubeus Hagrid, Keeper of Creatures"
     },
     "artwork": {
-      "status": "pending",
-      "description": "Unique artwork pending; no shared image is assigned.",
-      "subject": "Rubeus Hagrid, Keeper of Creatures"
+      "status": "attached",
+      "match_kind": "AI-generated original fan art",
+      "description": "Distinct AI-generated illustration made for this fan-made card set.",
+      "subject": "Rubeus Hagrid, Keeper of Creatures",
+      "asset_path": "artwork/HPAN-022.jpg",
+      "local_asset_path": "artwork/HPAN-022.jpg",
+      "credit": "AI-generated for the Crossover TCG project",
+      "redistribution_permission": "AI-generated for this project",
+      "redistribution_approved": true
     },
     "status": {
       "designed": true,

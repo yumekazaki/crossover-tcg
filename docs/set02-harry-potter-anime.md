@@ -7,7 +7,7 @@ This is a fan-made, anime-style alternate-universe set. It is not an official an
 - 50 unique cards: 22 Characters, 10 Equipment, 8 Abilities, 6 Speed Abilities and 4 Finishers.
 - Harry Potter appears on three individual Character cards. Draconia Malfoy appears on three individual Character cards. Two additional Character cards feature them together.
 - Hermione Granger, Ron Weasley, Voldemort, Dumbledore, Snape, Luna, Neville, Ginny, Cedric and Hagrid each have representation.
-- Eight distinct AI-generated artworks are attached to the Harry, Draconia and duo Character cards. No asset path is shared. Other Set 02 cards show named pending-art placeholders.
+- Twenty-two distinct AI-generated artworks cover every Character card, including Harry, Draconia, their shared cards and the wider cast. No asset path is shared. Set 02 Equipment and action cards show named pending-art placeholders.
 - A validated 40-card sample list, **Scarlet & Emerald Counterspell**, is registered for local practice.
 
 ## Play pattern

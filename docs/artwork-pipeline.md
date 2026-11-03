@@ -2,7 +2,7 @@
 
 ## Live status
 
-Card artwork is live in the library, card detail and local match views. The original set has 159 distinct local images; the Harry Potter (Anime) set adds 8 new AI-generated images for its Harry, Draconia and shared-pair cards. Each path belongs to one card. Other Set 02 art remains pending with named placeholders. Original-set image provenance is recorded in the existing artwork manifest; AI-generated assets have their own manifest.
+Card artwork is live in the library, card detail and local match views. The original set has 159 distinct local images; the Harry Potter (Anime) set adds 22 new AI-generated images covering all Character cards, including Harry, Draconia, their shared cards and the wider cast. Each path belongs to one card. Set 02 Equipment, Abilities, Speed Abilities and Finishers still show named pending-art placeholders. Original-set image provenance is recorded in the existing artwork manifest; AI-generated assets have their own manifest.
 
 ## Display contract
 

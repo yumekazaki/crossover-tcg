@@ -27,6 +27,9 @@ test('imports the original 500 unchanged and the distinct 50-card expansion', ()
   assert(harryPotterAnime.some(card => card.name.includes('Voldemort')));
   assert(harryPotterAnime.filter(card => /Harry Potter|Draconia Malfoy|Harry & Draconia/.test(card.name)).length >= 8);
   assert(harryPotterAnime.every(card => !/Draco Malfoy/i.test(card.name)));
+  const illustratedCharacters = harryPotterAnime.filter(card => card.type === 'Character' && card.artwork.redistribution_approved);
+  assert.equal(illustratedCharacters.length, 22);
+  assert.equal(new Set(harryPotterAnime.filter(card => card.artwork.local_asset_path).map(card => card.artwork.local_asset_path)).size, 22);
 });
 test('mechanical validation status matches focused engine coverage without implying balance or playtesting', () => {
   const coveredIds = ['CS1-005', 'CS1-011', 'CS1-177', 'CS1-178', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
@@ -141,6 +144,8 @@ test('source citations and attached status never imply redistribution approval',
     assert.equal(art.placeholder, false);
     assert.match(art.src, /public[\\/]artwork[\\/]HPAN-/i);
   }
+  const allLocalArtPaths = allCards().map(card => card.artwork.local_asset_path).filter(Boolean);
+  assert.equal(new Set(allLocalArtPaths).size, allLocalArtPaths.length, 'no two cards share an art path');
 });
 test('remote and nonexistent local images remain placeholders even with claimed approval', () => {
   const sora = getCard('CS1-001');

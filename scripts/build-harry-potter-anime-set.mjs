@@ -126,6 +126,11 @@ const images = new Map([
   [1, 'artwork/HPAN-001.png'], [2, 'artwork/HPAN-002.png'], [3, 'artwork/HPAN-003.png'],
   [4, 'artwork/HPAN-004.png'], [5, 'artwork/HPAN-005.png'], [6, 'artwork/HPAN-006.png'],
   [7, 'artwork/HPAN-007.png'], [8, 'artwork/HPAN-008.png'],
+  [9, 'artwork/HPAN-009.jpg'], [10, 'artwork/HPAN-010.jpg'], [11, 'artwork/HPAN-011.jpg'],
+  [12, 'artwork/HPAN-012.jpg'], [13, 'artwork/HPAN-013.jpg'], [14, 'artwork/HPAN-014.jpg'],
+  [15, 'artwork/HPAN-015.jpg'], [16, 'artwork/HPAN-016.jpg'], [17, 'artwork/HPAN-017.jpg'],
+  [18, 'artwork/HPAN-018.jpg'], [19, 'artwork/HPAN-019.jpg'], [20, 'artwork/HPAN-020.jpg'],
+  [21, 'artwork/HPAN-021.jpg'], [22, 'artwork/HPAN-022.jpg'],
 ]);
 const rarities = ['Common', 'Uncommon', 'Rare', 'Mythic'];
 const cards = [];

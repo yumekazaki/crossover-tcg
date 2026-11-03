@@ -7,7 +7,7 @@
 - Rules, decision history, registries and complete card database: imported from the current crossover design workspace.
 - GitHub repository: public `yumekazaki/crossover-tcg`; deployed through GitHub Pages at https://yumekazaki.github.io/crossover-tcg/.
 - Card artwork integration: library cards, card detail panels and local-match dialogs render an approved local image when available. Approval, local-file existence and one-image-per-card uniqueness are required.
-- Card artwork display is live in the app: 159 original-set images and 8 new, distinct AI images for Set 02 are individually assigned; no image path is reused.
+- Card artwork display is live in the app: 159 original-set images and 22 new, distinct AI images for all Set 02 Characters are individually assigned; no image path is reused.
 - Set 02 adds 50 Harry Potter (Anime) fan-made cards in a separate file, preserving the original 500-card database. It includes 22 Characters, 10 Equipment, 8 Abilities, 6 Speed Abilities and 4 Finishers. Harry Potter and Draconia Malfoy anchor it with three individual Character cards each and two shared Character cards; Hermione, Ron, Voldemort and the wider cast are represented.
 - Set 02 effects are designed and visible in the library/deck builder, but are not engine-implemented, mechanically validated, balance-reviewed or playtested. All 50 are marked accordingly.
 
@@ -19,7 +19,7 @@
 | Original 500-card source data | Yes | Yes (preserved) | Structural checks pass; semantic and balance review remain open | No full set playtesting |
 | Harry Potter (Anime) Set 02 | 50 cards | Yes: separate file and registry | Structural checks; effects still need engine validation | No |
 | Local playable interface | Yes | Yes: card browser, deck builder and shared-device practice prototype | UI component checks pass; live local app launch blocked by this environment's loopback socket restriction | No full-game playtest |
-| Card artwork display | Yes | Yes: local art is integrated in library, detail and match card views | Loader rejects remote/missing files and duplicate asset paths; 167 unique local images available | No art review |
+| Card artwork display | Yes | Yes: local art is integrated in library, detail and match card views | Loader rejects remote/missing files and duplicate asset paths; 181 unique local images available | No art review |
 | Deck builder | Yes | Yes: create/save/import/export/search and exact legality checks | 17 data checks and 16 UI browser checks pass | Not separately playtested |
 | Practice AI | Yes | No | No | No |
 | Accounts / online multiplayer | Yes | No | No | No |
