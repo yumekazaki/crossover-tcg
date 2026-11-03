@@ -1,4 +1,4 @@
-import { getArtwork } from '../data/cards.js';
+import { getArtwork } from '../data/cards.js?v=20261103-artworkfix4';
 
 /**
  * Render the two local practice seats in a face-to-face layout.
