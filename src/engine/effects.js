@@ -66,6 +66,12 @@ const triggerPrograms = Object.freeze({
     requiresOtherAlliedCharacter: true, healMain: 3000, drawDiscardIfNoParty: true
   }
 });
+const specialPrograms = Object.freeze({
+  'CS1-005': {
+    kind: 'axel-party-blast', timing: 'main', target: 'opposing-party-characters', targetCount: { min: 0, max: 2 }, amount: 2000,
+    activationCost: { handCardToContinue: 1 }, perNamePerTurn: true
+  }
+});
 
 export const getEffectProgram = (cardId) => programs[cardId] ?? null;
 export const implementedEffectIds = () => Object.keys(programs);
@@ -73,3 +79,5 @@ export const getEquipmentProgram = (cardId) => equipmentPrograms[cardId] ?? null
 export const implementedEquipmentEffectIds = () => Object.keys(equipmentPrograms);
 export const getTriggerProgram = (cardId) => triggerPrograms[cardId] ?? null;
 export const implementedTriggerIds = () => Object.keys(triggerPrograms);
+export const getSpecialProgram = (cardId) => specialPrograms[cardId] ?? null;
+export const implementedSpecialIds = () => Object.keys(specialPrograms);

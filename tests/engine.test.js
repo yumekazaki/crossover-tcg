@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-005', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -514,6 +514,39 @@ test('Heart-to-Heart rewards a cross-franchise pair with conditional healing or 
   assert.equal(both.instances[bothParty.instanceId].battlefield.currentHp, both.instances[bothParty.instanceId].battlefield.maxHp - 500);
   assert.equal(both.players.p1.resources.momentum, 5, 'healing both injured allies does not use the alternative Momentum branch');
   assertStateInvariants(both, cards);
+});
+
+test('Axel Special pays a hand discard and deals simultaneous damage to up to two opposing Party Members', () => {
+  let s = start(game('CS1-060'));
+  s.activePlayerId = 'p2'; s.priorityPlayerId = 'p2';
+  const enemyPartyIds = [];
+  for (const cardId of ['CS1-002', 'CS1-004']) {
+    s.players.p2.turn.standardAddUsed = false;
+    const instanceId = moveCardToHand(s, 'p2', cardId);
+    s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p2', instanceId }, cards);
+    s = passMenu(s);
+    enemyPartyIds.push(s.players.p2.party.find((id) => id && s.instances[id].cardId === cardId));
+    s.instances[enemyPartyIds.at(-1)].battlefield.currentHp = 1500;
+  }
+  s.activePlayerId = 'p1'; s.priorityPlayerId = 'p1';
+  const axelHandId = moveCardToHand(s, 'p1', 'CS1-005');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: axelHandId }, cards);
+  s = passMenu(s);
+  const axelId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-005');
+  const discardId = moveCardToHand(s, 'p1', 'CS1-283');
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_SPECIAL' && candidate.instanceId === axelId
+    && candidate.targets.length === 2 && candidate.targets.every((id) => enemyPartyIds.includes(id)) && candidate.activationCostInstanceId === discardId);
+  assert.ok(action, 'Axel offers one or two enemy Party targets and a discard choice');
+  assert.throws(() => dispatch(s, { ...action, playerId: 'p1', targets: [s.players.p2.center, enemyPartyIds[0]] }, cards), (error) => error.code === 'ILLEGAL_TARGET');
+  assert.equal(s.instances[discardId].zone, 'hand', 'an illegal selection cannot pay the cost');
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  assert.equal(s.instances[discardId].zone, 'continue');
+  s = passMenu(s);
+  assert.ok(enemyPartyIds.every((id) => s.instances[id].zone === 'continue'), 'all assignments are committed before defeat processing');
+  assert.equal(s.players.p2.life, 15, 'effect damage does not cause combat life loss');
+  assert.equal(s.players.p1.resources.momentum, 5, 'effect damage does not grant defeat Momentum');
+  assert.equal(s.log.filter((entry) => entry.type === 'EFFECT_DAMAGE' && enemyPartyIds.includes(entry.targetId)).length, 2);
+  assertStateInvariants(s, cards);
 });
 
 test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {

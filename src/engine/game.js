@@ -1,4 +1,4 @@
-import { getEffectProgram, getEquipmentProgram, getTriggerProgram } from './effects.js';
+import { getEffectProgram, getEquipmentProgram, getSpecialProgram, getTriggerProgram } from './effects.js';
 import { supportedTransformationIds, transformationRequirementMet } from './transformations.js';
 
 export class RuleError extends Error {
@@ -598,6 +598,16 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
       }
     } else if (select.kind === 'COMBAT') {
       resolveCombat(state, cardIndex);
+    } else if (select.kind === 'CHARACTER_SPECIAL') {
+      const source = state.instances[select.instanceId];
+      const sourceCard = source && cardIndex.get(source.cardId);
+      const program = getSpecialProgram(select.cardId);
+      if (source?.battlefield && source.controllerId === select.playerId && sourceCard?.id === select.cardId && program?.kind === 'axel-party-blast') {
+        const targets = (select.targets ?? []).map((id) => state.instances[id]).filter((target) => target?.battlefield
+          && target.controllerId !== select.playerId && state.players[target.controllerId].party.includes(target.instanceId));
+        if (targets.length) resolveDamageTransaction(state, cardIndex, targets.map((target) => ({ targetId: target.instanceId, amount: program.amount })), { origin: 'effect', sourcePlayerId: select.playerId, sourceCardId: sourceCard.id });
+        addLog(state, { type: 'CHARACTER_SPECIAL_RESOLVED', selectId: select.id, sourceInstanceId: source.instanceId, cardId: sourceCard.id, affectedTargets: targets.map((target) => target.instanceId) });
+      } else addLog(state, { type: 'CHARACTER_SPECIAL_FIZZLED', selectId: select.id, sourceInstanceId: select.instanceId, cardId: select.cardId });
     } else {
       addLog(state, { type: 'UNSUPPORTED_SELECT_SKIPPED', selectId: select.id, reason: 'No registered effect program.' });
     }
@@ -1084,6 +1094,30 @@ export function dispatch(stateInput, action, cards) {
     openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'ADD_TO_PARTY', playerId: player.id, instanceId: instance.instanceId, partyIndex });
     return state;
   }
+  if (action.type === 'ACTIVATE_SPECIAL') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Character Specials with Main timing activate in your Main Phase.');
+    const source = state.instances[action.instanceId], sourceCard = source && cardIndex.get(source.cardId);
+    const program = sourceCard && getSpecialProgram(sourceCard.id);
+    if (!source?.battlefield || source.controllerId !== player.id || sourceCard?.type !== 'Character' || !program || program.timing !== 'main') fail('ILLEGAL_SPECIAL', 'Choose a controlled Character with a registered Main Phase Special.');
+    if ((source.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) fail('SPECIAL_SUPPRESSED', 'This Character’s Specials are suppressed.');
+    if (player.turn.nameLimits[sourceCard.name]) fail('NAME_LIMIT', `${sourceCard.name} is limited to one Special activation per turn.`);
+    const targets = action.targets ?? [];
+    if (targets.length < program.targetCount.min || targets.length > program.targetCount.max || new Set(targets).size !== targets.length
+      || targets.some((id) => { const target = state.instances[id]; return !target?.battlefield || target.controllerId === player.id || !state.players[target.controllerId].party.includes(target.instanceId); })) {
+      fail('ILLEGAL_TARGET', 'Choose up to two distinct opposing Party Characters.');
+    }
+    const costId = action.activationCostInstanceId;
+    if (program.activationCost?.handCardToContinue && (!costId || costId === source.instanceId || !player.zones.hand.includes(costId))) fail('ACTIVATION_COST_REQUIRED', 'Discard one card from your hand as Axel’s activation cost.');
+    if (program.activationCost?.handCardToContinue) {
+      player.zones.hand = player.zones.hand.filter((id) => id !== costId);
+      state.instances[costId].zone = 'continue';
+      player.zones.continue.push(costId);
+      addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: sourceCard.id, cost: 'discard-hand-card', instanceId: costId });
+    }
+    player.turn.nameLimits[sourceCard.name] = true;
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CHARACTER_SPECIAL', playerId: player.id, instanceId: source.instanceId, cardId: sourceCard.id, targets });
+    return state;
+  }
   if (action.type === 'SWITCH_CENTER') {
     if (state.phase !== 'main') fail('WRONG_PHASE', 'Center switching is a Main Phase action.');
     if (player.turn.freeCenterSwitchUsed) fail('CENTER_SWITCH_USED', 'Your free Center switch was already used this turn.');
@@ -1416,6 +1450,17 @@ export function getLegalActions(state, playerId, cards) {
         } else actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, targetOptions: [player.center, ...player.party].filter(Boolean) });
       }
       if (card?.type === 'Speed Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id });
+    }
+    for (const instanceId of [player.center, ...player.party].filter(Boolean)) {
+      const character = state.instances[instanceId], program = character && getSpecialProgram(character.cardId);
+      if (!program || program.timing !== 'main' || player.turn.nameLimits[cardIndex.get(character.cardId)?.name]
+        || (character.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) continue;
+      const enemies = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => state.players[id].party.filter(Boolean));
+      const targetSets = [[]];
+      for (const enemy of enemies) targetSets.push([enemy]);
+      if (program.targetCount.max > 1) for (let i = 0; i < enemies.length; i += 1) for (let j = i + 1; j < enemies.length; j += 1) targetSets.push([enemies[i], enemies[j]]);
+      const costs = player.zones.hand.filter((handId) => handId !== instanceId);
+      for (const activationCostInstanceId of costs) for (const targets of targetSets) actions.push({ type: 'ACTIVATE_SPECIAL', instanceId, activationCostInstanceId, targets });
     }
     for (const formId of player.zones.arsenal) {
       const form = cardIndex.get(state.instances[formId]?.cardId);
