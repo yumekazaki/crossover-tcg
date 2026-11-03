@@ -1,4 +1,4 @@
-import { getEffectProgram, getEquipmentProgram } from './effects.js';
+import { getEffectProgram, getEquipmentProgram, getTriggerProgram } from './effects.js';
 import { supportedTransformationIds, transformationRequirementMet } from './transformations.js';
 
 export class RuleError extends Error {
@@ -132,6 +132,10 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
     nextInstanceNumber: nextInstance,
     menu: null,
     pendingTriggers: [],
+    nextTriggerGroupNumber: 1,
+    nextEventNumber: 1,
+    pendingMenuResolution: null,
+    resolutionChoice: null,
     combat: null,
     log: [{ type: 'GAME_CREATED', playerIds: ids, firstPlayerId, chooserId }],
     randomSeed: seed >>> 0
@@ -201,14 +205,116 @@ function openMenu(state, initiatorId, select) {
   addLog(state, { type: 'MENU_OPENED', menuId: state.menu.id, initiatorId, select: select.kind });
 }
 
+function snapshotCharacter(state, instance, cardIndex) {
+  const card = cardIndex.get(instance.cardId);
+  return {
+    instanceId: instance.instanceId, physicalCopyId: instance.physicalCopyId, cardId: instance.cardId,
+    ownerId: instance.ownerId, controllerId: instance.controllerId, position: instance.battlefield?.position ?? null,
+    currentHp: instance.battlefield?.currentHp ?? null, maxHp: instance.battlefield?.maxHp ?? null,
+    printedAtk: card?.statistics?.atk ?? null,
+    characterSpecialsSuppressedUntilTurn: instance.characterSpecialsSuppressedUntilTurn ?? null,
+    subtypes: [...(card?.subtypes ?? [])], attachedEquipment: attachedEquipment(state, instance.instanceId).map((gear) => ({
+      instanceId: gear.instanceId, cardId: gear.cardId, cost: clone(cardIndex.get(gear.cardId)?.cost ?? {})
+    }))
+  };
+}
+
+function collectEventTriggers(state, event, lastKnownCharacters, cardIndex) {
+  const records = [];
+  for (const source of lastKnownCharacters) {
+    const program = getTriggerProgram(source.cardId);
+    if (program?.event !== event.type || (source.characterSpecialsSuppressedUntilTurn ?? 0) > state.turnNumber) continue;
+    if (program.requiresOtherAlliedCharacter && !event.defeated?.some((victim) => victim.controllerId === source.controllerId && victim.instanceId !== source.instanceId)) continue;
+    const sourceCard = cardIndex.get(source.cardId);
+    const controller = state.players[source.controllerId];
+    if (!controller || (program.perNamePerTurn && controller.turn.nameLimits[sourceCard.name])) continue;
+    if (program.perNamePerTurn) controller.turn.nameLimits[sourceCard.name] = true;
+    const record = {
+      id: `T${String(state.nextTriggerGroupNumber).padStart(4, '0')}-${String(records.length + 1).padStart(2, '0')}`,
+      kind: program.kind, sourceInstanceId: source.instanceId, sourceCardId: source.cardId,
+      controllerId: source.controllerId, sourceSnapshot: clone(source), eventSnapshot: clone(event),
+      collectedAtTurn: state.turnNumber, status: 'pending'
+    };
+    records.push(record);
+    addLog(state, { type: 'TRIGGER_COLLECTED', triggerId: record.id, cardId: record.sourceCardId, sourceInstanceId: record.sourceInstanceId, controllerId: record.controllerId, eventType: event.type, eventId: event.id });
+  }
+  if (records.length) {
+    state.pendingTriggers.push({ id: `G${String(state.nextTriggerGroupNumber++).padStart(4, '0')}`, event: clone(event), records });
+  }
+}
+
+function openNextTriggerMenu(state) {
+  if (state.menu || state.resolutionChoice || state.status !== 'active' || !state.pendingTriggers.length) return;
+  const group = state.pendingTriggers.shift();
+  const otherPlayerId = state.playerOrder.find((id) => id !== state.activePlayerId);
+  const ordered = [
+    ...group.records.filter((record) => record.controllerId === state.activePlayerId),
+    ...group.records.filter((record) => record.controllerId === otherPlayerId)
+  ];
+  if (!ordered.length) return;
+  const selects = ordered.map((record) => ({
+    id: record.id, kind: 'TRIGGER_EFFECT', playerId: record.controllerId,
+    triggerId: record.id, cardId: record.sourceCardId, sourceInstanceId: record.sourceInstanceId,
+    triggerKind: record.kind, eventSnapshot: record.eventSnapshot, sourceSnapshot: record.sourceSnapshot
+  }));
+  openMenu(state, state.activePlayerId, selects[0]);
+  state.menu.selects = selects;
+  state.menu.triggerGroupId = group.id;
+  addLog(state, { type: 'TRIGGER_GROUP_OPENED', triggerGroupId: group.id, triggerIds: ordered.map((record) => record.id), priorityPlayerId: state.activePlayerId });
+}
+
 function resolveMenu(state, cardIndex) {
   const menu = state.menu;
   const selections = [...menu.selects].reverse();
   state.menu = null;
   state.priorityPlayerId = state.activePlayerId;
   state.phasePasses = 0;
-  for (const select of selections) {
-    if (select.kind === 'ADD_TO_PARTY') {
+  continueMenuResolution(state, cardIndex, selections, menu.id);
+}
+
+function resolveTriggerSelect(state, select, cardIndex) {
+  if (select.triggerKind !== 'mickey-defeat') return false;
+  const player = state.players[select.playerId];
+  const main = state.instances[player.center];
+  if (main?.battlefield) {
+    const healed = Math.min(3000, main.battlefield.maxHp - main.battlefield.currentHp);
+    main.battlefield.currentHp += healed;
+    addLog(state, { type: 'HP_RESTORED', playerId: player.id, sourceCardId: select.cardId, sourceInstanceId: select.sourceInstanceId, targetId: main.instanceId, amount: healed, triggerId: select.triggerId });
+  }
+  if (player.party.filter(Boolean).length === 0) {
+    if (player.zones.mainDeck.length === 0) {
+      player.life = 0;
+      state.status = 'finished';
+      state.winnerId = state.playerOrder.find((id) => id !== player.id);
+      addLog(state, { type: 'EMPTY_DECK_LOSS', playerId: player.id, triggerId: select.triggerId });
+      return false;
+    }
+    const drawnId = player.zones.mainDeck.shift();
+    state.instances[drawnId].zone = 'hand';
+    player.zones.hand.push(drawnId);
+    addLog(state, { type: 'CARD_DRAWN', playerId: player.id, instanceId: drawnId, sourceCardId: select.cardId, triggerId: select.triggerId });
+    state.resolutionChoice = {
+      id: `RC${select.triggerId}`, kind: 'DISCARD_ONE', playerId: player.id, triggerId: select.triggerId,
+      cardId: select.cardId, options: [...player.zones.hand],
+      prompt: 'Discard one card after Mickey’s defeat trigger draws a card.'
+    };
+    state.priorityPlayerId = player.id;
+    return true;
+  }
+  addLog(state, { type: 'TRIGGER_RESOLVED', triggerId: select.triggerId, cardId: select.cardId, sourceInstanceId: select.sourceInstanceId, controllerId: player.id });
+  return false;
+}
+
+function continueMenuResolution(state, cardIndex, selections, menuId, originalSelectCount = selections.length) {
+  for (let index = 0; index < selections.length; index += 1) {
+    const select = selections[index];
+    if (select.kind === 'TRIGGER_EFFECT') {
+      const paused = resolveTriggerSelect(state, select, cardIndex);
+      if (paused) {
+        state.pendingMenuResolution = { menuId, remainingSelections: selections.slice(index + 1), pendingTriggerId: select.triggerId, originalSelectCount };
+        return;
+      }
+    } else if (select.kind === 'ADD_TO_PARTY') {
       const player = state.players[select.playerId];
       const instance = state.instances[select.instanceId];
       if (!instance || instance.zone !== 'pending' || player.party[select.partyIndex] !== null) continue;
@@ -291,6 +397,10 @@ function resolveMenu(state, cardIndex) {
           addLog(state, { type: 'PARTY_SWAP_TARGET_SKIPPED', playerId: player.id, instanceId, reason: 'The selected Character left its legal untransformed Party Zone.' });
           continue;
         }
+        const lastKnown = snapshotCharacter(state, character, cardIndex);
+        for (const eventType of ['character-left-battlefield', 'character-returned-to-hand']) {
+          collectEventTriggers(state, { id: `E${String(state.nextEventNumber++).padStart(4, '0')}`, type: eventType, turn: state.turnNumber, instanceId, controllerId: character.controllerId }, [lastKnown], cardIndex);
+        }
         for (const gear of attachedEquipment(state, instanceId)) {
           const gearCard = cardIndex.get(gear.cardId);
           for (const resource of ['light', 'darkness']) {
@@ -371,9 +481,12 @@ function resolveMenu(state, cardIndex) {
     } else {
       addLog(state, { type: 'UNSUPPORTED_SELECT_SKIPPED', selectId: select.id, reason: 'No registered effect program.' });
     }
+    if (state.status === 'finished') break;
   }
+  state.pendingMenuResolution = null;
   state.priorityPlayerId = state.activePlayerId;
-  addLog(state, { type: 'MENU_RESOLVED', menuId: menu.id, selectCount: selections.length });
+  addLog(state, { type: 'MENU_RESOLVED', menuId, selectCount: originalSelectCount });
+  openNextTriggerMenu(state);
 }
 
 function hasControlledSubtype(state, playerId, subtype, cardIndex) {
@@ -442,7 +555,11 @@ function resolveCombat(state, cardIndex) {
     const amount = isMain ? 2 : 1;
     lifeLoss.set(owner.id, (lifeLoss.get(owner.id) ?? 0) + amount);
     momentumGain += amount;
-    return { victim, owner, isMain, amount };
+    return { victim, owner, isMain, amount, lastKnown: snapshotCharacter(state, victim, cardIndex) };
+  });
+  const lastKnownCharacters = state.playerOrder.flatMap((playerId) => {
+    const owner = state.players[playerId];
+    return [owner.center, ...owner.party].filter(Boolean).map((id) => snapshotCharacter(state, state.instances[id], cardIndex));
   });
   // Life loss and the resulting terminal check use the same simultaneous defeat event.
   for (const [ownerId, amount] of lifeLoss) state.players[ownerId].life = Math.max(0, state.players[ownerId].life - amount);
@@ -489,6 +606,13 @@ function resolveCombat(state, cardIndex) {
       owner.zones.continue.push(victim.instanceId);
     }
     addLog(state, { type: 'BATTLE_DEFEAT', victimId: victim.instanceId, playerId: owner.id, mainCharacter: isMain });
+  }
+  if (defeatRecords.length) {
+    const event = {
+      id: `E${String(state.nextEventNumber++).padStart(4, '0')}`, type: 'character-defeated', turn: state.turnNumber,
+      defeated: defeatRecords.map(({ owner, isMain, lastKnown }) => ({ ...lastKnown, controllerId: owner.id, wasMain: isMain }))
+    };
+    collectEventTriggers(state, event, lastKnownCharacters, cardIndex);
   }
   const down = state.playerOrder.filter((id) => state.players[id].life <= 0);
   if (down.length) { state.status = 'finished'; state.winnerId = down.length === 2 ? null : state.playerOrder.find((id) => !down.includes(id)); }
@@ -551,6 +675,23 @@ export function dispatch(stateInput, action, cards) {
     if (state.mulliganIndex >= 2 && state.status !== 'finished') { state.phase = 'main'; state.priorityPlayerId = state.activePlayerId; state.status = 'active'; }
     return state;
   }
+
+  if (state.resolutionChoice) {
+    const choice = state.resolutionChoice;
+    if (action.type !== 'RESOLVE_CHOICE' || action.playerId !== choice.playerId) fail('RESOLUTION_CHOICE_REQUIRED', 'The responsible player must make the pending resolution choice before play can continue.');
+    if (choice.kind !== 'DISCARD_ONE' || !choice.options.includes(action.instanceId) || !player.zones.hand.includes(action.instanceId)) fail('ILLEGAL_RESOLUTION_CHOICE', 'Choose one card currently in your hand to discard.');
+    player.zones.hand = player.zones.hand.filter((id) => id !== action.instanceId);
+    state.instances[action.instanceId].zone = 'continue';
+    player.zones.continue.push(action.instanceId);
+    state.resolutionChoice = null;
+    const pending = state.pendingMenuResolution;
+    state.pendingMenuResolution = null;
+    addLog(state, { type: 'CARD_DISCARDED', playerId: player.id, instanceId: action.instanceId, triggerId: choice.triggerId });
+    addLog(state, { type: 'TRIGGER_RESOLVED', triggerId: choice.triggerId, cardId: choice.cardId, controllerId: player.id });
+    if (pending) continueMenuResolution(state, cardIndex, pending.remainingSelections, pending.menuId, pending.originalSelectCount);
+    return state;
+  }
+  if (action.type === 'RESOLVE_CHOICE') fail('NO_RESOLUTION_CHOICE', 'There is no pending resolution choice.');
 
   if (state.status !== 'active' && action.type !== 'START_GAME') fail('GAME_NOT_ACTIVE', 'The game is not active.');
   if (state.menu) {
@@ -819,6 +960,11 @@ export function getLegalActions(state, playerId, cards) {
   const player = state.players[playerId];
   if (!player || state.status === 'finished') return [];
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
+  if (state.resolutionChoice) {
+    if (state.resolutionChoice.playerId !== playerId) return [];
+    return state.resolutionChoice.options.map((instanceId) => ({ type: 'RESOLVE_CHOICE', choiceId: state.resolutionChoice.id, instanceId }));
+  }
+  if (state.pendingMenuResolution) return [];
   if (state.menu) {
     if (state.menu.priorityPlayerId !== playerId) return [];
     if (state.combat?.guardWindow) {
@@ -911,6 +1057,9 @@ export function assertStateInvariants(state, cards) {
   if (!state.players[state.priorityPlayerId]) fail('PRIORITY_INVARIANT', 'Priority must belong to a registered player.');
   if (!Number.isInteger(state.phasePasses) || state.phasePasses < 0 || state.phasePasses > 1 || (state.menu && state.phasePasses !== 0)) fail('PHASE_PRIORITY_INVARIANT', 'Empty-window pass state is invalid or overlaps an open Menu.');
   if (state.menu && !state.players[state.menu.priorityPlayerId]) fail('MENU_PRIORITY_INVARIANT', 'Menu priority must belong to a registered player.');
+  if (state.resolutionChoice && (state.menu || !state.pendingMenuResolution || !state.players[state.resolutionChoice.playerId])) fail('RESOLUTION_CHOICE_INVARIANT', 'A resolution choice must pause a Menu resolution without opening a response window.');
+  if (state.pendingMenuResolution && !state.resolutionChoice) fail('MENU_RESOLUTION_INVARIANT', 'Paused Menu resolution must have a pending choice.');
+  if (!Array.isArray(state.pendingTriggers) || state.pendingTriggers.some((group) => !group.id || !Array.isArray(group.records) || group.records.some((record) => !state.players[record.controllerId] || !record.eventSnapshot || !record.sourceSnapshot))) fail('TRIGGER_QUEUE_INVARIANT', 'Pending trigger groups must retain their event and source snapshots.');
   for (const player of Object.values(state.players)) {
     const allZones = [...player.zones.mainDeck, ...player.zones.hand, ...player.zones.continue, ...player.zones.arsenal, ...player.zones.baseReserve, player.center, ...player.party].filter(Boolean);
     for (const id of allZones) { if (seen.has(id)) fail('ZONE_DUPLICATION', `${id} appears in more than one zone.`); seen.add(id); }

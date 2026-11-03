@@ -25,8 +25,16 @@ const programs = {
 
 // Equipment is executable only when an exact, reviewed program is listed here.
 const equipmentPrograms = Object.freeze({});
+const triggerPrograms = Object.freeze({
+  'CS1-011': {
+    event: 'character-defeated', kind: 'mickey-defeat', perNamePerTurn: true,
+    requiresOtherAlliedCharacter: true, healMain: 3000, drawDiscardIfNoParty: true
+  }
+});
 
 export const getEffectProgram = (cardId) => programs[cardId] ?? null;
 export const implementedEffectIds = () => Object.keys(programs);
 export const getEquipmentProgram = (cardId) => equipmentPrograms[cardId] ?? null;
 export const implementedEquipmentEffectIds = () => Object.keys(equipmentPrograms);
+export const getTriggerProgram = (cardId) => triggerPrograms[cardId] ?? null;
+export const implementedTriggerIds = () => Object.keys(triggerPrograms);

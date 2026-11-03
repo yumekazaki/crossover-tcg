@@ -160,6 +160,7 @@ function renderActions(actions, actorId, container) {
   container.replaceChildren();
   for (const action of actions) {
     if (action.type === 'MULLIGAN') { container.append(actionButton('Keep opening hand', () => safeDispatch({ type: 'MULLIGAN', playerId: actorId, instanceIds: [] }), 'pass')); continue; }
+    if (action.type === 'RESOLVE_CHOICE') { container.append(actionButton(`Discard ${cardName(action.instanceId)} to Continue?`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'ASSIGN_GUARDS') {
@@ -202,10 +203,10 @@ function renderMatch() {
   const root = $('match-board'); root.replaceChildren();
   const current = create('div', 'match-topline');
   current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.status === 'setup' ? `Opening mulligan · ${match.mulliganOrder[match.mulliganIndex] === 'p1' ? 'Player One' : 'Player Two'}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
-  current.append(create('span', '', match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
+  current.append(create('span', '', match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
   const seats = create('div', 'match-seats'); seats.append(renderSeat('p1'), renderSeat('p2')); root.append(seats);
   if (match.status !== 'finished') {
-    const actorId = match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.menu?.priorityPlayerId || match.priorityPlayerId;
+    const actorId = match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
     const controls = create('section', 'turn-controls'); controls.append(create('h3', '', `${match.players[actorId].name} · legal actions`));
     const actions = create('div', 'action-list'); renderActions(getLegalActions(match, actorId, cards), actorId, actions); controls.append(actions); root.append(controls);
   }

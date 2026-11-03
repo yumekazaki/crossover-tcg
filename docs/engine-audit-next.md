@@ -14,6 +14,8 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 **Hand-to-Party combo update:** `CS1-339` Blade Awakening now reveals a hand Blade, pays an Ability discard cost to Continue?, then Adds the Blade to an empty Party Zone at full HP through its resolving Menu Select. It bypasses the standard Add counter and stores Character Special suppression until that player's next turn begins. Deck-search/reveal choices and trigger-driven placement remain separate unsupported families.
 
+**Trigger scheduler update:** `CS1-011` Mickey is registered for allied Character defeats. Combat captures last-known Character/Equipment records before zone changes; eligible triggers enter FIFO groups and resolve through their own response Menus after the current Menu finishes. Mickey's no-Party branch pauses resolution for the controller to choose a discard, without priority or responses. Party Swap records leave/return event timing. This is a narrow trigger implementation: simultaneous ordering choices among multiple triggers, optional collection, suspension, broad event matching, and pre-damage combat trigger checkpoints remain open.
+
 ## P0 — Current combat and trigger status
 
 1. **Main defeat revival — implemented for Battle combat.** `resolveCombat()` commits all assigned damage before deriving defeat candidates, snapshots them together, returns attached Equipment, creates a fresh Main battlefield instance at full HP, and preserves physical-copy usage and shared allowances. Tests cover revival, fresh identity, gear return, and simultaneous Main/Party defeat processing. General effect-damage defeat remains unsupported because no general effect-damage program is registered. Authority: `master-rulebook.md:58-60,137`; rules contract “Combat transaction”, “HP, movement, and Equipment”, and “Win conditions”.
@@ -24,7 +26,7 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## P1 — Implement the next engine foundations
 
-4. **Turn and phase checkpoints — empty-window passes implemented; trigger processing remains open.** `PASS_PRIORITY` now alternates priority and advances a phase only after two consecutive passes. Pending triggers block advancement instead of being skipped. The queue is never populated or drained, End Phase expiry is not implemented, and beginning/end trigger order remains open. Authority: `master-rulebook.md:22-27,99-110,123`; rules contract “Priority and timing”.
+4. **Turn and phase checkpoints — empty-window passes and one trigger path are implemented.** `PASS_PRIORITY` now alternates priority and advances a phase only after two consecutive passes. Eligible Mickey defeat triggers are queued, opened, and resolved FIFO after the active Menu; a paused mandatory choice prevents any intervening action. Other trigger records, beginning/end resource/draw triggers, End Phase expiry, optional collection, ordering choices, and suspension remain open. Authority: `master-rulebook.md:22-27,99-110,123`; rules contract “Priority and timing”.
 
 5. **The chooser is recorded but cannot choose.** Setup accepts externally supplied `firstPlayerId` and `chooserId` (`game.js:74-80,115-126`) and proceeds directly through mulligans. The app’s random chooser is separate from the first-player dropdown, so the chooser does not actually make the selection. Add a setup choice stage after random chooser determination and before starting-Main selection/shuffle/draw, or make the UI submit the chooser’s selection as a validated engine command. Authority: `master-rulebook.md:119` (D001).
 
@@ -32,10 +34,10 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## P2 — Expand only after the above
 
-7. **Voluntary unequip, effect negation, protection/suspension, delayed effects, and Finishers have no executable commands.** Center switch and Party Swap are now implemented. Party Swap trigger handling depends on the unfinished trigger scheduler. Transformation entry, Main base restoration, and Party form defeat are covered; voluntary reversion remains unsupported. Build protection/suspension only over an explicit duration/trigger queue and retain U003-U010 as unresolved where the rulebook says so.
+7. **Voluntary unequip, effect negation, protection/suspension, delayed effects, and Finishers have no executable commands.** Center switch and Party Swap are now implemented. Party Swap leave/return event snapshots reach the trigger collector, but no current program matches those event types. Transformation entry, Main base restoration, and Party form defeat are covered; voluntary reversion remains unsupported. Build protection/suspension only over an explicit duration/trigger queue and retain U003-U010 as unresolved where the rulebook says so.
 
 8. **Acceptance tests cover a growing set of narrow engine cases.** They now verify setup, mulligan, Add, two healing programs, three combo resource/deployment programs, Center switch/Party Swap, response and guard windows, chain costs, Equipment cost, combat/Main revival, simultaneous combat defeats, transformation requirements, Main restoration, Party form defeat and blocked unregistered Equipment effects. Most other rulebook invariants remain untested. Add tests per rule capability as each foundation lands. Test counts are not evidence that the whole master rulebook is implemented.
 
 ## Recommended next implementation slice
 
-Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement event/trigger ordering so Party Swap and combat events can collect/resolve triggers; then add voluntary unequip and continue card-effect coverage.
+Extend trigger support to the remaining event families, especially pre-damage combat checkpoints and simultaneous controller ordering choices; then add voluntary unequip and continue search/response card-effect coverage. Keep broad trigger/suspension rules marked incomplete.

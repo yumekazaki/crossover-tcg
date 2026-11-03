@@ -249,6 +249,82 @@ test('Blade Awakening converts a Driver hand cost into a suppressed Blade withou
   assertStateInvariants(s, cards);
 });
 
+test('Mickey collects a last-known trigger when another allied Character is defeated and heals its current Main', () => {
+  let s = start(game('CS1-031'));
+  for (const cardId of ['CS1-011', 'CS1-001']) {
+    const id = moveCardToHand(s, 'p1', cardId);
+    s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: id }, cards);
+    s = passMenu(s);
+    s.players.p1.turn.standardAddUsed = false;
+  }
+  const mickeyId = s.players.p1.party.find((id) => s.instances[id].cardId === 'CS1-011');
+  const victimId = s.players.p1.party.find((id) => s.instances[id].cardId === 'CS1-001');
+  const main = s.instances[s.players.p1.center];
+  main.battlefield.currentHp -= 5000;
+  const beforeHeal = main.battlefield.currentHp;
+  s.instances[victimId].battlefield.currentHp = 1;
+  s.instances[mickeyId].battlefield.currentHp = 1;
+  s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: victimId }, cards);
+  s = dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [mickeyId] }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  const combatMenuId = s.menu.id;
+  s = passMenu(s);
+  assert.equal(s.instances[victimId].zone, 'continue');
+  assert.equal(s.instances[mickeyId].zone, 'continue');
+  assert.ok(s.menu?.triggerGroupId);
+  assert.equal(s.menu.selects[0].sourceInstanceId, mickeyId);
+  assert.equal(s.menu.selects[0].sourceSnapshot.instanceId, mickeyId);
+  assert.equal(s.menu.selects[0].sourceSnapshot.position, 'party-0');
+  assert.equal(s.menu.selects[0].eventSnapshot.defeated.length, 2);
+  assert.equal(s.menu.priorityPlayerId, 'p2');
+  const combatMenuResolved = s.log.findIndex((event) => event.type === 'MENU_RESOLVED' && event.menuId === combatMenuId);
+  const triggerGroupOpened = s.log.findIndex((event) => event.type === 'TRIGGER_GROUP_OPENED' && event.triggerGroupId === s.menu.triggerGroupId);
+  assert.ok(combatMenuResolved >= 0 && triggerGroupOpened > combatMenuResolved);
+  s = passMenu(s);
+  assert.equal(s.instances[s.players.p1.center].battlefield.currentHp, beforeHeal + 3000);
+  assert.equal(s.players.p1.turn.nameLimits['Mickey'], true);
+  assert.ok(s.log.some((event) => event.type === 'TRIGGER_COLLECTED' && event.sourceInstanceId === mickeyId));
+  assertStateInvariants(s, cards);
+});
+
+test('Mickey resolution pauses for its mandatory discard choice without opening a response window', () => {
+  let s = start(game('CS1-011'));
+  const victimId = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: victimId }, cards);
+  s = passMenu(s);
+  s.instances[victimId].battlefield.currentHp = 1;
+  s.instances[s.players.p1.center].battlefield.currentHp -= 4000;
+  const beforeHand = s.players.p1.zones.hand.length;
+  const beforeHeal = s.instances[s.players.p1.center].battlefield.currentHp;
+  s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: victimId }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.ok(s.menu?.triggerGroupId);
+  s = passMenu(s);
+  assert.equal(s.menu, null);
+  assert.equal(s.players.p1.zones.hand.length, beforeHand + 1);
+  assert.equal(s.instances[s.players.p1.center].battlefield.currentHp, beforeHeal + 3000);
+  assert.ok(s.resolutionChoice);
+  assert.equal(s.pendingMenuResolution.pendingTriggerId, s.resolutionChoice.triggerId);
+  assertStateInvariants(s, cards);
+  assert.deepEqual(getLegalActions(s, 'p2', cards), []);
+  const choices = getLegalActions(s, 'p1', cards);
+  assert.equal(choices.length, beforeHand + 1);
+  assert.ok(choices.every((action) => action.type === 'RESOLVE_CHOICE'));
+  const discardId = choices[0].instanceId;
+  s = dispatch(s, { ...choices[0], playerId: 'p1' }, cards);
+  assert.equal(s.resolutionChoice, null);
+  assert.equal(s.pendingMenuResolution, null);
+  assert.equal(s.instances[discardId].zone, 'continue');
+  assert.equal(s.players.p1.zones.hand.length, beforeHand);
+  assert.ok(s.log.some((event) => event.type === 'TRIGGER_RESOLVED' && event.cardId === 'CS1-011'));
+  assertStateInvariants(s, cards);
+});
+
 test('Ability card Cure resolves through the Menu and goes to Continue?', () => {
   let s = start(game());
   const cureId = moveCardToHand(s, 'p1', 'CS1-281');
