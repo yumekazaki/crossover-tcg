@@ -19,7 +19,7 @@ test('imports all 500 complete canonical definitions without synthesized fields'
   assert.equal(new Set(allCards().map(c => c.id)).size, 500);
 });
 test('mechanical validation status matches focused engine coverage without implying balance or playtesting', () => {
-  const coveredIds = ['CS1-011', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const coveredIds = ['CS1-011', 'CS1-281', 'CS1-282', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   assert.deepEqual(allCards().filter((card) => card.status.mechanically_validated).map((card) => card.id).sort(), [...coveredIds].sort());
   for (const id of coveredIds) {
     assert.equal(getCard(id).status.mechanically_validated, true, `${id} should be marked mechanically validated`);

@@ -492,6 +492,33 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
           resolveDamageTransaction(state, cardIndex, [{ targetId, amount }], { origin: 'effect', sourcePlayerId: select.playerId, sourceCardId: card.id });
         } else addLog(state, { type: 'EFFECT_FIZZLED', selectId: select.id, sourceCardId: card.id, reason: 'The chosen opposing Character was no longer a legal target.' });
       }
+      if (instance && program?.kind === 'heart-to-heart') {
+        const targets = (select.targets ?? []).map((id) => state.instances[id]);
+        if (targets.length === 2 && targets.every((target) => target?.battlefield && target.controllerId === select.playerId)) {
+          const [first, second] = targets;
+          const firstCard = cardIndex.get(first.cardId), secondCard = cardIndex.get(second.cardId);
+          if (firstCard?.franchise !== secondCard?.franchise) {
+            const firstInjured = first.battlefield.currentHp < first.battlefield.maxHp;
+            const secondInjured = second.battlefield.currentHp < second.battlefield.maxHp;
+            if (firstInjured && secondInjured) {
+              for (const target of targets) {
+                const amount = Math.min(program.bothInjuredHeal, target.battlefield.maxHp - target.battlefield.currentHp);
+                target.battlefield.currentHp += amount;
+                addLog(state, { type: 'HP_RESTORED', playerId: select.playerId, sourceCardId: card.id, targetId: target.instanceId, amount });
+              }
+            } else {
+              const injured = firstInjured ? first : secondInjured ? second : null;
+              if (injured) {
+                const amount = Math.min(program.oneInjuredHeal, injured.battlefield.maxHp - injured.battlefield.currentHp);
+                injured.battlefield.currentHp += amount;
+                addLog(state, { type: 'HP_RESTORED', playerId: select.playerId, sourceCardId: card.id, targetId: injured.instanceId, amount });
+              }
+              state.players[select.playerId].resources.momentum += program.noBothInjuredMomentum;
+              addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: card.id, resource: 'momentum', amount: program.noBothInjuredMomentum });
+            }
+          } else addLog(state, { type: 'EFFECT_FIZZLED', selectId: select.id, sourceCardId: card.id, reason: 'The chosen Characters no longer represent different franchises.' });
+        } else addLog(state, { type: 'EFFECT_FIZZLED', selectId: select.id, sourceCardId: card.id, reason: 'Both chosen allied Characters must remain in Character Zones.' });
+      }
       if (instance && program?.kind === 'curaga-response') {
         for (const targetId of select.targets ?? []) {
           const target = state.instances[targetId];
@@ -1151,6 +1178,12 @@ export function dispatch(stateInput, action, cards) {
     } else if (program.kind === 'effect-damage') {
       const target = state.instances[action.targets?.[0]];
       if (!target?.battlefield || target.controllerId === player.id) fail('ILLEGAL_TARGET', 'Choose an opposing Character as the effect-damage target.');
+    } else if (program.kind === 'heart-to-heart') {
+      const targets = action.targets ?? [];
+      const selected = targets.map((id) => state.instances[id]);
+      if (targets.length !== program.targetCount || new Set(targets).size !== targets.length
+        || selected.some((target) => !target?.battlefield || target.controllerId !== player.id)
+        || cardIndex.get(selected[0]?.cardId)?.franchise === cardIndex.get(selected[1]?.cardId)?.franchise) fail('ILLEGAL_TARGET', 'Choose two different allied Characters from different franchises.');
     } else if (program.kind === 'union-cross') {
       if (!controlsDifferentNamedSubtypes(state, player.id, 'Keyblade Wielder', 'Keyblade Wielder', cardIndex)) fail('REQUIREMENT_FAILED', 'Union Cross requires two differently named Keyblade Wielders you control.');
       const costId = action.activationCostInstanceId;
@@ -1366,6 +1399,12 @@ export function getLegalActions(state, playerId, cards) {
         } else if (program.kind === 'effect-damage') {
           const targetOptions = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => [state.players[id].center, ...state.players[id].party].filter(Boolean));
           for (const targetId of targetOptions) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, targets: [targetId] });
+        } else if (program.kind === 'heart-to-heart') {
+          const allies = [player.center, ...player.party].filter(Boolean);
+          for (let i = 0; i < allies.length; i += 1) for (let j = i + 1; j < allies.length; j += 1) {
+            const first = cardIndex.get(state.instances[allies[i]].cardId), second = cardIndex.get(state.instances[allies[j]].cardId);
+            if (first.franchise !== second.franchise) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind, targets: [allies[i], allies[j]] });
+          }
         } else if (program.kind === 'stocked-memories') {
           actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'blade-awakening') {

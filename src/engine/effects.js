@@ -8,6 +8,10 @@ const programs = {
     kind: 'effect-damage', timing: 'main', target: 'opposing-character', amount: 4000,
     bonus: { requiresControllerSubtype: 'Mage', targetEquipmentAtLeast: 2, amount: 2000 }, perNamePerTurn: true
   },
+  'CS1-334': {
+    kind: 'heart-to-heart', timing: 'main', targetCount: 2, requireDifferentFranchises: true,
+    bothInjuredHeal: 2500, oneInjuredHeal: 3500, noBothInjuredMomentum: 1, perNamePerTurn: true
+  },
   'CS1-433': {
     kind: 'heal', timing: 'opponent-attack-response', target: 'attacked-character', amount: 4000,
     requires: ['Healer'], perNamePerTurn: true

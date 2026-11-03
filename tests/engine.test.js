@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-002', 'CS1-004', 'CS1-009', 'CS1-014', 'CS1-023', 'CS1-024', 'CS1-031', 'CS1-035', 'CS1-054', 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-283', 'CS1-285', 'CS1-290', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-320', 'CS1-334', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -474,6 +474,46 @@ test('Firaga effect damage defeats and revives a Main without combat life or Mom
   assert.ok(s.log.some((entry) => entry.type === 'EFFECT_DAMAGE' && entry.targetId === targetId && entry.amount === 4000));
   assert.ok(s.log.some((entry) => entry.type === 'EFFECT_DEFEAT' && entry.mainCharacter));
   assertStateInvariants(s, cards);
+});
+
+test('Heart-to-Heart rewards a cross-franchise pair with conditional healing or Momentum', () => {
+  let s = start(game('CS1-060'));
+  const cloudId = moveCardToHand(s, 'p1', 'CS1-031');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: cloudId }, cards);
+  s = passMenu(s);
+  const partyId = s.players.p1.party.find((id) => id && s.instances[id].cardId === 'CS1-031');
+  const centerId = s.players.p1.center;
+  const heartId = moveCardToHand(s, 'p1', 'CS1-334');
+  const center = s.instances[centerId], cloud = s.instances[partyId];
+  center.battlefield.currentHp -= 1000;
+  const momentum = s.players.p1.resources.momentum;
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_ABILITY' && candidate.instanceId === heartId
+    && candidate.targets?.includes(centerId) && candidate.targets.includes(partyId));
+  assert.ok(action, 'cross-franchise allied targets are offered');
+  assert.throws(() => dispatch(s, { ...action, playerId: 'p1', targets: [centerId, centerId] }, cards), (error) => error.code === 'ILLEGAL_TARGET');
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.instances[centerId].battlefield.currentHp, s.instances[centerId].battlefield.maxHp, 'the one injured ally receives capped 3500 healing');
+  assert.equal(s.instances[partyId].battlefield.currentHp, s.instances[partyId].battlefield.maxHp, 'the other ally remains unchanged');
+  assert.equal(s.players.p1.resources.momentum, momentum + 1, 'the one-injured branch gains Momentum');
+  assertStateInvariants(s, cards);
+
+  let both = start(game('CS1-060'));
+  const bothCloudId = moveCardToHand(both, 'p1', 'CS1-031');
+  both = dispatch(both, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: bothCloudId }, cards);
+  both = passMenu(both);
+  const bothCenter = both.instances[both.players.p1.center];
+  const bothParty = both.instances[both.players.p1.party.find((id) => id && both.instances[id].cardId === 'CS1-031')];
+  const bothHeartId = moveCardToHand(both, 'p1', 'CS1-334');
+  bothCenter.battlefield.currentHp -= 3000;
+  bothParty.battlefield.currentHp -= 3000;
+  const bothAction = getLegalActions(both, 'p1', cards).find((candidate) => candidate.type === 'ACTIVATE_ABILITY' && candidate.instanceId === bothHeartId);
+  both = dispatch(both, { ...bothAction, playerId: 'p1' }, cards);
+  both = passMenu(both);
+  assert.equal(both.instances[bothCenter.instanceId].battlefield.currentHp, both.instances[bothCenter.instanceId].battlefield.maxHp - 500);
+  assert.equal(both.instances[bothParty.instanceId].battlefield.currentHp, both.instances[bothParty.instanceId].battlefield.maxHp - 500);
+  assert.equal(both.players.p1.resources.momentum, 5, 'healing both injured allies does not use the alternative Momentum branch');
+  assertStateInvariants(both, cards);
 });
 
 test('Stocked Memories offers a revealed Ability, bottoms a hand card, and orders the remaining reveals', () => {
