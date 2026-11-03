@@ -1,3 +1,6 @@
+import { getEffectProgram, getEquipmentProgram } from './effects.js';
+import { supportedTransformationIds, transformationRequirementMet } from './transformations.js';
+
 export class RuleError extends Error {
   constructor(code, message) {
     super(message);
@@ -36,7 +39,6 @@ export function validateRegistration(deck, cardIndex) {
   const mainIds = deck?.mainIds ?? [];
   const equipmentIds = deck?.equipmentIds ?? [];
   if (mainIds.length < 40 || mainIds.length > 60) errors.push('Main Deck must contain 40–60 cards.');
-  if (equipmentIds.length !== 20) errors.push('Equipment/Transformation Deck must occupy exactly 20 slots.');
   const copies = new Map();
   let finishers = 0;
   for (const id of mainIds) {
@@ -61,8 +63,8 @@ export function validateRegistration(deck, cardIndex) {
   return { valid: errors.length === 0, errors, mainCount: mainIds.length, equipmentSlots: slots, finisherCount: finishers };
 }
 
-function createInstance({ id, cardId, ownerId, zone }) {
-  return { instanceId: id, cardId, ownerId, controllerId: ownerId, zone, attachedTo: null, battlefield: null, usage: { attackedThisTurn: false, nameLimits: {} } };
+function createInstance({ id, cardId, ownerId, zone, physicalCopyId = id, usage = null }) {
+  return { instanceId: id, physicalCopyId, cardId, ownerId, controllerId: ownerId, zone, attachedTo: null, battlefield: null, usage: usage ? clone(usage) : { attackedThisTurn: false, nameLimits: {} } };
 }
 
 function maxHp(instance, cardIndex, isCenter = false) {
@@ -126,6 +128,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
     mulliganOrder: [firstPlayerId, opponentId],
     mulliganIndex: 0,
     instances,
+    nextInstanceNumber: nextInstance,
     menu: null,
     pendingTriggers: [],
     combat: null,
@@ -172,8 +175,8 @@ function startNextTurn(state, cardIndex) {
 }
 
 function openMenu(state, initiatorId, select) {
-  state.menu = { id: `M${state.log.length + 1}`, initiatorId, activeSelectId: `S${state.log.length + 1}`, selects: [select], priorityPlayerId: state.playerOrder.find((id) => id !== initiatorId), consecutivePasses: 0 };
-  state.priorityPlayerId = state.menu.priorityPlayerId;
+  state.menu = { id: `M${state.log.length + 1}`, initiatorId, activeSelectId: `S${state.log.length + 1}`, selects: [select], priorityPlayerId: initiatorId, consecutivePasses: 0 };
+  state.priorityPlayerId = initiatorId;
   addLog(state, { type: 'MENU_OPENED', menuId: state.menu.id, initiatorId, select: select.kind });
 }
 
@@ -207,6 +210,35 @@ function resolveMenu(state, cardIndex) {
       }
       gear.zone = 'attached'; gear.attachedTo = host.instanceId; gear.controllerId = host.controllerId;
       addLog(state, { type: 'EQUIPMENT_ATTACHED', playerId: player.id, equipmentId: gear.instanceId, hostId: host.instanceId });
+    } else if (select.kind === 'TRANSFORM') {
+      const player = state.players[select.playerId];
+      const base = state.instances[select.baseInstanceId];
+      const form = state.instances[select.formInstanceId];
+      const definition = form && cardIndex.get(form.cardId);
+      if (!supportedTransformationIds().includes(definition?.id) || form.zone !== 'pending' || !base?.battlefield || base.controllerId !== player.id || base.cardId !== definition.transformation.base_id) {
+        restorePendingTransformation(state, select);
+        addLog(state, { type: 'TRANSFORMATION_FAILED', formInstanceId: select.formInstanceId, reason: 'The selected base or transformation is no longer legal.' });
+        continue;
+      }
+      const isCenter = player.center === base.instanceId;
+      const partyIndex = player.party.indexOf(base.instanceId);
+      if (!isCenter && partyIndex < 0) {
+        restorePendingTransformation(state, select);
+        addLog(state, { type: 'TRANSFORMATION_FAILED', formInstanceId: form.instanceId, reason: 'The base left its Character Zone.' });
+        continue;
+      }
+      base.zone = 'underlay'; base.battlefield = null; base.underlayFor = form.instanceId;
+      form.zone = isCenter ? 'center' : 'party'; form.controllerId = player.id; form.usage = clone(base.usage);
+      form.transformState = { underlayId: base.instanceId, reservedBaseId: select.reservedBaseId ?? null };
+      const hp = maxHp(form, cardIndex, isCenter);
+      form.battlefield = { currentHp: hp, maxHp: hp, position: isCenter ? 'center' : `party-${partyIndex}` };
+      if (isCenter) player.center = form.instanceId;
+      else player.party[partyIndex] = form.instanceId;
+      for (const gear of attachedEquipment(state, base.instanceId)) {
+        if (requirementsMet(cardIndex.get(gear.cardId), form, cardIndex)) { gear.attachedTo = form.instanceId; gear.controllerId = form.controllerId; }
+        else returnAttachedEquipment(state, base.instanceId, gear.instanceId);
+      }
+      addLog(state, { type: 'CHARACTER_TRANSFORMED', playerId: player.id, baseInstanceId: base.instanceId, formInstanceId: form.instanceId, reserveId: select.reservedBaseId ?? null });
     } else if (select.kind === 'CARD_EFFECT') {
       const instance = state.instances[select.instanceId];
       const card = instance && cardIndex.get(instance.cardId);
@@ -248,12 +280,9 @@ function hasControlledSubtype(state, playerId, subtype, cardIndex) {
 function passiveEquipmentAttackBonus(state, hostId, cardIndex) {
   let bonus = 0;
   for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === hostId)) {
-    const text = cardIndex.get(gear.cardId)?.effect_text ?? '';
-    const match = text.match(/(?:^|\. )The bearer gains ([0-9,]+) ATK\.(?:\s|$)/);
-    if (match) bonus += Number(match[1].replaceAll(',', ''));
-    const conditional = text.match(/(?:^|\. )The bearer gains ([0-9,]+) ATK while it has damage\./);
+    const program = getEquipmentProgram(gear.cardId);
     const host = state.instances[hostId];
-    if (conditional && host.battlefield.currentHp < host.battlefield.maxHp) bonus += Number(conditional[1].replaceAll(',', ''));
+    if (program?.passiveAttackBonus && (!program.requiresDamage || host.battlefield.currentHp < host.battlefield.maxHp)) bonus += program.passiveAttackBonus;
   }
   return bonus;
 }
@@ -274,46 +303,113 @@ function resolveCombat(state, cardIndex) {
   const recipients = [target, ...combat.guardIds.map((id) => state.instances[id]).filter((x) => x?.battlefield && x.controllerId !== combat.initiatorId)];
   if (recipients.length === 0) { state.combat = null; return; }
   const share = Math.floor(total / recipients.length), remainder = total % recipients.length;
-  recipients.forEach((recipient, index) => {
+  const damageAssignments = recipients.map((recipient, index) => {
     let amount = share + (index === 0 ? remainder : 0);
     for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === recipient.instanceId)) {
-      const text = cardIndex.get(gear.cardId)?.effect_text ?? '';
-      const reduced = text.match(/(?:^|\. )(?:its|the bearer’s|the bearer's) combat damage taken is reduced by ([0-9,]+)\./i);
-      if (reduced) amount = Math.max(0, amount - Number(reduced[1].replaceAll(',', '')));
+      const program = getEquipmentProgram(gear.cardId);
+      if (program?.combatDamageReduction) amount = Math.max(0, amount - program.combatDamageReduction);
     }
-    recipient.battlefield.currentHp -= amount;
-    addLog(state, { type: 'COMBAT_DAMAGE', targetId: recipient.instanceId, amount, remainingHp: recipient.battlefield.currentHp });
+    return { recipient, amount, remainingHp: recipient.battlefield.currentHp - amount };
   });
+  // Commit every recipient's HP change together before determining any defeat.
+  for (const { recipient, amount, remainingHp } of damageAssignments) {
+    recipient.battlefield.currentHp = remainingHp;
+    addLog(state, { type: 'COMBAT_DAMAGE', targetId: recipient.instanceId, amount, remainingHp });
+  }
   participants.forEach((instance) => { instance.usage.attackedThisTurn = true; });
   const declaredLead = combat.attackerIds[0];
   if (declaredLead === initiator.center) initiator.turn.freeMainAttackUsed = true;
   else initiator.turn.freePartyAttackUsed = true;
   const defeated = recipients.filter((x) => x.battlefield.currentHp <= 0);
-  for (const victim of defeated) {
+  const lifeLoss = new Map();
+  let momentumGain = 0;
+  const defeatRecords = defeated.map((victim) => {
     const owner = state.players[victim.controllerId];
     const isMain = owner.center === victim.instanceId;
-    if (isMain) {
-      owner.life = Math.max(0, owner.life - 2);
-      initiator.resources.momentum += 2;
-      victim.battlefield.currentHp = victim.battlefield.maxHp;
-      victim.usage.attackedThisTurn = false;
-      victim.battlefield.generation = (victim.battlefield.generation ?? 1) + 1;
+    const amount = isMain ? 2 : 1;
+    lifeLoss.set(owner.id, (lifeLoss.get(owner.id) ?? 0) + amount);
+    momentumGain += amount;
+    return { victim, owner, isMain, amount };
+  });
+  // Life loss and the resulting terminal check use the same simultaneous defeat event.
+  for (const [ownerId, amount] of lifeLoss) state.players[ownerId].life = Math.max(0, state.players[ownerId].life - amount);
+  initiator.resources.momentum += momentumGain;
+  for (const { victim, owner, isMain } of defeatRecords) {
+    returnAttachedEquipment(state, victim.instanceId);
+    if (victim.transformState) {
+      const underlay = state.instances[victim.transformState.underlayId];
+      if (!underlay || underlay.zone !== 'underlay') fail('TRANSFORMATION_UNDERLAY_MISSING', 'A transformed Character must retain its exact base underlay.');
+      if (isMain) {
+        const reserve = state.instances[victim.transformState.reservedBaseId];
+        if (!reserve || reserve.zone !== 'baseReserve' || reserve.cardId !== underlay.cardId) fail('TRANSFORMATION_RESERVE_MISSING', 'A transformed Main must have its reserved exact base copy.');
+        owner.zones.baseReserve = owner.zones.baseReserve.filter((id) => id !== reserve.instanceId);
+        const restoredId = `${owner.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+        const restored = createInstance({ id: restoredId, physicalCopyId: reserve.physicalCopyId, cardId: reserve.cardId, ownerId: reserve.ownerId, zone: 'center', usage: victim.usage });
+        restored.battlefield = { currentHp: maxHp(restored, cardIndex, true), maxHp: maxHp(restored, cardIndex, true), position: 'center' };
+        state.instances[restoredId] = restored;
+        reserve.zone = 'retired'; reserve.reservedFrom = null;
+        owner.center = restoredId;
+        victim.zone = 'continue'; victim.battlefield = null; victim.transformState = null;
+        owner.zones.continue.push(victim.instanceId);
+        underlay.zone = 'continue'; underlay.underlayFor = null; owner.zones.continue.push(underlay.instanceId);
+        addLog(state, { type: 'TRANSFORMED_MAIN_RESTORED', defeatedFormId: victim.instanceId, baseUnderlayId: underlay.instanceId, instanceId: restoredId, physicalCopyId: restored.physicalCopyId });
+      } else {
+        owner.party = owner.party.map((id) => id === victim.instanceId ? null : id);
+        victim.zone = 'continue'; victim.battlefield = null; victim.transformState = null;
+        underlay.zone = 'continue'; underlay.underlayFor = null;
+        owner.zones.continue.push(victim.instanceId, underlay.instanceId);
+        addLog(state, { type: 'TRANSFORMED_PARTY_DEFEATED', formId: victim.instanceId, baseUnderlayId: underlay.instanceId });
+      }
+    } else if (isMain) {
+      const oldId = victim.instanceId;
+      const replacementId = `${owner.id}-C${String(state.nextInstanceNumber++).padStart(4, '0')}`;
+      const replacement = createInstance({ id: replacementId, physicalCopyId: victim.physicalCopyId, cardId: victim.cardId, ownerId: victim.ownerId, zone: 'center', usage: victim.usage });
+      const card = cardIndex.get(victim.cardId);
+      replacement.battlefield = { currentHp: maxHp(replacement, cardIndex, true), maxHp: maxHp(replacement, cardIndex, true), position: 'center' };
+      state.instances[replacementId] = replacement;
+      victim.zone = 'retired'; victim.battlefield = null;
+      owner.center = replacementId;
+      addLog(state, { type: 'MAIN_REVIVED', oldInstanceId: oldId, instanceId: replacementId, physicalCopyId: replacement.physicalCopyId });
     } else {
-      owner.life = Math.max(0, owner.life - 1);
-      initiator.resources.momentum += 1;
       owner.party = owner.party.map((id) => id === victim.instanceId ? null : id);
       victim.zone = 'continue'; victim.battlefield = null;
       owner.zones.continue.push(victim.instanceId);
-      for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === victim.instanceId)) {
-        gear.zone = 'arsenal'; gear.attachedTo = null; gear.controllerId = gear.ownerId;
-        state.players[gear.ownerId].zones.arsenal.push(gear.instanceId);
-      }
     }
     addLog(state, { type: 'BATTLE_DEFEAT', victimId: victim.instanceId, playerId: owner.id, mainCharacter: isMain });
   }
   const down = state.playerOrder.filter((id) => state.players[id].life <= 0);
   if (down.length) { state.status = 'finished'; state.winnerId = down.length === 2 ? null : state.playerOrder.find((id) => !down.includes(id)); }
   state.combat = null;
+}
+
+function attachedEquipment(state, hostId) {
+  return Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === hostId);
+}
+
+function returnAttachedEquipment(state, hostId, specificId = null) {
+  for (const gear of attachedEquipment(state, hostId).filter((x) => !specificId || x.instanceId === specificId)) {
+    gear.zone = 'arsenal'; gear.attachedTo = null; gear.controllerId = gear.ownerId;
+    state.players[gear.ownerId].zones.arsenal.push(gear.instanceId);
+  }
+}
+
+function restorePendingTransformation(state, select) {
+  const player = state.players[select.playerId], form = state.instances[select.formInstanceId];
+  if (form?.zone === 'pending') { form.zone = 'arsenal'; player.zones.arsenal.push(form.instanceId); }
+  if (select.reservedBaseId) {
+    const reserved = state.instances[select.reservedBaseId];
+    if (!reserved || reserved.zone !== 'baseReserve') return;
+    player.zones.baseReserve = player.zones.baseReserve.filter((id) => id !== reserved.instanceId);
+    const origin = reserved.reservedFrom?.zone;
+    reserved.reservedFrom = null;
+    if (origin === 'hand') { reserved.zone = 'hand'; player.zones.hand.push(reserved.instanceId); }
+    else if (origin === 'continue') { reserved.zone = 'continue'; player.zones.continue.push(reserved.instanceId); }
+    else {
+      reserved.zone = 'mainDeck'; player.zones.mainDeck.push(reserved.instanceId);
+      const rng = makeRng((state.randomSeed + state.log.length + reserved.instanceId.length) >>> 0);
+      player.zones.mainDeck = shuffle(player.zones.mainDeck, rng);
+    }
+  }
 }
 
 /** Pure reducer: validates the action, returns a new state, and throws RuleError on illegal actions. */
@@ -345,6 +441,33 @@ export function dispatch(stateInput, action, cards) {
 
   if (state.status !== 'active' && action.type !== 'START_GAME') fail('GAME_NOT_ACTIVE', 'The game is not active.');
   if (state.menu) {
+    if (state.combat?.guardWindow) {
+      if (action.playerId !== state.combat.defenderId) fail('NO_PRIORITY', 'Only the defender may declare guards in the combat declaration window.');
+      if (action.type === 'ASSIGN_GUARDS') {
+        if (state.combat.guardsDeclared) fail('GUARDS_ALREADY_DECLARED', 'All Allied Guards are declared at once before responses begin.');
+        const chosen = action.guardInstanceIds ?? [];
+        if (new Set(chosen).size !== chosen.length) fail('INVALID_GUARDS', 'Choose distinct Party Members.');
+        const legal = chosen.map((id) => state.instances[id]);
+        if (legal.some((instance) => !instance?.battlefield || instance.controllerId !== player.id || instance.battlefield.position === 'center' || instance.instanceId === state.combat.targetId || state.combat.attackerIds.includes(instance.instanceId))) fail('INVALID_GUARDS', 'Allied Guards must be distinct Party Members, excluding the original target and Chain attackers.');
+        const cost = legal.length * 2;
+        if (player.resources.momentum < cost) fail('INSUFFICIENT_RESOURCE', 'Pay 2 Momentum for each Allied Guard before responses.');
+        player.resources.momentum -= cost;
+        state.combat.guardIds = [...chosen];
+        state.combat.guardsDeclared = true;
+        addLog(state, { type: 'ALLIED_GUARDS_DECLARED', playerId: player.id, guardInstanceIds: chosen, cost });
+        return state;
+      }
+      if (action.type === 'BEGIN_COMBAT_RESPONSES') {
+        state.combat.guardsDeclared = true;
+        state.combat.guardWindow = false;
+        state.menu.priorityPlayerId = state.combat.initiatorId;
+        state.menu.consecutivePasses = 0;
+        state.priorityPlayerId = state.combat.initiatorId;
+        addLog(state, { type: 'COMBAT_RESPONSES_BEGIN', playerId: state.combat.initiatorId });
+        return state;
+      }
+      fail('GUARD_WINDOW_ACTION', 'Only Allied Guard declarations or response-window confirmation are legal before responses.');
+    }
     if (action.playerId !== state.menu.priorityPlayerId) fail('NO_PRIORITY', 'Only the player with priority may act in this Menu.');
     if (action.type === 'PASS') {
       state.menu.consecutivePasses += 1;
@@ -353,20 +476,7 @@ export function dispatch(stateInput, action, cards) {
       return state;
     }
     if (action.type === 'ASSIGN_GUARDS') {
-      if (!state.combat || state.combat.initiatorId === player.id) fail('NOT_DEFENDING', 'Only the defender may assign Allied Guards in this combat Menu.');
-      const chosen = action.guardInstanceIds ?? [];
-      if (new Set(chosen).size !== chosen.length || chosen.some((id) => state.combat.guardIds.includes(id))) fail('INVALID_GUARDS', 'Choose distinct Party Members that are not already guarding.');
-      const legal = chosen.map((id) => state.instances[id]);
-      if (legal.some((instance) => !instance?.battlefield || instance.controllerId !== player.id || instance.battlefield.position === 'center')) fail('INVALID_GUARDS', 'Allied Guards must be controlled Party Members.');
-      const cost = legal.length * 2;
-      if (player.resources.momentum < cost) fail('INSUFFICIENT_RESOURCE', 'Pay 2 Momentum for each Allied Guard before responses.');
-      player.resources.momentum -= cost;
-      state.combat.guardIds.push(...chosen);
-      state.menu.selects.push({ id: `S${state.log.length + 1}`, kind: 'ALLIED_GUARD', playerId: player.id, guardInstanceIds: chosen });
-      state.menu.consecutivePasses = 0;
-      state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
-      addLog(state, { type: 'ALLIED_GUARD_ASSIGNED', playerId: player.id, guardInstanceIds: chosen, cost });
-      return state;
+      fail('GUARD_WINDOW_CLOSED', 'All Allied Guards must be declared before response actions begin.');
     }
     if (action.type === 'ACTIVATE_SPEED') {
       const instance = state.instances[action.instanceId];
@@ -417,6 +527,38 @@ export function dispatch(stateInput, action, cards) {
     openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'ADD_TO_PARTY', playerId: player.id, instanceId: instance.instanceId, partyIndex });
     return state;
   }
+  if (action.type === 'TRANSFORM') {
+    if (state.phase !== 'main') fail('WRONG_PHASE', 'Transformation is a Main Phase action.');
+    const form = state.instances[action.formInstanceId], formCard = form && cardIndex.get(form.cardId);
+    const base = state.instances[action.baseInstanceId];
+    if (!form || form.zone !== 'arsenal' || form.ownerId !== player.id || formCard?.type !== 'Character' || !formCard.transformation || !supportedTransformationIds().includes(formCard.id)) fail('UNSUPPORTED_TRANSFORMATION', 'Choose a registered transformation from your arsenal with an implemented entry condition.');
+    if (!base?.battlefield || base.controllerId !== player.id || base.cardId !== formCard.transformation.base_id) fail('ILLEGAL_TRANSFORMATION_BASE', 'Choose the exact nontransformed base Character required by this form.');
+    if (!transformationRequirementMet(state, formCard, base, player, cardIndex)) fail('TRANSFORMATION_REQUIREMENT', 'This form’s printed entry requirement is not met.');
+    const isCenter = player.center === base.instanceId;
+    let reserved = null;
+    if (isCenter) {
+      const exactCopies = [player.zones.continue, player.zones.hand, player.zones.mainDeck].flat();
+      reserved = action.reserveInstanceId ? state.instances[action.reserveInstanceId] : exactCopies.map((id) => state.instances[id]).find((instance) => instance?.cardId === base.cardId);
+      if (!reserved || reserved.cardId !== base.cardId || !exactCopies.includes(reserved.instanceId)) fail('MAIN_BASE_RESERVE_REQUIRED', 'A Main transformation requires another registered exact base copy from hand, Main Deck, or Continue?.');
+    }
+    const cost = formCard.cost ?? {};
+    for (const key of ['momentum', 'light', 'darkness']) if (player.resources[key] < (cost[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key} to transform.`);
+    for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= cost[key] ?? 0;
+    if (reserved) {
+      const source = reserved.zone, sourceList = player.zones[source];
+      reserved.reservedFrom = { zone: source, index: sourceList.indexOf(reserved.instanceId) };
+      player.zones[source] = sourceList.filter((id) => id !== reserved.instanceId);
+      reserved.zone = 'baseReserve'; player.zones.baseReserve.push(reserved.instanceId);
+      if (source === 'mainDeck') {
+        const rng = makeRng((state.randomSeed + state.log.length + reserved.instanceId.length) >>> 0);
+        player.zones.mainDeck = shuffle(player.zones.mainDeck, rng);
+      }
+    }
+    player.zones.arsenal = player.zones.arsenal.filter((id) => id !== form.instanceId);
+    form.zone = 'pending';
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'TRANSFORM', playerId: player.id, baseInstanceId: base.instanceId, formInstanceId: form.instanceId, reservedBaseId: reserved?.instanceId ?? null });
+    return state;
+  }
   if (action.type === 'ATTACH_EQUIPMENT') {
     if (state.phase !== 'main') fail('WRONG_PHASE', 'Standard Equipment attachment is a Main Phase action.');
     const gear = state.instances[action.equipmentInstanceId], card = gear && cardIndex.get(gear.cardId), host = state.instances[action.hostInstanceId];
@@ -458,13 +600,14 @@ export function dispatch(stateInput, action, cards) {
     const extra = action.chainInstanceIds ?? [];
     if (extra.includes(attacker.instanceId) || new Set(extra).size !== extra.length) fail('INVALID_CHAIN', 'Chain participants must be distinct.');
     const extras = extra.map((id) => state.instances[id]);
-    if (extras.some((x) => !x?.battlefield || x.controllerId !== player.id || x.usage.attackedThisTurn || x.battlefield.position === 'center')) fail('INVALID_CHAIN', 'Each extra attacker must be an unused allied Party Member.');
+    if (extras.some((x) => !x?.battlefield || x.controllerId !== player.id || x.usage.attackedThisTurn)) fail('INVALID_CHAIN', 'Each extra attacker must be an unused allied Character.');
     const extraCost = 2 * extras.length;
     if (player.resources.momentum < extraCost) fail('INSUFFICIENT_RESOURCE', 'Pay 2 Momentum for each additional attacker before responses.');
-    for (const instance of extras) if (!instance || instance.battlefield.position === 'center') fail('INVALID_CHAIN', 'The Main Character cannot assist as a Party Member.');
     player.resources.momentum -= extraCost;
-    state.combat = { initiatorId: player.id, attackerIds: [attacker.instanceId, ...extra], targetId: target.instanceId, guardIds: [], declaredAtTurn: state.turnNumber };
+    state.combat = { initiatorId: player.id, defenderId: target.controllerId, attackerIds: [attacker.instanceId, ...extra], targetId: target.instanceId, guardIds: [], guardsDeclared: false, guardWindow: true, declaredAtTurn: state.turnNumber };
     openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'COMBAT', combat: clone(state.combat) });
+    state.menu.priorityPlayerId = state.combat.defenderId;
+    state.priorityPlayerId = state.combat.defenderId;
     return state;
   }
   if (action.type === 'ACTIVATE_SPEED') {
@@ -498,11 +641,14 @@ export function getLegalActions(state, playerId, cards) {
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
   if (state.menu) {
     if (state.menu.priorityPlayerId !== playerId) return [];
-    const actions = [{ type: 'PASS' }];
-    if (state.combat && state.combat.initiatorId !== playerId) {
-      const eligible = player.party.filter(Boolean).filter((id) => !state.combat.guardIds.includes(id));
-      if (eligible.length && player.resources.momentum >= 2) actions.push({ type: 'ASSIGN_GUARDS', eligibleInstanceIds: eligible, costEach: 2 });
+    if (state.combat?.guardWindow) {
+      const actions = [{ type: 'BEGIN_COMBAT_RESPONSES' }];
+      const eligible = player.party.filter(Boolean).filter((id) => !state.combat.attackerIds.includes(id));
+      const maxCount = Math.min(eligible.length, Math.floor(player.resources.momentum / 2));
+      if (!state.combat.guardsDeclared && maxCount > 0) actions.unshift({ type: 'ASSIGN_GUARDS', eligibleInstanceIds: eligible, costEach: 2, maxCount });
+      return actions;
     }
+    const actions = [{ type: 'PASS' }];
     for (const id of player.zones.hand) {
       const card = cardIndex.get(state.instances[id].cardId), program = card && getEffectProgram(card.id);
       if (card?.type !== 'Speed Ability' || !program || player.turn.nameLimits[card.name]) continue;
@@ -527,6 +673,19 @@ export function getLegalActions(state, playerId, cards) {
       if (card?.type === 'Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, targetOptions: [player.center, ...player.party].filter(Boolean) });
       if (card?.type === 'Speed Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id });
     }
+    for (const formId of player.zones.arsenal) {
+      const form = cardIndex.get(state.instances[formId]?.cardId);
+      if (form?.transformation && supportedTransformationIds().includes(form.id)) {
+        const cost = form.cost ?? {};
+        if (['momentum', 'light', 'darkness'].some((key) => player.resources[key] < (cost[key] ?? 0))) continue;
+        for (const baseId of [player.center, ...player.party].filter(Boolean)) {
+          const base = state.instances[baseId];
+          if (base.cardId !== form.transformation.base_id || !transformationRequirementMet(state, form, base, player, cardIndex)) continue;
+          if (baseId === player.center && ![...player.zones.hand, ...player.zones.mainDeck, ...player.zones.continue].some((id) => state.instances[id]?.cardId === base.cardId)) continue;
+          actions.push({ type: 'TRANSFORM', formInstanceId: formId, baseInstanceId: baseId, reserveRequired: baseId === player.center });
+        }
+      }
+    }
   }
   if (state.phase === 'battle' && !(state.turnNumber === 1 && state.activePlayerId === state.playerOrder[0])) {
     const enemies = state.playerOrder.filter((id) => id !== playerId).flatMap((id) => [state.players[id].center, ...state.players[id].party].filter(Boolean));
@@ -534,7 +693,7 @@ export function getLegalActions(state, playerId, cards) {
     if (!player.turn.freeMainAttackUsed && !state.instances[player.center].usage.attackedThisTurn) attackers.push(player.center);
     if (!player.turn.freePartyAttackUsed) attackers.push(...player.party.filter((id) => id && !state.instances[id].usage.attackedThisTurn));
     for (const attackerInstanceId of attackers) for (const targetInstanceId of enemies) {
-      actions.push({ type: 'DECLARE_ATTACK', attackerInstanceId, targetInstanceId, availableChainIds: player.party.filter((id) => id && id !== attackerInstanceId && !state.instances[id].usage.attackedThisTurn && player.resources.momentum >= 2) });
+      actions.push({ type: 'DECLARE_ATTACK', attackerInstanceId, targetInstanceId, availableChainIds: [player.center, ...player.party].filter((id) => id && id !== attackerInstanceId && !state.instances[id].usage.attackedThisTurn && player.resources.momentum >= 2) });
     }
   }
   return actions;
@@ -551,7 +710,8 @@ export function assertStateInvariants(state, cards) {
     for (const id of player.party.filter(Boolean)) { const c=state.instances[id]; if(!c?.battlefield||c.battlefield.position==='center'||c.controllerId!==player.id) fail('PARTY_INVARIANT',`${id} is not a controlled Party Member.`); }
   }
   for (const instance of Object.values(state.instances)) if (instance.zone === 'attached' && (!instance.attachedTo || !state.instances[instance.attachedTo]?.battlefield)) fail('ATTACHMENT_INVARIANT', `${instance.instanceId} has no legal host.`);
-  if (seen.size !== Object.values(state.instances).filter((instance) => instance.zone !== 'pending' && instance.zone !== 'attached' && instance.zone !== 'underlay').length) fail('ZONE_CONSERVATION', 'A card instance is missing from its owner’s public or private zones.');
+  if (seen.size !== Object.values(state.instances).filter((instance) => !['pending', 'attached', 'underlay', 'retired'].includes(instance.zone)).length) fail('ZONE_CONSERVATION', 'A card instance is missing from its owner’s public or private zones.');
+  const livePhysicalCopies = Object.values(state.instances).filter((instance) => !['pending', 'attached', 'underlay', 'retired'].includes(instance.zone));
+  if (new Set(livePhysicalCopies.map((instance) => instance.physicalCopyId)).size !== livePhysicalCopies.length) fail('PHYSICAL_COPY_DUPLICATION', 'A registered physical card copy has more than one active battlefield/zone instance.');
   return true;
 }
-import { getEffectProgram } from './effects.js';

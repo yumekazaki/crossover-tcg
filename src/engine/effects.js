@@ -10,5 +10,10 @@ const programs = {
   }
 };
 
+// Equipment is executable only when an exact, reviewed program is listed here.
+const equipmentPrograms = Object.freeze({});
+
 export const getEffectProgram = (cardId) => programs[cardId] ?? null;
 export const implementedEffectIds = () => Object.keys(programs);
+export const getEquipmentProgram = (cardId) => equipmentPrograms[cardId] ?? null;
+export const implementedEquipmentEffectIds = () => Object.keys(equipmentPrograms);

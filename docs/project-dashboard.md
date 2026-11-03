@@ -12,7 +12,7 @@
 
 | System | Planned | Implemented | Validated | Tested |
 |---|---|---|---|---|
-| Rules engine | Yes | Partial: setup, mulligan, deployment, compatible Equipment, two healing effects, response Menus, turn resources and initial chain combat | Covered paths pass 9 engine tests; full rule audit not passed | Partial automated tests only |
+| Rules engine | Yes | Partial: setup, mulligan, deployment, compatible Equipment, two healing effects, combat guard window, attacker-first response priority, simultaneous HP/life commit, fresh-instance Main revival, and all eight registered transformation entry paths | Covered paths pass 16 engine tests; full rule audit not passed | Partial automated tests only |
 | 500-card source data | Yes | Yes (imported) | Structural checks pass; semantic and balance review remain open | No full set playtesting |
 | Local playable interface | Yes | Yes: card browser, deck builder and shared-device practice prototype | UI component checks pass; live local app launch blocked by this environment's loopback socket restriction | No full-game playtest |
 | Deck builder | Yes | Yes: create/save/import/export/search and exact legality checks | 16 data tests and 16 UI browser checks pass | Not separately playtested |
@@ -20,4 +20,4 @@
 | Accounts / online multiplayer | Yes | No | No | No |
 | Deployment | Yes | No | No | No |
 
-Engine effect coverage is **2 of 500** cards; all other effects are explicitly unsupported and blocked. Transformation, Finisher execution, full triggers/protection/suspension/control resolution, AI, accounts, online matches and deployment remain incomplete. This dashboard distinguishes imported designs from implemented, validated, reviewed and actually played functionality.
+Engine card-effect coverage is **2 of 500**; every other card effect remains unsupported and blocked. Equipment attachment is implemented, but Equipment effects only run through explicit reviewed programs; none are registered yet. Eight canonical forms can enter play using explicit base, resource, entry-condition, reserve, Equipment-transfer and defeat/restore rules, but their printed form abilities and voluntary reversion are still unimplemented. Finisher execution, trigger processing, full protection/suspension/control resolution, AI, accounts, online matches and deployment remain incomplete. The test suite currently has 32 checks (16 data, 16 engine). `docs/effect-coverage-plan.md` groups the remaining card text into proposed implementation families without marking those effects implemented. This dashboard distinguishes imported designs from implemented, validated, reviewed and actually played functionality.

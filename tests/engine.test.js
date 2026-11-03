@@ -2,23 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadCards, allCards } from '../src/data/cards.js';
 import { createInitialState, dispatch, getLegalActions, assertStateInvariants, RuleError } from '../src/engine/game.js';
+import { supportedTransformationIds, transformationRequirementMet } from '../src/engine/transformations.js';
 
 await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
-function deck(starter) {
+function deck(starter, duplicateStarter = false, transformationId = null) {
   const required = [starter, 'CS1-060', 'CS1-281', 'CS1-282', 'CS1-433'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
-  assert.equal(mainIds.length, 40);
-  const equipmentIds = cards.filter((card) => card.type === 'Equipment').slice(0, 20).map((card) => card.id);
+  if (duplicateStarter) mainIds.splice(1, 0, starter);
+  assert.ok(mainIds.length >= 40 && mainIds.length <= 60);
+  const equipmentIds = cards.filter((card) => card.type === 'Equipment').slice(0, transformationId ? 18 : 20).map((card) => card.id);
+  if (transformationId) equipmentIds.push(transformationId);
   assert.equal(new Set(mainIds).size, 40);
   return { mainIds, equipmentIds };
 }
-function game(p1Starter = 'CS1-060') {
+function game(p1Starter = 'CS1-060', duplicateStarter = false, transformationId = null) {
   return createInitialState({
     players: [
-      { id: 'p1', name: 'Player One', deck: deck(p1Starter), startingMainId: p1Starter },
+      { id: 'p1', name: 'Player One', deck: deck(p1Starter, duplicateStarter, transformationId), startingMainId: p1Starter },
       { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
     ], firstPlayerId: 'p1', chooserId: 'p2', seed: 42, cards
   });
@@ -114,12 +117,196 @@ test('a legal opponent attack can be answered by First Aid before combat damage'
   assert.equal(s.activePlayerId, 'p2');
   s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: targetId }, cards);
+  assert.equal(s.menu.priorityPlayerId, 'p1');
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  assert.equal(s.menu.priorityPlayerId, 'p2');
+  s = dispatch(s, { type: 'PASS', playerId: 'p2' }, cards);
   assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'ACTIVATE_SPEED' && action.instanceId === speedId));
   s = dispatch(s, { type: 'ACTIVATE_SPEED', playerId: 'p1', instanceId: speedId, targets: [targetId] }, cards);
   s = passMenu(s);
   const attack = cards.find((card) => card.id === s.instances[s.players.p2.center].cardId);
   assert.equal(s.instances[targetId].battlefield.currentHp, hpBeforeResponse + 4000 - attack.statistics.atk);
   assert.equal(s.instances[speedId].zone, 'continue');
+  assertStateInvariants(s, cards);
+});
+
+test('combat guard declaration closes before responses and response priority begins with attacker', () => {
+  let s = start(game());
+  const partyCard = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyCard }, cards);
+  s = passMenu(s);
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: s.players.p1.center }, cards);
+  const guardId = s.players.p1.party[0];
+  assert.throws(() => dispatch(s, { type: 'PASS', playerId: 'p1' }, cards), (error) => error.code === 'GUARD_WINDOW_ACTION');
+  s = dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [guardId] }, cards);
+  assert.equal(s.players.p1.resources.momentum, 3);
+  assert.throws(() => dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [] }, cards), (error) => error.code === 'GUARDS_ALREADY_DECLARED');
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  assert.equal(s.menu.priorityPlayerId, 'p2');
+  assert.throws(() => dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [] }, cards), (error) => error.code === 'NO_PRIORITY');
+});
+
+test('an unregistered passive Equipment effect is not inferred from its rules text', () => {
+  let s = start(game('CS1-001'));
+  const targetId = s.players.p1.center;
+  const gearId = s.players.p1.zones.arsenal.find((id) => s.instances[id].cardId === 'CS1-181');
+  assert.ok(gearId);
+  s.players.p1.zones.arsenal = s.players.p1.zones.arsenal.filter((id) => id !== gearId);
+  s.instances[gearId].zone = 'attached'; s.instances[gearId].attachedTo = targetId;
+  const before = s.instances[targetId].battlefield.currentHp;
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: targetId }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  const attack = cards.find((card) => card.id === 'CS1-031');
+  assert.equal(s.instances[targetId].battlefield.currentHp, before - attack.statistics.atk);
+  assertStateInvariants(s, cards);
+});
+
+test('battle defeat revives Main as a new instance, returns Equipment, and keeps physical attack use', () => {
+  let s = start(game());
+  const mainId = s.players.p1.center;
+  const main = s.instances[mainId];
+  main.battlefield.currentHp = 1;
+  main.usage.attackedThisTurn = true;
+  const gearId = s.players.p1.zones.arsenal.find((id) => cards.find((card) => card.id === s.instances[id].cardId)?.type === 'Equipment');
+  s.players.p1.zones.arsenal = s.players.p1.zones.arsenal.filter((id) => id !== gearId);
+  s.instances[gearId].zone = 'attached'; s.instances[gearId].attachedTo = mainId;
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: mainId }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  const revivedId = s.players.p1.center;
+  assert.notEqual(revivedId, mainId);
+  assert.equal(s.instances[mainId].zone, 'retired');
+  assert.equal(s.instances[revivedId].physicalCopyId, main.physicalCopyId);
+  assert.equal(s.instances[revivedId].usage.attackedThisTurn, true);
+  assert.equal(s.instances[revivedId].battlefield.currentHp, s.instances[revivedId].battlefield.maxHp);
+  assert.equal(s.players.p1.life, 13);
+  assert.ok(s.players.p1.zones.arsenal.includes(gearId));
+  assert.equal(s.players.p1.turn.freeMainAttackUsed, false);
+  assertStateInvariants(s, cards);
+});
+
+test('one combat commits Main and guard defeats together before life and Momentum totals', () => {
+  let s = start(game());
+  const mainId = s.players.p1.center;
+  s.instances[mainId].battlefield.currentHp = 1;
+  const partyCard = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyCard }, cards);
+  s = passMenu(s);
+  const guardId = s.players.p1.party[0];
+  s.instances[guardId].battlefield.currentHp = 1;
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: mainId }, cards);
+  s = dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [guardId] }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.players.p1.life, 12);
+  assert.equal(s.players.p2.resources.momentum, 13);
+  assert.equal(s.instances[guardId].zone, 'continue');
+  assert.notEqual(s.players.p1.center, mainId);
+  assertStateInvariants(s, cards);
+});
+
+test('Final Form Main transformation reserves the exact base and restores it when the form is defeated', () => {
+  let s = start(game('CS1-001', true, 'CS1-027'));
+  const player = s.players.p1, baseId = player.center;
+  player.resources.light = 3; player.resources.darkness = 2;
+  const gearIds = ['CS1-181', 'CS1-183'].map((cardId) => player.zones.arsenal.find((id) => s.instances[id].cardId === cardId));
+  assert.ok(gearIds.every(Boolean));
+  player.zones.arsenal = player.zones.arsenal.filter((id) => !gearIds.includes(id));
+  for (const id of gearIds) { s.instances[id].zone = 'attached'; s.instances[id].attachedTo = baseId; }
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'TRANSFORM' && candidate.formInstanceId === player.zones.arsenal.find((id) => s.instances[id].cardId === 'CS1-027') && candidate.baseInstanceId === baseId);
+  assert.ok(action);
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  const reservedId = s.players.p1.zones.baseReserve[0];
+  assert.equal(s.instances[reservedId].cardId, 'CS1-001');
+  s = passMenu(s);
+  const formId = s.players.p1.center;
+  assert.equal(s.instances[formId].cardId, 'CS1-027');
+  assert.equal(s.instances[baseId].zone, 'underlay');
+  assert.ok(gearIds.every((id) => s.instances[id].attachedTo === formId));
+  assertStateInvariants(s, cards);
+  s.instances[formId].battlefield.currentHp = 1;
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: formId }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  const restoredId = s.players.p1.center;
+  assert.notEqual(restoredId, reservedId);
+  assert.equal(s.instances[restoredId].cardId, 'CS1-001');
+  assert.equal(s.instances[restoredId].physicalCopyId, s.instances[reservedId].physicalCopyId);
+  assert.equal(s.instances[formId].zone, 'continue');
+  assert.equal(s.instances[baseId].zone, 'continue');
+  assert.equal(s.instances[reservedId].zone, 'retired');
+  assert.equal(s.players.p1.zones.baseReserve.length, 0);
+  assert.ok(gearIds.every((id) => s.players.p1.zones.arsenal.includes(id)));
+  assert.equal(s.players.p1.life, 13);
+  assertStateInvariants(s, cards);
+});
+
+test('all eight transformation entry programs enforce their canonical requirement family', () => {
+  assert.equal(supportedTransformationIds().length, 8);
+  const attached = ['g1', 'g2'].map((id) => ({ instanceId: id, cardId: id, zone: 'attached', attachedTo: 'base' }));
+  const cardsById = new Map([
+    ['g1', { name: 'Kingdom Key', cost: { light: 1, darkness: 1 } }],
+    ['g2', { name: 'Oblivion', cost: { light: 1, darkness: 3 } }],
+    ['base', { franchise: 'Kingdom Hearts', subtypes: ['Sword Wielder'] }],
+    ['party2', { franchise: 'Final Fantasy', subtypes: ['Dominant'] }],
+    ['party3', { franchise: 'Persona', subtypes: [] }]
+  ]);
+  const state = { instances: { ...Object.fromEntries(attached.map((item) => [item.instanceId, item])), base: { cardId: 'base' }, party2: { cardId: 'party2' }, party3: { cardId: 'party3' } } };
+  const base = { instanceId: 'base', cardId: 'base', battlefield: { currentHp: 10000, maxHp: 20000 } };
+  const player = { center: 'base', party: ['party2', 'party3'], zones: { continue: Array(10).fill('continue-card') } };
+  const run = (id, selectedBase = base, selectedPlayer = player, selectedState = state, cardMap = cardsById) => transformationRequirementMet(selectedState, { id }, selectedBase, selectedPlayer, cardMap);
+  assert.equal(run('CS1-027'), true);
+  assert.equal(run('CS1-028'), true);
+  assert.equal(run('CS1-029'), true);
+  assert.equal(run('CS1-030'), true);
+  assert.equal(run('CS1-058'), true);
+  assert.equal(run('CS1-148'), true);
+  assert.equal(run('CS1-158'), true);
+  assert.equal(run('CS1-166'), true);
+  const costly = new Map(cardsById); costly.set('g2', { name: 'Oathkeeper', cost: { light: 1, darkness: 1 } });
+  assert.equal(run('CS1-028', base, player, state, costly), false);
+});
+
+test('transformed Party defeat sends both form and underlay to Continue without a Main reserve', () => {
+  let s = start(game('CS1-001', true, 'CS1-027'));
+  const partyBaseId = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyBaseId }, cards);
+  s = passMenu(s);
+  const player = s.players.p1;
+  player.resources.light = 3; player.resources.darkness = 2;
+  const gearIds = ['CS1-181', 'CS1-183'].map((cardId) => player.zones.arsenal.find((id) => s.instances[id].cardId === cardId));
+  player.zones.arsenal = player.zones.arsenal.filter((id) => !gearIds.includes(id));
+  for (const id of gearIds) { s.instances[id].zone = 'attached'; s.instances[id].attachedTo = partyBaseId; }
+  const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'TRANSFORM' && candidate.baseInstanceId === partyBaseId);
+  assert.ok(action);
+  assert.equal(action.reserveRequired, false);
+  s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  const formId = s.players.p1.party[0];
+  assert.equal(s.players.p1.zones.baseReserve.length, 0);
+  assert.equal(s.instances[partyBaseId].zone, 'underlay');
+  s.instances[formId].battlefield.currentHp = 1;
+  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: formId }, cards);
+  s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.instances[formId].zone, 'continue');
+  assert.equal(s.instances[partyBaseId].zone, 'continue');
+  assert.equal(s.players.p1.party[0], null);
+  assert.ok(gearIds.every((id) => s.players.p1.zones.arsenal.includes(id)));
+  assert.equal(s.players.p1.life, 14);
   assertStateInvariants(s, cards);
 });
 

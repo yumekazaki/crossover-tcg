@@ -2,6 +2,7 @@ import { loadCards, allCards, validateDeck, getArtwork } from './data/cards.js';
 import { createCardBrowser } from './ui/card-browser.js';
 import { createInitialState, dispatch, getLegalActions, assertStateInvariants } from './engine/game.js';
 import { implementedEffectIds } from './engine/effects.js';
+import { supportedTransformationIds } from './engine/transformations.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -130,7 +131,12 @@ function showCard(card) {
   content.append(create('p', 'dialog-effect', card.effect_text));
   content.append(create('p', '', `Cost: ${card.cost.light} Light · ${card.cost.darkness} Darkness · ${card.cost.momentum} Momentum`));
   content.append(create('p', '', art.placeholder ? `${art.label}. The image source is recorded, but use rights are not approved for this application.` : art.credit));
-  content.append(create('p', '', `Engine status: ${implementedEffectIds().includes(card.id) ? 'implemented template' : 'effect not yet implemented; actions using it are disabled'}.`));
+  const supportedForm = supportedTransformationIds().includes(card.id);
+  const effectStatus = implementedEffectIds().includes(card.id) ? 'implemented effect template'
+    : supportedForm ? 'transformation entry and base requirements are supported; printed form effects are still pending'
+      : card.type === 'Equipment' ? 'attachment procedure is supported; printed Equipment effects are not implemented'
+        : 'effect not yet implemented; actions using it are disabled';
+  content.append(create('p', '', `Engine status: ${effectStatus}.`));
   if (art.sourceUrl) { const link = create('a', '', 'Recorded source provenance'); link.href = art.sourceUrl; link.target = '_blank'; link.rel = 'noreferrer'; content.append(link); }
   $('card-dialog').showModal();
 }
@@ -159,10 +165,13 @@ function renderActions(actions, actorId, container) {
       const wrap = create('div', 'guard-choice'); wrap.append(create('span', '', 'Choose Party Members to guard (2 Momentum each)'));
       const checks = [];
       for (const id of action.eligibleInstanceIds) { const label = create('label', 'guard-check'), input = document.createElement('input'); input.type = 'checkbox'; input.value = id; label.append(input, create('span', '', cardName(id))); checks.push(input); wrap.append(label); }
+      for (const input of checks) input.addEventListener('change', () => { const selected = checks.filter((check) => check.checked).length; if (selected > action.maxCount) input.checked = false; const full = checks.filter((check) => check.checked).length >= action.maxCount; for (const check of checks) check.disabled = full && !check.checked; });
       wrap.append(actionButton('Assign selected guards', () => safeDispatch({ type: action.type, playerId: actorId, guardInstanceIds: checks.filter((x) => x.checked).map((x) => x.value) }))); container.append(wrap); continue;
     }
+    if (action.type === 'BEGIN_COMBAT_RESPONSES') { container.append(actionButton('Confirm guards and begin responses', () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ADVANCE_PHASE') { container.append(actionButton(`Advance from ${match.phase} phase`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ADD_TO_PARTY') { container.append(actionButton(`Add ${cardName(action.instanceId)} to Party`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+    if (action.type === 'TRANSFORM') { container.append(actionButton(`Transform ${cardName(action.baseInstanceId)} → ${cardName(action.formInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ATTACH_EQUIPMENT') { const gear = cardName(action.equipmentInstanceId), host = cardName(action.hostInstanceId); container.append(actionButton(`Attach ${gear} → ${host}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ACTIVATE_ABILITY') {
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;
@@ -220,7 +229,7 @@ try {
   await loadCards(); cards = allCards(); $('card-count').textContent = cards.length.toLocaleString();
   const response = await fetch('data/source/decks.json'); if (!response.ok) throw new Error('Could not load the registered sample decks.'); samples = await response.json();
   initSavedDecks(); mountBrowser(); syncDeckUI();
-  $('implemented-effects').textContent = `${implementedEffectIds().length}/500 card effects implemented in this slice`;
+  $('implemented-effects').textContent = `${implementedEffectIds().length}/500 effects · ${supportedTransformationIds().length} form entries`;
   $('match-notice').textContent = 'Choose two validated decks. The first player chooser is selected randomly at match start.';
 } catch (error) {
   $('match-notice').textContent = `Application data could not load: ${error.message}`;

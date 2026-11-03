@@ -1,0 +1,33 @@
+# Engine audit: highest-priority next work
+
+Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/master-rulebook.md`, and `docs/rules-engine-contract.md`. This is a focused review of implemented paths, not a certification of the full rules engine.
+
+**Update:** The initial review’s combat items 1–3 have since been partly addressed in code. Main combat defeat now creates a fresh battlefield instance and returns attached Equipment; guards are declared before response priority; damage and life-loss decisions are committed by stages. Noncombat defeat and trigger processing remain unsupported. The detailed historical findings below describe the initial audit state and should be read with this update.
+
+**Transformation update:** All eight canonical transformation IDs now have explicit entry-condition programs. The engine supports paid Main Phase activation, exact-base checks, Main reserve search/shuffle, legal Equipment transfer, full-HP form entry, and transformed Main and Party defeat handling. Printed form abilities, voluntary reversion, and trigger interactions remain unverified or unsupported.
+
+## P0 — Correct before extending combat
+
+1. **Main defeat does not perform the required revival transition.** In `src/engine/game.js:295-300`, a defeated untransformed Main keeps the same battlefield instance, merely resets its HP and attack-use flag, and keeps attached Equipment. D010 requires a new instance at full HP, returning gear to its owners’ arsenals, clearing instance effects/references, and retaining card-name/physical-copy use and shared allowances. Effect damage also has no supported damage path yet. Add a single defeat transition routine and tests for combat and effect defeat, gear return, fresh instance identity, and preserved usage/allowances before adding more removal effects. Authority: `master-rulebook.md:58-60,137`; rules contract “HP, movement, and Equipment” and “Win conditions”.
+
+2. **Combat priority and guard timing are out of order.** `openMenu()` gives priority to the player opposite the initiator (`game.js:174-177`), so ordinary active-player Menus and combat do not begin with the turn player/attacker. D007 explicitly puts defender guard declaration/payment before the alternating response Menu, which begins with the attacker. Instead, `ASSIGN_GUARDS` is accepted inside the response Menu (`game.js:355-369`) and can be repeated after responses have begun. Split combat setup into a one-time guard declaration stage followed by response priority for the attacker; set ordinary Menu priority to the turn player as required. Test that no guard can be added after the first response and that response order is attacker, defender. Authority: `master-rulebook.md:89,127,131-133`.
+
+3. **Combat defeats are processed sequentially and skip event/trigger ordering.** `resolveCombat()` subtracts HP and logs recipients in a loop (`game.js:277-286`), then defeats one victim at a time (`game.js:291-313`). Although defeat candidates are identified together, life/Momentum and transitions are applied sequentially, and no trigger collection/menu queue is created. D008/D010 require simultaneous HP commit and defeat processing, then simultaneous life-loss evaluation before triggers; D003/D008 require combat-created trigger Menus before damage finalization where eligible. Introduce staged combat results: compute all post-defense HP, commit together, collect all defeats, apply all transitions/life/Momentum as one event, then queue triggers. Add multiple-victim/simultaneous-loss tests. Authority: `master-rulebook.md:55-60,123,133,137`; rules contract “Combat transaction” and “Win conditions”.
+
+## P1 — Implement the next engine foundations
+
+4. **Turn and phase checkpoints omit required passes and trigger processing.** `ADVANCE_PHASE` immediately changes phase (`game.js:398-405`); `pendingTriggers` is initialized but never populated or drained (`game.js:129-130`), and End Phase expiry/checkpoints do not exist. D003 requires phase advancement after both players pass on an empty Menu with no eligible pending triggers; start/end and duration triggers have ordered checkpoints. Add explicit empty-Menu priority/pass state and a minimal event/trigger queue before implementing effects that create delayed or triggered actions. Authority: `master-rulebook.md:22-27,99-110,123`; rules contract “Priority and timing”.
+
+5. **The chooser is recorded but cannot choose.** Setup accepts externally supplied `firstPlayerId` and `chooserId` (`game.js:74-80,115-126`) and proceeds directly through mulligans. The app’s random chooser is separate from the first-player dropdown, so the chooser does not actually make the selection. Add a setup choice stage after random chooser determination and before starting-Main selection/shuffle/draw, or make the UI submit the chooser’s selection as a validated engine command. Authority: `master-rulebook.md:119` (D001).
+
+6. **Equipment passive effects — regex execution removed; no Equipment programs implemented.** Combat now consults an explicit `getEquipmentProgram()` registry rather than parsing card text. No Equipment program is registered, so all current Equipment effects remain disabled. Modifier duration, source/controller, global reductions, prevention, redirection, and compatible ordering still need a layered combat model. Authority: rules contract “Combat transaction”, “HP, movement, and Equipment”, and unresolved U004/U008.
+
+## P2 — Expand only after the above
+
+7. **Switch/Party Swap/unequip, effect negation, protection/suspension, delayed effects, and Finishers have no executable commands.** Transformation entry, Main base restoration, and Party form defeat are covered; voluntary reversion remains unsupported. Build protection/suspension only over an explicit duration/trigger queue and retain U003-U010 as unresolved where the rulebook says so.
+
+8. **Acceptance tests cover a growing set of narrow engine cases.** They now verify setup, mulligan, Add, two healing programs, response and guard windows, chain costs, Equipment cost, combat/Main revival, simultaneous combat defeats, transformation requirements, Main restoration, Party form defeat and blocked unregistered Equipment effects. Most other rulebook invariants remain untested. Add tests per rule capability as each foundation lands. Test counts are not evidence that the whole master rulebook is implemented.
+
+## Recommended next implementation slice
+
+Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement full empty-Menu phase checkpoints and validate transformed Party defeat/reversion edge cases before expanding card effects.
