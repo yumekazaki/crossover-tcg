@@ -73,7 +73,7 @@ function maxHp(instance, cardIndex, isCenter = false) {
 }
 
 /** Create a two-player game from the canonical card records and registered card IDs. */
-export function createInitialState({ players, firstPlayerId, chooserId, seed = 1, cards }) {
+export function createInitialState({ players, firstPlayerId, chooserId, awaitingFirstPlayerChoice = false, seed = 1, cards }) {
   const cardIndex = indexCards(cards);
   if (!Array.isArray(players) || players.length !== 2) fail('PLAYER_COUNT', 'This rules edition requires exactly two players.');
   const ids = players.map((p) => p.id);
@@ -123,7 +123,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
     activePlayerId: firstPlayerId,
     firstPlayerChooserId: chooserId,
     turnNumber: 1,
-    phase: 'mulligan',
+    phase: awaitingFirstPlayerChoice ? 'first-player-choice' : 'mulligan',
     priorityPlayerId: firstPlayerId,
     phasePasses: 0,
     mulliganOrder: [firstPlayerId, opponentId],
@@ -762,6 +762,21 @@ export function dispatch(stateInput, action, cards) {
   const player = state.players[action.playerId];
   if (!player) fail('UNKNOWN_PLAYER', 'Action player is not in this game.');
 
+  if (state.phase === 'first-player-choice') {
+    if (action.type !== 'CHOOSE_FIRST_PLAYER') fail('SETUP_ONLY', 'The selected chooser must choose who goes first before mulligans.');
+    if (action.playerId !== state.firstPlayerChooserId) fail('CHOOSER_ONLY', 'Only the randomly selected chooser may choose who goes first.');
+    if (!state.playerOrder.includes(action.firstPlayerId)) fail('FIRST_PLAYER', 'Choose one of the registered players to go first.');
+    const secondPlayerId = state.playerOrder.find((id) => id !== action.firstPlayerId);
+    state.playerOrder = [action.firstPlayerId, secondPlayerId];
+    state.activePlayerId = action.firstPlayerId;
+    state.priorityPlayerId = action.firstPlayerId;
+    state.mulliganOrder = [...state.playerOrder];
+    state.mulliganIndex = 0;
+    state.phase = 'mulligan';
+    addLog(state, { type: 'FIRST_PLAYER_CHOSEN', chooserId: action.playerId, firstPlayerId: action.firstPlayerId });
+    return state;
+  }
+
   if (state.phase === 'mulligan') {
     if (action.type !== 'MULLIGAN') fail('SETUP_ONLY', 'Complete both mulligan choices before taking game actions.');
     const expected = state.mulliganOrder[state.mulliganIndex];
@@ -1181,6 +1196,8 @@ export function getLegalActions(state, playerId, cards) {
   const cardIndex = indexCards(cards);
   const player = state.players[playerId];
   if (!player || state.status === 'finished') return [];
+  if (state.phase === 'first-player-choice') return playerId === state.firstPlayerChooserId
+    ? state.playerOrder.map((firstPlayerId) => ({ type: 'CHOOSE_FIRST_PLAYER', firstPlayerId })) : [];
   if (state.phase === 'mulligan') return state.mulliganOrder[state.mulliganIndex] === playerId ? [{ type: 'MULLIGAN', max: 5 }] : [];
   if (state.resolutionChoice) {
     if (state.resolutionChoice.playerId !== playerId) return [];

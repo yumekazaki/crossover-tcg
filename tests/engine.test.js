@@ -75,6 +75,28 @@ test('initialization validates registration, chooses a starting Main, and deals 
   assertStateInvariants(s, cards);
 });
 
+test('the randomly selected chooser makes the first-player choice through a validated setup action', () => {
+  let s = createInitialState({
+    players: [
+      { id: 'p1', name: 'Player One', deck: deck('CS1-060'), startingMainId: 'CS1-060' },
+      { id: 'p2', name: 'Player Two', deck: deck('CS1-031'), startingMainId: 'CS1-031' }
+    ],
+    firstPlayerId: 'p1', chooserId: 'p2', awaitingFirstPlayerChoice: true, seed: 42, cards
+  });
+  assert.equal(s.phase, 'first-player-choice');
+  assert.deepEqual(getLegalActions(s, 'p1', cards), []);
+  const actions = getLegalActions(s, 'p2', cards);
+  assert.deepEqual(actions.map((action) => action.firstPlayerId), ['p1', 'p2']);
+  assert.throws(() => dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p1', firstPlayerId: 'p1' }, cards), (error) => error.code === 'CHOOSER_ONLY');
+  s = dispatch(s, { type: 'CHOOSE_FIRST_PLAYER', playerId: 'p2', firstPlayerId: 'p2' }, cards);
+  assert.equal(s.phase, 'mulligan');
+  assert.deepEqual(s.playerOrder, ['p2', 'p1']);
+  assert.deepEqual(s.mulliganOrder, ['p2', 'p1']);
+  assert.equal(s.activePlayerId, 'p2');
+  assert.equal(s.log.at(-1).type, 'FIRST_PLAYER_CHOSEN');
+  assertStateInvariants(s, cards);
+});
+
 test('ordered mulligans preserve card count and open the first Main Phase', () => {
   let s = game();
   assert.throws(() => dispatch(s, { type: 'MULLIGAN', playerId: 'p2', instanceIds: [] }, cards), RuleError);

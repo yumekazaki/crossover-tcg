@@ -104,10 +104,10 @@ function startMatch() {
   const state = createInitialState({
     players: [{ id: 'p1', name: 'Player One', deck: { mainIds: p1.mainIds, equipmentIds: p1.equipmentIds }, startingMainId: starter1 },
       { id: 'p2', name: 'Player Two', deck: { mainIds: p2.mainIds, equipmentIds: p2.equipmentIds }, startingMainId: starter2 }],
-    chooserId, firstPlayerId: $('first-player').value, seed: Math.floor(Math.random() * 0xffffffff), cards
+    chooserId, firstPlayerId: chooserId, awaitingFirstPlayerChoice: true, seed: Math.floor(Math.random() * 0xffffffff), cards
   });
   match = state; $('match-board').hidden = false; $('reset-match').disabled = false;
-  $('match-notice').textContent = `A random choice selected ${chooserId === 'p1' ? 'Player One' : 'Player Two'} to choose who goes first. The selected first player is ${state.activePlayerId === 'p1' ? 'Player One' : 'Player Two'}. Local shared-device test only.`;
+  $('match-notice').textContent = `A random choice selected ${chooserId === 'p1' ? 'Player One' : 'Player Two'} to choose who goes first. Make that choice below. Local shared-device test only.`;
   renderMatch();
 }
 function cardName(instanceId) { const instance = match.instances[instanceId]; return cards.find((card) => card.id === instance?.cardId)?.name || instance?.cardId || 'Empty'; }
@@ -186,6 +186,7 @@ function renderActions(actions, actorId, container) {
       container.append(actionButton(label, () => safeDispatch({ ...action, playerId: actorId }), action.decline ? 'pass' : ''));
       continue;
     }
+    if (action.type === 'CHOOSE_FIRST_PLAYER') { container.append(actionButton(`Choose ${match.players[action.firstPlayerId].name} to go first`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'ASSIGN_GUARDS') {
@@ -231,9 +232,9 @@ function renderMatch() {
   if (!match) return;
   const root = $('match-board'); root.replaceChildren();
   const current = create('div', 'match-topline');
-  current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.status === 'setup' ? `Opening mulligan · ${match.mulliganOrder[match.mulliganIndex] === 'p1' ? 'Player One' : 'Player Two'}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
-  current.append(create('span', '', match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
-  const actorId = match.status === 'finished' ? null : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
+  current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.phase === 'first-player-choice' ? `First-player choice · ${match.players[match.firstPlayerChooserId].name} is chooser` : match.status === 'setup' ? `Opening mulligan · ${match.mulliganOrder[match.mulliganIndex] === 'p1' ? 'Player One' : 'Player Two'}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
+  current.append(create('span', '', match.phase === 'first-player-choice' ? `${match.players[match.firstPlayerChooserId].name} is choosing who goes first` : match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
+  const actorId = match.status === 'finished' ? null : match.phase === 'first-player-choice' ? match.firstPlayerChooserId : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
   const seats = create('div', 'match-seats'); seats.append(renderSeat('p1', actorId === 'p1'), renderSeat('p2', actorId === 'p2')); root.append(seats);
   if (match.resolutionChoice) {
     const prompt = create('section', 'turn-controls');
@@ -275,7 +276,7 @@ try {
   const response = await fetch('data/source/decks.json'); if (!response.ok) throw new Error('Could not load the registered sample decks.'); samples = await response.json();
   initSavedDecks(); mountBrowser(); syncDeckUI();
   $('implemented-effects').textContent = `${implementedEffectIds().length}/500 effects · ${supportedTransformationIds().length} form entries`;
-  $('match-notice').textContent = 'Choose two validated decks. The first player chooser is selected randomly at match start.';
+  $('match-notice').textContent = 'Choose two validated decks. A random chooser will select who goes first after the match begins.';
 } catch (error) {
   $('match-notice').textContent = `Application data could not load: ${error.message}`;
   $('implemented-effects').textContent = 'Data loading failed';
