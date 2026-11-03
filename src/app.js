@@ -140,7 +140,7 @@ function showCard(card) {
   if (art.sourceUrl) { const link = create('a', '', 'Recorded source provenance'); link.href = art.sourceUrl; link.target = '_blank'; link.rel = 'noreferrer'; content.append(link); }
   $('card-dialog').showModal();
 }
-function renderSeat(playerId) {
+function renderSeat(playerId, revealHand = false) {
   const player = match.players[playerId], seat = create('article', 'seat'), header = create('div', 'seat-header');
   const name = create('h3', '', `${player.name}${match.activePlayerId === playerId ? ' · TURN' : ''}${match.priorityPlayerId === playerId ? ' · PRIORITY' : ''}`);
   const resources = create('div', 'seat-resources'); resources.innerHTML = `<b class="life">${player.life} LIFE</b><b>${player.resources.momentum} M</b><b>${player.resources.light} L</b><b>${player.resources.darkness} D</b>`; header.append(name, resources); seat.append(header);
@@ -150,7 +150,8 @@ function renderSeat(playerId) {
   const attachments = Object.values(match.instances).filter((x) => x.zone === 'attached' && player.party.concat(player.center).includes(x.attachedTo));
   if (attachments.length) { const row = create('div', 'attached-row'); for (const gear of attachments) { const card = cards.find((x) => x.id === gear.cardId); const b = create('span', 'gear-pill', `⚔ ${card.name} → ${cardName(gear.attachedTo)}`); row.append(b); } seat.append(row); }
   const hand = create('div', 'hand-area'), label = create('span', 'hand-label', `HAND · ${player.zones.hand.length} CARDS`), list = create('div', 'hand-cards');
-  for (const instanceId of player.zones.hand) { const card = cards.find((x) => x.id === match.instances[instanceId].cardId); const button = create('button', 'hand-card'); button.type = 'button'; button.textContent = card.name; const small = create('small', '', `${card.type} · ${card.cost.momentum}M`); button.append(small); button.addEventListener('click', () => showCard(card)); list.append(button); }
+  if (revealHand) for (const instanceId of player.zones.hand) { const card = cards.find((x) => x.id === match.instances[instanceId].cardId); const button = create('button', 'hand-card'); button.type = 'button'; button.textContent = card.name; const small = create('small', '', `${card.type} · ${card.cost.momentum}M`); button.append(small); button.addEventListener('click', () => showCard(card)); list.append(button); }
+  else for (const _instanceId of player.zones.hand) { const back = create('button', 'hand-card concealed-card', 'Face down'); back.type = 'button'; back.disabled = true; list.append(back); }
   hand.append(label, list); seat.append(hand);
   const zonesInfo = create('p', 'seat-footnote', `Main Deck ${player.zones.mainDeck.length} · Continue? ${player.zones.continue.length} · Arsenal ${player.zones.arsenal.length} cards / ${player.registration.equipmentIds.reduce((n, id) => n + cards.find((x) => x.id === id).slots, 0)} slots`); seat.append(zonesInfo);
   return seat;
@@ -159,7 +160,24 @@ function actionButton(label, callback, klass = '') { const b = create('button', 
 function renderActions(actions, actorId, container) {
   container.replaceChildren();
   for (const action of actions) {
-    if (action.type === 'MULLIGAN') { container.append(actionButton('Keep opening hand', () => safeDispatch({ type: 'MULLIGAN', playerId: actorId, instanceIds: [] }), 'pass')); continue; }
+    if (action.type === 'MULLIGAN') {
+      const wrap = create('div', 'guard-choice');
+      wrap.append(create('span', '', 'Choose up to five cards to return and redraw.'));
+      const checks = [];
+      for (const id of match.players[actorId].zones.hand) {
+        const card = cards.find((item) => item.id === match.instances[id].cardId);
+        const label = create('label', 'guard-check'), input = document.createElement('input');
+        input.type = 'checkbox'; input.value = id;
+        label.append(input, create('span', '', `${card.name} · ${card.type}`));
+        checks.push(input); wrap.append(label);
+      }
+      for (const input of checks) input.addEventListener('change', () => {
+        const chosen = checks.filter((check) => check.checked);
+        if (chosen.length > action.max) input.checked = false;
+      });
+      wrap.append(actionButton('Return selected cards and redraw', () => safeDispatch({ type: 'MULLIGAN', playerId: actorId, instanceIds: checks.filter((check) => check.checked).map((check) => check.value) }), 'pass'));
+      container.append(wrap); continue;
+    }
     if (action.type === 'RESOLVE_CHOICE') { container.append(actionButton(`Discard ${cardName(action.instanceId)} to Continue?`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'PASS') { container.append(actionButton('Pass priority', () => safeDispatch({ type: 'PASS', playerId: actorId }), 'pass')); continue; }
     if (action.type === 'PASS_PRIORITY') { container.append(actionButton(match.phasePasses ? 'Confirm pass · advance phase' : 'Pass empty phase window', () => safeDispatch({ type: 'PASS_PRIORITY', playerId: actorId }), 'pass')); continue; }
@@ -204,9 +222,9 @@ function renderMatch() {
   const current = create('div', 'match-topline');
   current.append(create('strong', '', match.status === 'finished' ? (match.winnerId ? `${match.players[match.winnerId].name} wins` : 'Draw') : match.status === 'setup' ? `Opening mulligan · ${match.mulliganOrder[match.mulliganIndex] === 'p1' ? 'Player One' : 'Player Two'}` : `${match.players[match.activePlayerId].name} · Turn ${match.turnNumber} · ${match.phase.toUpperCase()}`));
   current.append(create('span', '', match.resolutionChoice ? `Resolving effect · ${match.players[match.resolutionChoice.playerId].name} must choose` : match.menu ? `MENU ${match.menu.id} · ${match.players[match.menu.priorityPlayerId].name} has priority · ${match.menu.consecutivePasses}/2 passes` : `No open Menu · ${match.players[match.priorityPlayerId].name} has phase priority · ${match.phasePasses}/2 passes`)); root.append(current);
-  const seats = create('div', 'match-seats'); seats.append(renderSeat('p1'), renderSeat('p2')); root.append(seats);
+  const actorId = match.status === 'finished' ? null : match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
+  const seats = create('div', 'match-seats'); seats.append(renderSeat('p1', actorId === 'p1'), renderSeat('p2', actorId === 'p2')); root.append(seats);
   if (match.status !== 'finished') {
-    const actorId = match.phase === 'mulligan' ? match.mulliganOrder[match.mulliganIndex] : match.resolutionChoice?.playerId || match.menu?.priorityPlayerId || match.priorityPlayerId;
     const controls = create('section', 'turn-controls'); controls.append(create('h3', '', `${match.players[actorId].name} · legal actions`));
     const actions = create('div', 'action-list'); renderActions(getLegalActions(match, actorId, cards), actorId, actions); controls.append(actions); root.append(controls);
   }
