@@ -36,6 +36,12 @@ function passMenu(s) {
   s = dispatch(s, { type: 'PASS', playerId: first }, cards);
   return dispatch(s, { type: 'PASS', playerId: s.menu.priorityPlayerId }, cards);
 }
+function advancePhase(s, playerId = s.activePlayerId) {
+  assert.equal(s.activePlayerId, playerId);
+  assert.equal(s.priorityPlayerId, playerId);
+  s = dispatch(s, { type: 'PASS_PRIORITY', playerId }, cards);
+  return dispatch(s, { type: 'PASS_PRIORITY', playerId: s.priorityPlayerId }, cards);
+}
 function moveCardToHand(state, playerId, cardId) {
   const player = state.players[playerId];
   const already = player.zones.hand.find((id) => state.instances[id].cardId === cardId);
@@ -68,6 +74,23 @@ test('ordered mulligans preserve card count and open the first Main Phase', () =
   assert.equal(s.status, 'active');
   assert.equal(s.phase, 'main');
   assertStateInvariants(s, cards);
+});
+
+test('empty phase windows require two consecutive passes and return priority to the active player', () => {
+  let s = start(game());
+  assert.throws(() => dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p1' }, cards), (error) => error.code === 'PHASE_REQUIRES_PASSES');
+  assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'PASS_PRIORITY'));
+  assert.deepEqual(getLegalActions(s, 'p2', cards), []);
+  s = dispatch(s, { type: 'PASS_PRIORITY', playerId: 'p1' }, cards);
+  assert.equal(s.phase, 'main');
+  assert.equal(s.phasePasses, 1);
+  assert.equal(s.priorityPlayerId, 'p2');
+  assert.throws(() => dispatch(s, { type: 'PASS_PRIORITY', playerId: 'p1' }, cards), (error) => error.code === 'NO_PRIORITY');
+  assert.deepEqual(getLegalActions(s, 'p2', cards), [{ type: 'PASS_PRIORITY' }]);
+  s = dispatch(s, { type: 'PASS_PRIORITY', playerId: 'p2' }, cards);
+  assert.equal(s.phase, 'battle');
+  assert.equal(s.phasePasses, 0);
+  assert.equal(s.priorityPlayerId, 'p1');
 });
 
 test('standard Add to Party opens a Menu and deploys only after two passes', () => {
@@ -113,9 +136,9 @@ test('a legal opponent attack can be answered by First Aid before combat damage'
   const target = s.instances[targetId];
   target.battlefield.currentHp = Math.floor(target.battlefield.maxHp / 2) - 1;
   const hpBeforeResponse = target.battlefield.currentHp;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: s.activePlayerId }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s);
   assert.equal(s.activePlayerId, 'p2');
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: targetId }, cards);
   assert.equal(s.menu.priorityPlayerId, 'p1');
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
@@ -135,8 +158,8 @@ test('combat guard declaration closes before responses and response priority beg
   const partyCard = moveCardToHand(s, 'p1', 'CS1-001');
   s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: partyCard }, cards);
   s = passMenu(s);
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: s.players.p1.center }, cards);
   const guardId = s.players.p1.party[0];
   assert.throws(() => dispatch(s, { type: 'PASS', playerId: 'p1' }, cards), (error) => error.code === 'GUARD_WINDOW_ACTION');
@@ -156,8 +179,8 @@ test('an unregistered passive Equipment effect is not inferred from its rules te
   s.players.p1.zones.arsenal = s.players.p1.zones.arsenal.filter((id) => id !== gearId);
   s.instances[gearId].zone = 'attached'; s.instances[gearId].attachedTo = targetId;
   const before = s.instances[targetId].battlefield.currentHp;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: targetId }, cards);
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
   s = passMenu(s);
@@ -175,8 +198,8 @@ test('battle defeat revives Main as a new instance, returns Equipment, and keeps
   const gearId = s.players.p1.zones.arsenal.find((id) => cards.find((card) => card.id === s.instances[id].cardId)?.type === 'Equipment');
   s.players.p1.zones.arsenal = s.players.p1.zones.arsenal.filter((id) => id !== gearId);
   s.instances[gearId].zone = 'attached'; s.instances[gearId].attachedTo = mainId;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: mainId }, cards);
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
   s = passMenu(s);
@@ -201,8 +224,8 @@ test('one combat commits Main and guard defeats together before life and Momentu
   s = passMenu(s);
   const guardId = s.players.p1.party[0];
   s.instances[guardId].battlefield.currentHp = 1;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: mainId }, cards);
   s = dispatch(s, { type: 'ASSIGN_GUARDS', playerId: 'p1', guardInstanceIds: [guardId] }, cards);
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
@@ -234,8 +257,8 @@ test('Final Form Main transformation reserves the exact base and restores it whe
   assert.ok(gearIds.every((id) => s.instances[id].attachedTo === formId));
   assertStateInvariants(s, cards);
   s.instances[formId].battlefield.currentHp = 1;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: formId }, cards);
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
   s = passMenu(s);
@@ -297,8 +320,8 @@ test('transformed Party defeat sends both form and underlay to Continue without 
   assert.equal(s.players.p1.zones.baseReserve.length, 0);
   assert.equal(s.instances[partyBaseId].zone, 'underlay');
   s.instances[formId].battlefield.currentHp = 1;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  s = advancePhase(s, 'p2');
   s = dispatch(s, { type: 'DECLARE_ATTACK', playerId: 'p2', attackerInstanceId: s.players.p2.center, targetInstanceId: formId }, cards);
   s = dispatch(s, { type: 'BEGIN_COMBAT_RESPONSES', playerId: 'p1' }, cards);
   s = passMenu(s);
@@ -316,8 +339,8 @@ test('the attacking player pays two Momentum for each extra Chain participant', 
   s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: charId }, cards);
   s = passMenu(s);
   s.players.p1.resources.momentum = 1;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: s.activePlayerId }, cards);
-  s = dispatch(s, { type: 'ADVANCE_PHASE', playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s);
+  s = advancePhase(s, 'p2');
   const extraCard = s.players.p2.zones.hand.find((id) => cards.find((c) => c.id === s.instances[id].cardId).type === 'Character');
   assert.ok(extraCard);
   const extra = s.instances[extraCard], record = cards.find((c) => c.id === extra.cardId);
@@ -338,9 +361,9 @@ test('Equipment compatibility and resource cost are checked before opening the M
 
 test('turn start grants five Momentum, one Light and one Darkness, then draws', () => {
   let s = start(game());
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p1' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
   const before = s.players.p1.zones.hand.length;
-  for (const type of ['ADVANCE_PHASE', 'ADVANCE_PHASE', 'ADVANCE_PHASE']) s = dispatch(s, { type, playerId: 'p2' }, cards);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p2');
   assert.equal(s.activePlayerId, 'p1');
   assert.deepEqual(s.players.p1.resources, { momentum: 10, light: 1, darkness: 1 });
   assert.equal(s.players.p1.zones.hand.length, 6);

@@ -16,7 +16,7 @@ npm start
 
 Open `http://127.0.0.1:4173`. This build supports local two-seat practice only. Run the automated checks with `npm test`.
 
-The current engine executes two audited healing effects alongside setup, standard deployment, compatible Equipment, response Menus, turn resources and an initial chain-combat path. Combat now declares all guards before attacker-first responses, commits damage together, and revives a defeated Main as a fresh instance while returning its Equipment. The eight registered transformations have explicit entry checks, Main base reservation and defeat restoration. Equipment and form effects only execute through explicit programs; unregistered rules text is not interpreted. The forms’ printed abilities and all other unsupported effects remain blocked. The build is not a complete implementation of the rulebook.
+The current engine executes two audited healing effects alongside setup, standard deployment, compatible Equipment, response Menus, turn resources and an initial chain-combat path. Empty phase windows require two consecutive passes. Combat declares all guards before attacker-first responses, commits damage together, and revives a defeated Main as a fresh instance while returning its Equipment. The eight registered transformations have explicit entry checks, Main base reservation and defeat restoration. Equipment and form effects only execute through explicit programs; unregistered rules text is not interpreted. The forms’ printed abilities and all other unsupported effects remain blocked. The build is not a complete implementation of the rulebook.
 
 ## Artwork
 

@@ -125,6 +125,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
     turnNumber: 1,
     phase: 'mulligan',
     priorityPlayerId: firstPlayerId,
+    phasePasses: 0,
     mulliganOrder: [firstPlayerId, opponentId],
     mulliganIndex: 0,
     instances,
@@ -140,6 +141,21 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
 function addLog(state, event) { state.log.push({ ...event, turn: state.turnNumber, phase: state.phase }); }
 function currentPlayer(state) { return state.players[state.activePlayerId]; }
 function emptyPartyIndex(player) { return player.party.findIndex((id) => id === null); }
+
+function advancePhase(state, cardIndex) {
+  if (state.pendingTriggers.length) fail('TRIGGER_QUEUE_UNSUPPORTED', 'A phase cannot advance while unresolved triggers are pending in this partial engine.');
+  state.phasePasses = 0;
+  if (state.phase === 'main') state.phase = 'battle';
+  else if (state.phase === 'battle') state.phase = 'end';
+  else if (state.phase === 'end') {
+    addLog(state, { type: 'PHASE_ADVANCED', phase: 'end', activePlayerId: state.activePlayerId });
+    startNextTurn(state, cardIndex);
+    return;
+  } else fail('ILLEGAL_PHASE', 'The phase cannot advance now.');
+  state.priorityPlayerId = state.activePlayerId;
+  state.phasePasses = 0;
+  addLog(state, { type: 'PHASE_ADVANCED', phase: state.phase, activePlayerId: state.activePlayerId });
+}
 
 function startNextTurn(state, cardIndex) {
   state.turnNumber += 1;
@@ -169,6 +185,7 @@ function startNextTurn(state, cardIndex) {
   player.zones.hand.push(drawn);
   state.phase = 'main';
   state.priorityPlayerId = player.id;
+  state.phasePasses = 0;
   state.menu = null;
   state.combat = null;
   addLog(state, { type: 'TURN_STARTED', playerId: player.id, drew: drawn, resources: { ...player.resources }, cardIndexSize: cardIndex.size });
@@ -177,6 +194,7 @@ function startNextTurn(state, cardIndex) {
 function openMenu(state, initiatorId, select) {
   state.menu = { id: `M${state.log.length + 1}`, initiatorId, activeSelectId: `S${state.log.length + 1}`, selects: [select], priorityPlayerId: initiatorId, consecutivePasses: 0 };
   state.priorityPlayerId = initiatorId;
+  state.phasePasses = 0;
   addLog(state, { type: 'MENU_OPENED', menuId: state.menu.id, initiatorId, select: select.kind });
 }
 
@@ -185,6 +203,7 @@ function resolveMenu(state, cardIndex) {
   const selections = [...menu.selects].reverse();
   state.menu = null;
   state.priorityPlayerId = state.activePlayerId;
+  state.phasePasses = 0;
   for (const select of selections) {
     if (select.kind === 'ADD_TO_PARTY') {
       const player = state.players[select.playerId];
@@ -473,6 +492,7 @@ export function dispatch(stateInput, action, cards) {
       state.menu.consecutivePasses += 1;
       if (state.menu.consecutivePasses >= 2) resolveMenu(state, cardIndex);
       else state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      state.priorityPlayerId = state.menu?.priorityPlayerId ?? state.activePlayerId;
       return state;
     }
     if (action.type === 'ASSIGN_GUARDS') {
@@ -498,22 +518,27 @@ export function dispatch(stateInput, action, cards) {
       state.menu.selects.push({ id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [] });
       state.menu.consecutivePasses = 0;
       state.menu.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      state.priorityPlayerId = state.menu.priorityPlayerId;
       addLog(state, { type: 'SPEED_ABILITY_ACTIVATED', playerId: player.id, cardId: card.id, instanceId: instance.instanceId });
       return state;
     }
     fail('MENU_ACTION_UNSUPPORTED', 'This action is not implemented in the current engine slice.');
   }
 
-  if (action.playerId !== state.activePlayerId || action.playerId !== state.priorityPlayerId) fail('NOT_ACTIVE_PLAYER', 'Only the active player may act outside a Menu.');
-  if (action.type === 'ADVANCE_PHASE') {
-    if (state.phase === 'main') state.phase = 'battle';
-    else if (state.phase === 'battle') state.phase = 'end';
-    else if (state.phase === 'end') startNextTurn(state, cardIndex);
-    else fail('ILLEGAL_PHASE', 'The phase cannot advance now.');
-    state.priorityPlayerId = state.activePlayerId;
-    addLog(state, { type: 'PHASE_ADVANCED', phase: state.phase, activePlayerId: state.activePlayerId });
+  if (action.type === 'PASS_PRIORITY') {
+    if (action.playerId !== state.priorityPlayerId) fail('NO_PRIORITY', 'Only the player with empty-window priority may pass.');
+    if (state.phasePasses === 0) {
+      state.phasePasses = 1;
+      state.priorityPlayerId = state.playerOrder.find((id) => id !== action.playerId);
+      addLog(state, { type: 'PHASE_PRIORITY_PASSED', playerId: action.playerId, consecutivePasses: 1 });
+      return state;
+    }
+    addLog(state, { type: 'PHASE_PRIORITY_PASSED', playerId: action.playerId, consecutivePasses: 2 });
+    advancePhase(state, cardIndex);
     return state;
   }
+  if (action.playerId !== state.activePlayerId || action.playerId !== state.priorityPlayerId) fail('NOT_ACTIVE_PLAYER', 'Only the active player may act outside a Menu.');
+  if (action.type === 'ADVANCE_PHASE') fail('PHASE_REQUIRES_PASSES', 'Both players must pass on the empty phase window before the phase advances.');
   if (action.type === 'ADD_TO_PARTY') {
     if (state.phase !== 'main') fail('WRONG_PHASE', 'Standard deployment is a Main Phase action.');
     if (player.turn.standardAddUsed) fail('ADD_USED', 'Standard Add to Party was already used this turn.');
@@ -659,8 +684,9 @@ export function getLegalActions(state, playerId, cards) {
     }
     return actions;
   }
-  if (state.activePlayerId !== playerId) return [];
-  const actions = [{ type: 'ADVANCE_PHASE' }];
+  if (state.priorityPlayerId !== playerId) return [];
+  if (state.activePlayerId !== playerId) return [{ type: 'PASS_PRIORITY' }];
+  const actions = [{ type: 'PASS_PRIORITY' }];
   if (state.phase === 'main') {
     if (!player.turn.standardAddUsed && emptyPartyIndex(player) >= 0) for (const id of player.zones.hand) if (cardIndex.get(state.instances[id].cardId)?.type === 'Character' && !cardIndex.get(state.instances[id].cardId).transformation) actions.push({ type: 'ADD_TO_PARTY', instanceId: id });
     for (const id of player.zones.arsenal) {
@@ -701,6 +727,9 @@ export function getLegalActions(state, playerId, cards) {
 
 export function assertStateInvariants(state, cards) {
   const cardIndex = indexCards(cards), seen = new Set();
+  if (!state.players[state.priorityPlayerId]) fail('PRIORITY_INVARIANT', 'Priority must belong to a registered player.');
+  if (!Number.isInteger(state.phasePasses) || state.phasePasses < 0 || state.phasePasses > 1 || (state.menu && state.phasePasses !== 0)) fail('PHASE_PRIORITY_INVARIANT', 'Empty-window pass state is invalid or overlaps an open Menu.');
+  if (state.menu && !state.players[state.menu.priorityPlayerId]) fail('MENU_PRIORITY_INVARIANT', 'Menu priority must belong to a registered player.');
   for (const player of Object.values(state.players)) {
     const allZones = [...player.zones.mainDeck, ...player.zones.hand, ...player.zones.continue, ...player.zones.arsenal, ...player.zones.baseReserve, player.center, ...player.party].filter(Boolean);
     for (const id of allZones) { if (seen.has(id)) fail('ZONE_DUPLICATION', `${id} appears in more than one zone.`); seen.add(id); }

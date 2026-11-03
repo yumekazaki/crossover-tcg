@@ -6,6 +6,8 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 **Transformation update:** All eight canonical transformation IDs now have explicit entry-condition programs. The engine supports paid Main Phase activation, exact-base checks, Main reserve search/shuffle, legal Equipment transfer, full-HP form entry, and transformed Main and Party defeat handling. Printed form abilities, voluntary reversion, and trigger interactions remain unverified or unsupported.
 
+**Phase-window update:** Empty phase windows now require two consecutive passes, with the second player receiving priority and phase changes rejected through the old single-click action. The queue blocks advancement if pending triggers exist; trigger collection and resolution are still not implemented.
+
 ## P0 — Correct before extending combat
 
 1. **Main defeat does not perform the required revival transition.** In `src/engine/game.js:295-300`, a defeated untransformed Main keeps the same battlefield instance, merely resets its HP and attack-use flag, and keeps attached Equipment. D010 requires a new instance at full HP, returning gear to its owners’ arsenals, clearing instance effects/references, and retaining card-name/physical-copy use and shared allowances. Effect damage also has no supported damage path yet. Add a single defeat transition routine and tests for combat and effect defeat, gear return, fresh instance identity, and preserved usage/allowances before adding more removal effects. Authority: `master-rulebook.md:58-60,137`; rules contract “HP, movement, and Equipment” and “Win conditions”.
@@ -16,7 +18,7 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## P1 — Implement the next engine foundations
 
-4. **Turn and phase checkpoints omit required passes and trigger processing.** `ADVANCE_PHASE` immediately changes phase (`game.js:398-405`); `pendingTriggers` is initialized but never populated or drained (`game.js:129-130`), and End Phase expiry/checkpoints do not exist. D003 requires phase advancement after both players pass on an empty Menu with no eligible pending triggers; start/end and duration triggers have ordered checkpoints. Add explicit empty-Menu priority/pass state and a minimal event/trigger queue before implementing effects that create delayed or triggered actions. Authority: `master-rulebook.md:22-27,99-110,123`; rules contract “Priority and timing”.
+4. **Turn and phase checkpoints — empty-window passes implemented; trigger processing remains open.** `PASS_PRIORITY` now alternates priority and advances a phase only after two consecutive passes. Pending triggers block advancement instead of being skipped. The queue is never populated or drained, End Phase expiry is not implemented, and beginning/end trigger order remains open. Authority: `master-rulebook.md:22-27,99-110,123`; rules contract “Priority and timing”.
 
 5. **The chooser is recorded but cannot choose.** Setup accepts externally supplied `firstPlayerId` and `chooserId` (`game.js:74-80,115-126`) and proceeds directly through mulligans. The app’s random chooser is separate from the first-player dropdown, so the chooser does not actually make the selection. Add a setup choice stage after random chooser determination and before starting-Main selection/shuffle/draw, or make the UI submit the chooser’s selection as a validated engine command. Authority: `master-rulebook.md:119` (D001).
 
@@ -30,4 +32,4 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## Recommended next implementation slice
 
-Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement full empty-Menu phase checkpoints and validate transformed Party defeat/reversion edge cases before expanding card effects.
+Keep the trigger queue explicitly marked incomplete until D003/D013-D015 event processing is implemented. Next, implement event/trigger ordering and add Switch, Party Swap and voluntary unequip commands before expanding card effects.
