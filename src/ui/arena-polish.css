@@ -26,3 +26,27 @@ body{background:radial-gradient(ellipse at 48% -24%,#28233a 0,transparent 44%),#
 @media(max-width:580px){.app-header{gap:6px}.match-board{padding:8px;border-radius:13px}.match-topline{align-items:flex-start;flex-direction:column;gap:5px;padding:11px}.seat-resources{justify-content:flex-start}.zone-card,.zone-card.empty{min-height:148px}.party-zones .zone-card{min-height:126px}.zone-card__info{padding:8px}.zone-card__info b{font-size:11px}.zone-card__info small{font-size:8px}.hand-card{width:88px;max-width:88px}.hand-card__art{height:82px}.ctcg-browser__tile-art{height:118px}}
 @media(prefers-reduced-motion:reduce){.zone-card,.zone-card__art,.hand-card,.ctcg-browser__card{transition:none}.zone-card:hover,.hand-card:hover,.ctcg-browser__card:hover{transform:none}}
 
+/* Clear three-stop navigation: play, build, browse. */
+.primary-nav{gap:7px}.nav-button{min-height:42px;padding-inline:16px;border-radius:9px;color:#a4a5b0;font:600 12px 'DM Sans',Manrope,sans-serif}.nav-button.is-active{background:#ffffff0a;color:#fff;box-shadow:none;position:relative}.nav-button.is-active:after{content:"";position:absolute;bottom:-14px;left:15px;right:15px;height:2px;border-radius:2px;background:#f08bc9}.page-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}.page-heading h1 em,.hero h1 em{font-style:normal;color:#f08bc9}.page-heading .eyebrow{color:#b3a3ca}
+.footer-link{border:0;background:none;color:#bbaee0;text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer}.footer-link:hover{color:#f08bc9}
+#library-view.is-deck-mode #cards-heading,#library-view.is-cards-mode #deck-heading{display:none}
+#library-view.is-cards-mode .deck-controls{margin-bottom:12px}
+.ctcg-browser__heading{display:none}
+.ctcg-browser.is-deck-view .ctcg-browser__toolbar,.ctcg-browser.is-deck-view .ctcg-browser__filters,.ctcg-browser.is-deck-view .ctcg-browser__library,.ctcg-browser.is-deck-view .ctcg-browser__detail{display:none}
+.ctcg-browser.is-deck-view .ctcg-browser__workspace{display:block}
+.ctcg-browser.is-deck-view .ctcg-browser__deck{position:static;max-height:none;overflow:visible;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px;padding:clamp(18px,2.5vw,30px)}
+.ctcg-browser.is-deck-view .ctcg-browser__section-heading,.ctcg-browser.is-deck-view .ctcg-browser__browse,.ctcg-browser.is-deck-view .ctcg-browser__totals,.ctcg-browser.is-deck-view .ctcg-browser__deck-summary,.ctcg-browser.is-deck-view .ctcg-browser__copy-rule,.ctcg-browser.is-deck-view .ctcg-browser__type-counts,.ctcg-browser.is-deck-view .ctcg-browser__validation{grid-column:1/-1}
+.ctcg-browser.is-deck-view .ctcg-browser__section-heading h3{font:600 22px 'Space Grotesk',Manrope,sans-serif}
+.ctcg-browser.is-deck-view .ctcg-browser__browse{width:100%;min-height:48px;font-size:13px}
+.ctcg-browser.is-deck-view .ctcg-browser__totals{max-width:720px;margin-inline:auto;width:100%}
+.ctcg-browser.is-deck-view .ctcg-browser__deck-section+section{border-left:1px solid #ffffff13;padding:0 0 0 24px;margin:0}
+.ctcg-browser.is-deck-view .ctcg-browser__deck-list li{padding:9px 2px}
+.ctcg-browser.is-deck-view .ctcg-browser__deck-card-name{font-size:12px}
+.ctcg-browser.is-deck-view .ctcg-browser__notice{grid-column:1/-1}
+.ctcg-browser.is-library-view .ctcg-browser__workspace{grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr);gap:18px}
+.ctcg-browser.is-library-view .ctcg-browser__deck{display:none}
+.ctcg-browser.is-library-view .ctcg-browser__detail{top:18px}
+.ctcg-browser__browse{font-weight:700}
+@media(max-width:900px){.ctcg-browser.is-deck-view .ctcg-browser__deck{grid-template-columns:1fr;gap:0}.ctcg-browser.is-deck-view .ctcg-browser__deck-section+section{border-left:0;border-top:1px solid #ffffff13;padding:16px 0 0;margin:16px 0 0}.ctcg-browser.is-library-view .ctcg-browser__workspace{grid-template-columns:minmax(0,1fr)}.ctcg-browser.is-library-view .ctcg-browser__detail{position:static}}
+@media(max-width:580px){.primary-nav{gap:2px}.nav-button{padding-inline:8px;font-size:10px}.nav-button.is-active:after{bottom:-8px;left:8px;right:8px}.page-heading{align-items:flex-start;flex-direction:column}.page-heading .button-quiet{width:100%}.ctcg-browser.is-deck-view .ctcg-browser__deck{padding:15px}.ctcg-browser.is-deck-view .ctcg-browser__totals strong{font-size:27px}}
+

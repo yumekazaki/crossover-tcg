@@ -19,9 +19,9 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
   const uniqueId = `ctcg-${Math.random().toString(36).slice(2, 9)}`;
 
   const heading = el('header', 'ctcg-browser__heading');
-  heading.append(el('p', 'ctcg-browser__eyebrow', 'SET 01 · CROSSOVER ARCHIVE'));
-  heading.append(el('h2', '', 'Build your party. Find your edge.'));
-  heading.append(el('p', 'ctcg-browser__intro', 'Explore the card pool, inspect every effect, and shape your next deck.'));
+  heading.append(el('p', 'ctcg-browser__eyebrow', 'CROSSOVER TCG · CARD TOOLKIT'));
+  heading.append(el('h2', '', 'Search cards and shape a deck.'));
+  heading.append(el('p', 'ctcg-browser__intro', 'Choose cards from across the set, then check your list in the Deck Workshop.'));
   root.append(heading);
 
   const toolbar = el('div', 'ctcg-browser__toolbar');
@@ -237,6 +237,7 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     const mainCount = ids.mainIds.length;
     const equipmentSlots = ids.equipmentIds.reduce((sum, id) => sum + Number(byId.get(id)?.slots ?? 1), 0);
     const deckHeading = el('div', 'ctcg-browser__section-heading'); deckHeading.append(el('h3', '', 'Your deck'), el('span', 'ctcg-browser__deck-symbol', '◇')); deckPanel.append(deckHeading);
+    deckPanel.append(button('Browse cards to add', 'ctcg-browser__primary ctcg-browser__browse', () => root.dispatchEvent(new CustomEvent('browse-cards'))));
     const totals = el('div', 'ctcg-browser__totals');
     totals.append(metric(String(mainCount), 'Main cards', '40–60 required'), metric(String(equipmentSlots), 'E/T slots', '20 required'));
     deckPanel.append(totals);
@@ -291,6 +292,13 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     if (next.onRemove !== undefined) onRemove = next.onRemove;
     refresh(); return root;
   };
+  root.setMode = function setMode(mode) {
+    const deckMode = mode !== 'cards';
+    root.classList.toggle('is-deck-view', deckMode);
+    root.classList.toggle('is-library-view', !deckMode);
+    return root;
+  };
+  root.setMode('deck');
   populateFilters(); refresh(); return root;
 }
 
@@ -305,3 +313,4 @@ function metric(value, label, hint) { const node = el('div'); node.append(el('st
 function requirementText(value) { if (!value) return ''; const all = (value.all || []).map(item => typeof item === 'string' ? item : JSON.stringify(item)); const any = (value.any || []).map(item => typeof item === 'string' ? item : JSON.stringify(item)); return [all.length ? all.join(' AND ') : '', any.length ? `(${any.join(' OR ')})` : ''].filter(Boolean).join(' AND '); }
 function normalizeMessages(value) { if (!value) return []; return (Array.isArray(value) ? value : [value]).map(item => typeof item === 'string' ? item : item?.message || item?.reason || JSON.stringify(item)); }
 function looksLikeValidation(value) { return typeof value === 'boolean' || !!value && typeof value === 'object' && ['valid', 'isValid', 'ok', 'errors', 'issues', 'warnings'].some(key => key in value); }
+

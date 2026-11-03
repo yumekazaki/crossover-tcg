@@ -14,17 +14,21 @@
   <header class="app-header">
     <a class="brand" href="#home" aria-label="Crossover TCG home"><span class="brand-mark">C</span><span>CROSSOVER <small>TACTICAL CARD GAME</small></span></a>
     <nav class="primary-nav" aria-label="Main navigation">
-      <button class="nav-button is-active" data-view="library">Library &amp; Deck Lab</button>
-      <button class="nav-button" data-view="practice">Local Practice</button>
-      <button class="nav-button" data-view="status">Project Status</button>
+      <button class="nav-button is-active" data-view="practice">Play</button>
+      <button class="nav-button" data-view="library" data-mode="deck">Deck Workshop</button>
+      <button class="nav-button" data-view="library" data-mode="cards">Card Library</button>
     </nav>
     <span class="local-badge"><i></i> BROWSER PLAYTEST · LOCAL MATCHES</span>
   </header>
   <main>
-    <section id="library-view" class="view is-visible">
-      <div class="hero">
-        <div><p class="eyebrow">TWO SETS · 550 CARD DATASET</p><h1>Choose your next combination.</h1><p>Browse the complete card pool, inspect the full card text, and validate a deck against the established limits.</p></div>
+    <section id="library-view" class="view" hidden>
+      <div class="hero" id="deck-heading">
+        <div><p class="eyebrow">YOUR COLLECTION · 550 CARDS</p><h1>Deck <em>workshop</em></h1><p>Pick a saved deck, check its limits, then browse cards to add or remove pieces from your strategy.</p></div>
         <div class="hero-stat"><strong id="card-count">550</strong><span>cards across 2 sets</span><small id="implemented-effects">Loading engine coverage…</small></div>
+      </div>
+      <div class="hero cards-heading" id="cards-heading" hidden>
+        <div><p class="eyebrow">CARD LIBRARY · 2 SETS</p><h1>Find your next <em>play</em>.</h1><p>Search by character, franchise, card type, subtype, or effect. Add cards directly to your selected deck.</p></div>
+        <div class="hero-stat"><strong id="library-count">550</strong><span>cards to explore</span><small>Use “Deck Workshop” to manage deck lists</small></div>
       </div>
       <section class="deck-controls" aria-label="Deck management">
         <label>Deck<select id="deck-select"></select></label>
@@ -41,8 +45,8 @@
       </section>
       <div id="card-browser"></div>
     </section>
-    <section id="practice-view" class="view" hidden>
-      <div class="page-heading"><p class="eyebrow">PRACTICE · LOCAL SANDBOX</p><h1>Run a match rehearsal</h1><p>This build runs two seats on this device. It is not online multiplayer. Choose validated registered decks to start; each action is checked by the rules reducer.</p></div>
+    <section id="practice-view" class="view is-visible">
+      <div class="page-heading"><div><p class="eyebrow">PLAY · LOCAL MATCH</p><h1>Set up your <em>match</em>.</h1><p>Choose two saved decks to play on this device. Pick a deck in the workshop if you need to make changes first.</p></div><button class="button-quiet" type="button" data-view="library" data-mode="deck">Open Deck Workshop</button></div>
       <div class="match-setup">
         <label>Player One deck<select id="p1-deck"></select></label>
         <label>Player Two deck<select id="p2-deck"></select></label>
@@ -62,7 +66,7 @@
       </div>
     </section>
   </main>
-  <footer><span>CROSSOVER TCG · ENGINE PREVIEW 0.1</span><span>Separate local project · No Vanguard files or services</span></footer>
+  <footer><span>CROSSOVER TCG · ENGINE PREVIEW 0.1</span><span>Separate local project · <button class="footer-link" type="button" data-view="status">Build status</button></span></footer>
   <dialog id="card-dialog" class="card-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button></form><div id="dialog-content"></div></dialog>
   <script type="module" src="src/app.js"></script>
 </body>

@@ -65,6 +65,7 @@ function mountBrowser() {
     onAdd: (cardId, section) => addOrRemove(cardId, section, 'add'),
     onRemove: (cardId, section) => addOrRemove(cardId, section, 'remove')
   });
+  panel.addEventListener('browse-cards', () => showView('library', 'cards'));
   $('card-browser').replaceChildren(panel);
 }
 function saveDeck() {
@@ -284,12 +285,20 @@ function renderMatch() {
   const log = create('section', 'game-log'), title = create('h3', '', 'Match log'), list = create('ol');
   match.log.slice(-30).reverse().forEach((entry) => list.append(create('li', '', logLabel(entry)))); log.append(title, list); root.append(log);
 }
-function showView(view) {
+function showView(view, mode = 'deck') {
   document.querySelectorAll('.view').forEach((el) => { el.classList.toggle('is-visible', el.id === `${view}-view`); el.hidden = el.id !== `${view}-view`; });
-  document.querySelectorAll('.nav-button').forEach((el) => el.classList.toggle('is-active', el.dataset.view === view));
+  if (view === 'library') {
+    const cardsMode = mode === 'cards';
+    $('library-view').classList.toggle('is-deck-mode', !cardsMode);
+    $('library-view').classList.toggle('is-cards-mode', cardsMode);
+    $('deck-heading').hidden = cardsMode;
+    $('cards-heading').hidden = !cardsMode;
+    panel?.setMode(cardsMode ? 'cards' : 'deck');
+  }
+  document.querySelectorAll('.nav-button').forEach((el) => el.classList.toggle('is-active', el.dataset.view === view && (view !== 'library' || (el.dataset.mode || 'deck') === mode)));
 }
 
-for (const button of document.querySelectorAll('.nav-button')) button.addEventListener('click', () => showView(button.dataset.view));
+for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => showView(button.dataset.view, button.dataset.mode || 'deck'));
 $('deck-select').addEventListener('change', (event) => { activeDeckId = event.target.value; syncDeckUI(); });
 $('deck-name').addEventListener('input', () => { const deck = currentDeck(); if (deck) deck.name = $('deck-name').value; });
 $('save-deck').addEventListener('click', saveDeck);
@@ -303,7 +312,7 @@ $('start-match').addEventListener('click', startMatch);
 $('reset-match').addEventListener('click', () => { match = null; $('match-board').hidden = true; $('reset-match').disabled = true; $('match-notice').textContent = 'Local match cleared.'; });
 
 try {
-  await loadCards(); cards = allCards(); $('card-count').textContent = cards.length.toLocaleString();
+  await loadCards(); cards = allCards(); $('card-count').textContent = cards.length.toLocaleString(); $('library-count').textContent = cards.length.toLocaleString();
   const response = await fetch('data/source/decks.json'); if (!response.ok) throw new Error('Could not load the registered sample decks.'); samples = await response.json();
   initSavedDecks(); mountBrowser(); syncDeckUI();
   $('implemented-effects').textContent = `${implementedEffectIds().length}/${cards.length} effects · ${supportedTransformationIds().length} form entries`;
