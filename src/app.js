@@ -122,7 +122,20 @@ function renderCharacterZone(player, instanceId, label, isCenter = false) {
   if (!instanceId) { zone.disabled = true; zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>Open zone</b>`; return zone; }
   const instance = match.instances[instanceId], card = cards.find((x) => x.id === instance.cardId);
   const specialsSuppressed = (instance.characterSpecialsSuppressedUntilTurn ?? 0) > match.turnNumber;
-  zone.innerHTML = `<span class="zone-label">${esc(label)}</span><b>${esc(card.name)}</b><small>${Number(instance.battlefield.currentHp).toLocaleString()} / ${Number(instance.battlefield.maxHp).toLocaleString()} HP · ${Number(card.statistics.atk).toLocaleString()} ATK${specialsSuppressed ? ' · Specials suppressed' : ''}</small>`;
+  const artwork = getArtwork(card);
+  zone.setAttribute('aria-label', `${label}: ${card.name}, ${instance.battlefield.currentHp} of ${instance.battlefield.maxHp} HP, ${card.statistics.atk} attack`);
+  zone.classList.add('has-card');
+  if (artwork.src) {
+    const image = create('img', 'zone-card__art'); image.src = artwork.src; image.alt = artwork.label;
+    image.loading = 'lazy'; image.decoding = 'async'; zone.append(image);
+  } else {
+    const mark = create('span', 'zone-card__mark', card.type === 'Character' ? '◇' : '✧'); mark.setAttribute('aria-hidden', 'true'); zone.append(mark);
+  }
+  const tint = create('span', 'zone-card__shade'); tint.setAttribute('aria-hidden', 'true');
+  const info = create('span', 'zone-card__info');
+  info.append(create('span', 'zone-label', label), create('b', '', card.name),
+    create('small', '', `${Number(instance.battlefield.currentHp).toLocaleString()} / ${Number(instance.battlefield.maxHp).toLocaleString()} HP · ${Number(card.statistics.atk).toLocaleString()} ATK${specialsSuppressed ? ' · Specials suppressed' : ''}`));
+  zone.append(tint, info);
   zone.addEventListener('click', () => showCard(card)); return zone;
 }
 function showCard(card) {
@@ -163,9 +176,9 @@ function renderSeat(playerId, revealHand = false) {
   const party = create('div', 'party-zones'); player.party.forEach((id, index) => party.append(renderCharacterZone(player, id, `PARTY ${index + 1}`)));
   const board = create('div', 'zones'); board.style.display = 'block'; board.append(party); seat.append(zones, board);
   const attachments = Object.values(match.instances).filter((x) => x.zone === 'attached' && player.party.concat(player.center).includes(x.attachedTo));
-  if (attachments.length) { const row = create('div', 'attached-row'); for (const gear of attachments) { const card = cards.find((x) => x.id === gear.cardId); const suppressed = (gear.abilitiesSuppressedUntilTurn ?? 0) > match.turnNumber; const b = create('span', 'gear-pill', `⚔ ${card.name} → ${cardName(gear.attachedTo)}${suppressed ? ' · abilities suppressed' : ''}`); row.append(b); } seat.append(row); }
+  if (attachments.length) { const row = create('div', 'attached-row'); for (const gear of attachments) { const card = cards.find((x) => x.id === gear.cardId); const suppressed = (gear.abilitiesSuppressedUntilTurn ?? 0) > match.turnNumber; const b = create('button', 'gear-pill'); b.type = 'button'; const art = getArtwork(card); if (art.src) { const image = create('img', 'gear-pill__art'); image.src = art.src; image.alt = ''; image.loading = 'lazy'; b.append(image); } b.append(create('span', '', `⚔ ${card.name} → ${cardName(gear.attachedTo)}${suppressed ? ' · abilities suppressed' : ''}`)); b.addEventListener('click', () => showCard(card)); row.append(b); } seat.append(row); }
   const hand = create('div', 'hand-area'), label = create('span', 'hand-label', `HAND · ${player.zones.hand.length} CARDS`), list = create('div', 'hand-cards');
-  if (revealHand) for (const instanceId of player.zones.hand) { const card = cards.find((x) => x.id === match.instances[instanceId].cardId); const button = create('button', 'hand-card'); button.type = 'button'; button.textContent = card.name; const small = create('small', '', `${card.type} · ${card.cost.momentum}M`); button.append(small); button.addEventListener('click', () => showCard(card)); list.append(button); }
+  if (revealHand) for (const instanceId of player.zones.hand) { const card = cards.find((x) => x.id === match.instances[instanceId].cardId); const button = create('button', 'hand-card'); button.type = 'button'; const art = getArtwork(card); if (art.src) { const image = create('img', 'hand-card__art'); image.src = art.src; image.alt = ''; image.loading = 'lazy'; button.append(image); } button.append(create('span', 'hand-card__name', card.name), create('small', '', `${card.type} · ${card.cost.momentum}M`)); button.addEventListener('click', () => showCard(card)); list.append(button); }
   else for (const _instanceId of player.zones.hand) { const back = create('button', 'hand-card concealed-card', 'Face down'); back.type = 'button'; back.disabled = true; list.append(back); }
   hand.append(label, list); seat.append(hand);
   const zonesInfo = create('p', 'seat-footnote', `Main Deck ${player.zones.mainDeck.length} · Continue? ${player.zones.continue.length} · Arsenal ${player.zones.arsenal.length} cards / ${player.registration.equipmentIds.reduce((n, id) => n + cards.find((x) => x.id === id).slots, 0)} slots`); seat.append(zonesInfo);
@@ -299,3 +312,4 @@ try {
   $('match-notice').textContent = `Application data could not load: ${error.message}`;
   $('implemented-effects').textContent = 'Data loading failed';
 }
+
