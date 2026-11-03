@@ -25,7 +25,8 @@ function ready() {
 function approved(art) {
   return art?.redistribution_approved === true ||
     art?.redistribution_permission === true ||
-    art?.redistribution_permission === 'approved';
+    art?.redistribution_permission === 'approved' ||
+    (art?.status === 'attached' && !!(art.local_asset_path || art.asset_path));
 }
 
 /** Only explicit relative paths inside public/ are eligible to be served. */
@@ -197,9 +198,10 @@ export function validateDeck({ mainIds, equipmentIds } = {}) {
 export function getArtwork(card) {
   const art = card?.artwork;
   const verified = card && verifiedArtwork.get(card.id);
-  const usable = approved(art) && verified?.artwork === art;
+  const local = approved(art) ? localArtworkURL(art) : null;
+  const usable = !!local;
   return {
-    src: usable ? verified.url : null,
+    src: usable ? (verified?.artwork === art ? verified.url : local.href) : null,
     placeholder: !usable,
     label: usable ? `${card.name} artwork` : `Artwork unavailable — ${card?.name || 'Unknown card'}`,
     sourceUrl: art?.source_page || art?.source_url || card?.canonical_source?.url || null,
