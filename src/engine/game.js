@@ -111,7 +111,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
       center: starter,
       party: Array(6).fill(null),
       registration: { mainCount: player.deck.mainIds.length, equipmentIds: [...player.deck.equipmentIds] },
-      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, nameLimits: {} }
+      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], nameLimits: {} }
     };
   }
   const opponentId = ids.find((id) => id !== firstPlayerId);
@@ -166,6 +166,8 @@ function startNextTurn(state, cardIndex) {
     player.turn.freeMainAttackUsed = false;
     player.turn.freePartyAttackUsed = false;
     player.turn.finisherCombatUsed = false;
+    player.turn.finisherDisabled = false;
+    player.turn.equipmentLockedInstanceIds = [];
     player.turn.nameLimits = {};
     for (const instance of Object.values(state.instances)) instance.usage.nameLimits = {};
   }
@@ -324,6 +326,20 @@ function resolveMenu(state, cardIndex) {
           }
         }
       }
+      if (instance && program?.kind === 'aether-channel') {
+        const chosen = (select.requirementInstanceIds ?? []).map((id) => state.instances[id]);
+        if (program.resourceChoices.includes(select.resourceChoice)) {
+          const player = state.players[select.playerId];
+          player.resources[select.resourceChoice] += program.amount;
+          for (const character of chosen) if (character?.battlefield && character.controllerId === player.id && !player.turn.equipmentLockedInstanceIds.includes(character.instanceId)) player.turn.equipmentLockedInstanceIds.push(character.instanceId);
+          addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: card.id, resource: select.resourceChoice, amount: program.amount });
+        }
+      }
+      if (instance && program?.kind === 'theurgy-charge') {
+        state.players[select.playerId].resources.momentum += program.gain.momentum;
+        state.players[select.playerId].turn.finisherDisabled = true;
+        addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: card.id, resource: 'momentum', amount: program.gain.momentum });
+      }
       if (instance && card?.type !== 'Character') {
         instance.zone = 'continue';
         state.players[instance.ownerId].zones.continue.push(instance.instanceId);
@@ -342,6 +358,15 @@ function resolveMenu(state, cardIndex) {
 function hasControlledSubtype(state, playerId, subtype, cardIndex) {
   return [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean)
     .some((id) => (cardIndex.get(state.instances[id]?.cardId)?.subtypes ?? []).includes(subtype));
+}
+
+function controlsDifferentNamedSubtypes(state, playerId, firstTag, secondTag, cardIndex) {
+  const controlled = [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean)
+    .map((id) => state.instances[id]).filter((x) => x?.battlefield);
+  return controlled.some((first) => (cardIndex.get(first.cardId)?.subtypes ?? []).includes(firstTag)
+    && controlled.some((second) => second.instanceId !== first.instanceId
+      && cardIndex.get(second.cardId)?.name !== cardIndex.get(first.cardId)?.name
+      && (cardIndex.get(second.cardId)?.subtypes ?? []).includes(secondTag)));
 }
 
 function passiveEquipmentAttackBonus(state, hostId, cardIndex) {
@@ -662,6 +687,7 @@ export function dispatch(stateInput, action, cards) {
     const gear = state.instances[action.equipmentInstanceId], card = gear && cardIndex.get(gear.cardId), host = state.instances[action.hostInstanceId];
     if (!gear || gear.zone !== 'arsenal' || gear.ownerId !== player.id || card?.type !== 'Equipment') fail('ILLEGAL_EQUIPMENT', 'Choose Equipment from your own arsenal.');
     if (!host || host.controllerId !== player.id || !host.battlefield) fail('ILLEGAL_HOST', 'Equipment must attach to your Character.');
+    if (player.turn.equipmentLockedInstanceIds.includes(host.instanceId)) fail('ATTACHMENT_LOCKED', 'An effect prevents Equipment from being attached to this Character this turn.');
     if (!requirementsMet(card, host, cardIndex)) fail('INCOMPATIBLE_HOST', 'The Character does not meet this Equipment’s printed subtype requirements.');
     const cost = card.cost ?? {};
     for (const key of ['light', 'darkness']) if (player.resources[key] < (cost[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
@@ -677,14 +703,34 @@ export function dispatch(stateInput, action, cards) {
     if (!instance || instance.zone !== 'hand' || card?.type !== 'Ability') fail('ILLEGAL_ABILITY', 'Choose an Ability card from your hand.');
     if (!getEffectProgram(card.id)) fail('UNIMPLEMENTED_EFFECT', `${card.name} has no validated engine program yet; it remains visible in the database but cannot be resolved.`);
     if (player.turn.nameLimits[card.name]) fail('NAME_LIMIT', `${card.name} is limited to one activation per turn.`);
-    if (!action.targets?.[0]) fail('TARGET_REQUIRED', `${card.name} requires a Character target.`);
-    const target = state.instances[action.targets[0]];
-    if (!target?.battlefield || target.controllerId !== player.id) fail('ILLEGAL_TARGET', 'Choose a Character you control.');
+    const program = getEffectProgram(card.id);
+    let requirementInstanceIds = [];
+    if (program.kind === 'aether-channel') {
+      requirementInstanceIds = action.requirementInstanceIds ?? [];
+      if (requirementInstanceIds.length !== 2 || new Set(requirementInstanceIds).size !== 2) fail('REQUIREMENT_TARGETS', 'Choose two distinct Characters for Aether Channel.');
+      const selected = requirementInstanceIds.map((id) => state.instances[id]);
+      if (selected.some((x) => !x?.battlefield || x.controllerId !== player.id) || cardIndex.get(selected[0]?.cardId)?.name === cardIndex.get(selected[1]?.cardId)?.name
+        || !program.requires.every((tag) => selected.some((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes(tag)))) fail('REQUIREMENT_FAILED', 'Choose a Mage and a differently named Warrior you control.');
+      if (!program.resourceChoices.includes(action.resourceChoice)) fail('ILLEGAL_RESOURCE_CHOICE', 'Choose Light or Darkness.');
+    } else if (program.kind !== 'theurgy-charge') {
+      if (!action.targets?.[0]) fail('TARGET_REQUIRED', `${card.name} requires a Character target.`);
+      const target = state.instances[action.targets[0]];
+      if (!target?.battlefield || target.controllerId !== player.id) fail('ILLEGAL_TARGET', 'Choose a Character you control.');
+    }
+    if (program.kind === 'theurgy-charge') {
+      if (!controlsDifferentNamedSubtypes(state, player.id, 'Persona User', 'Persona User', cardIndex)) fail('REQUIREMENT_FAILED', 'Control Persona Users with two different names.');
+      const discardId = action.activationCostInstanceId;
+      if (!discardId || discardId === instance.instanceId || !player.zones.hand.includes(discardId)) fail('ACTIVATION_COST_REQUIRED', 'Put one other card from your hand on the bottom of your Main Deck as the activation cost.');
+      player.zones.hand = player.zones.hand.filter((id) => id !== discardId);
+      state.instances[discardId].zone = 'mainDeck';
+      player.zones.mainDeck.push(discardId);
+      addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'hand-to-main-deck-bottom', instanceId: discardId });
+    }
     for (const key of ['momentum', 'light', 'darkness']) if (player.resources[key] < (card.cost?.[key] ?? 0)) fail('INSUFFICIENT_RESOURCE', `Not enough ${key}.`);
     for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= card.cost?.[key] ?? 0;
     player.turn.nameLimits[card.name] = true;
     player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1); instance.zone = 'pending';
-    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [] });
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [], resourceChoice: action.resourceChoice, requirementInstanceIds });
     return state;
   }
   if (action.type === 'DECLARE_ATTACK') {
@@ -773,11 +819,23 @@ export function getLegalActions(state, playerId, cards) {
     for (const id of player.zones.arsenal) {
       const equipment = cardIndex.get(state.instances[id].cardId), cost = equipment?.cost ?? {};
       if (player.resources.light < (cost.light ?? 0) || player.resources.darkness < (cost.darkness ?? 0)) continue;
-      for (const hostId of [player.center, ...player.party].filter(Boolean)) if (requirementsMet(equipment ?? {}, state.instances[hostId], cardIndex)) actions.push({ type: 'ATTACH_EQUIPMENT', equipmentInstanceId: id, hostInstanceId: hostId });
+      for (const hostId of [player.center, ...player.party].filter(Boolean)) if (!player.turn.equipmentLockedInstanceIds.includes(hostId) && requirementsMet(equipment ?? {}, state.instances[hostId], cardIndex)) actions.push({ type: 'ATTACH_EQUIPMENT', equipmentInstanceId: id, hostInstanceId: hostId });
     }
     for (const id of player.zones.hand) {
       const card = cardIndex.get(state.instances[id].cardId), program = card && getEffectProgram(card.id);
-      if (card?.type === 'Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, targetOptions: [player.center, ...player.party].filter(Boolean) });
+      if (card?.type === 'Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) {
+        if (program.kind === 'aether-channel' && controlsDifferentNamedSubtypes(state, playerId, 'Mage', 'Warrior', cardIndex)) {
+          const field = [player.center, ...player.party].filter(Boolean).map((characterId) => state.instances[characterId]);
+          const mages = field.filter((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes('Mage'));
+          const warriors = field.filter((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes('Warrior'));
+          for (const mage of mages) for (const warrior of warriors) {
+            if (cardIndex.get(mage.cardId)?.name === cardIndex.get(warrior.cardId)?.name) continue;
+            for (const resourceChoice of program.resourceChoices) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, resourceChoice, requirementInstanceIds: [mage.instanceId, warrior.instanceId] });
+          }
+        } else if (program.kind === 'theurgy-charge') {
+          if (controlsDifferentNamedSubtypes(state, playerId, 'Persona User', 'Persona User', cardIndex)) for (const costId of player.zones.hand) if (costId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, activationCostInstanceId: costId });
+        } else actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, targetOptions: [player.center, ...player.party].filter(Boolean) });
+      }
       if (card?.type === 'Speed Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id });
     }
     for (const formId of player.zones.arsenal) {

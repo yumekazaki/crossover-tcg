@@ -176,6 +176,8 @@ function renderActions(actions, actorId, container) {
     if (action.type === 'TRANSFORM') { container.append(actionButton(`Transform ${cardName(action.baseInstanceId)} → ${cardName(action.formInstanceId)}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ATTACH_EQUIPMENT') { const gear = cardName(action.equipmentInstanceId), host = cardName(action.hostInstanceId); container.append(actionButton(`Attach ${gear} → ${host}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
     if (action.type === 'ACTIVATE_ABILITY') {
+      if (action.resourceChoice) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · gain 2 ${action.resourceChoice} with ${action.requirementInstanceIds.map(cardName).join(' + ')}`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
+      if (action.activationCostInstanceId) { container.append(actionButton(`Activate ${cardName(action.instanceId)} · put ${cardName(action.activationCostInstanceId)} on deck bottom`, () => safeDispatch({ ...action, playerId: actorId }))); continue; }
       for (const targetId of action.targetOptions || []) container.append(actionButton(`Activate ${cardName(action.instanceId)} → ${cardName(targetId)}`, () => safeDispatch({ ...action, playerId: actorId, targets: [targetId] }))); continue;
     }
     if (action.type === 'ACTIVATE_SPEED') { container.append(actionButton(`Respond with ${cardName(action.instanceId)} → ${cardName(action.targets?.[0])}`, () => safeDispatch({ ...action, playerId: actorId }), 'pass')); continue; }

@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-060', 'CS1-281', 'CS1-282', 'CS1-433'];
+  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-433'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -177,6 +177,51 @@ test('Party Swap rejects transformed Members and unaffordable actions before ope
   s.instances[s.players.p1.party[0]].cardId = transformed;
   assert.throws(() => dispatch(s, { type: 'PARTY_SWAP', playerId: 'p1', instanceIds: [s.players.p1.party[0]] }, cards), (error) => error.code === 'TRANSFORMED_SWAP');
   assert.equal(s.menu, null);
+});
+
+test('Aether Channel chooses a Light or Darkness burst for a Mage/Warrior pair and locks both from new Equipment', () => {
+  let s = start(game('CS1-031'));
+  const soraId = moveCardToHand(s, 'p1', 'CS1-001');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: soraId }, cards);
+  s = passMenu(s);
+  const abilityId = moveCardToHand(s, 'p1', 'CS1-316');
+  const beforeLight = s.players.p1.resources.light, beforeDarkness = s.players.p1.resources.darkness;
+  const legal = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === abilityId && action.resourceChoice === 'light');
+  assert.ok(legal);
+  s = dispatch(s, { ...legal, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.players.p1.resources.light, beforeLight + 2);
+  assert.equal(s.players.p1.resources.darkness, beforeDarkness);
+  assert.deepEqual(new Set(s.players.p1.turn.equipmentLockedInstanceIds), new Set([s.players.p1.center, soraId]));
+  const gearId = s.players.p1.zones.arsenal.find((id) => s.instances[id].cardId === 'CS1-181');
+  assert.ok(gearId);
+  assert.equal(getLegalActions(s, 'p1', cards).some((action) => action.type === 'ATTACH_EQUIPMENT' && action.hostInstanceId === soraId), false);
+  assert.throws(() => dispatch(s, { type: 'ATTACH_EQUIPMENT', playerId: 'p1', equipmentInstanceId: gearId, hostInstanceId: soraId }, cards), (error) => error.code === 'ATTACHMENT_LOCKED');
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  assert.deepEqual(s.players.p1.turn.equipmentLockedInstanceIds, []);
+  assertStateInvariants(s, cards);
+});
+
+test('Theurgy Charge bottoms a hand card as an upfront cost, then grants Momentum and disables Finishers for the turn', () => {
+  let s = start(game('CS1-060'));
+  const makotoId = moveCardToHand(s, 'p1', 'CS1-059');
+  s = dispatch(s, { type: 'ADD_TO_PARTY', playerId: 'p1', instanceId: makotoId }, cards);
+  s = passMenu(s);
+  const abilityId = moveCardToHand(s, 'p1', 'CS1-319');
+  const costId = s.players.p1.zones.hand.find((id) => id !== abilityId);
+  assert.ok(costId);
+  const before = s.players.p1.resources.momentum;
+  s = dispatch(s, { type: 'ACTIVATE_ABILITY', playerId: 'p1', instanceId: abilityId, activationCostInstanceId: costId }, cards);
+  assert.equal(s.instances[costId].zone, 'mainDeck');
+  assert.equal(s.players.p1.resources.momentum, before);
+  s = passMenu(s);
+  assert.equal(s.players.p1.resources.momentum, before + 2);
+  assert.equal(s.players.p1.turn.finisherDisabled, true);
+  assert.equal(s.instances[abilityId].zone, 'continue');
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  assert.equal(s.activePlayerId, 'p2');
+  assert.equal(s.players.p1.turn.finisherDisabled, false);
+  assertStateInvariants(s, cards);
 });
 
 test('Ability card Cure resolves through the Menu and goes to Continue?', () => {

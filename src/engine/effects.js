@@ -7,6 +7,14 @@ const programs = {
   'CS1-433': {
     kind: 'heal', timing: 'opponent-attack-response', target: 'attacked-character', amount: 4000,
     requires: ['Healer'], perNamePerTurn: true
+  },
+  'CS1-316': {
+    kind: 'aether-channel', timing: 'main', requires: ['Mage', 'Warrior'], differentNames: true,
+    resourceChoices: ['light', 'darkness'], amount: 2, locksEquipment: true, perNamePerTurn: true
+  },
+  'CS1-319': {
+    kind: 'theurgy-charge', timing: 'main', requires: ['Persona User', 'Persona User'], differentNames: true,
+    cost: { handToMainDeckBottom: 1 }, gain: { momentum: 2 }, locksFinisher: true, perNamePerTurn: true
   }
 };
 

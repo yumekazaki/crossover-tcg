@@ -1,6 +1,6 @@
 # Effect coverage implementation plan
 
-Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js` on 2026-10-30. This is an implementation map, not a rewrite of card text or a claim of mechanical validation. The existing implementation has two effect programs (`CS1-281`, `CS1-433`); 498 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
+Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js`, updated 2026-11-02. This is an implementation map, not a rewrite of card text or a claim of broad mechanical validation. Four effect programs are implemented (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-433`); 496 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
 
 The source data and recent card revisions are explicitly not balance-reviewed or playtested. Preserve each card's exact printed conditions, timing, costs, targets, once-per-name restrictions, and post-resolution clauses. The player preference in the project history favors combo lines, response interaction, deck/hand movement, and Light/Darkness/Momentum generation over standalone numerical stat boosts; use that as a selection priority, not permission to alter card text.
 
@@ -20,7 +20,7 @@ The source data and recent card revisions are explicitly not balance-reviewed or
 
 ## Work order
 
-1. Implement transaction and choice primitives shared by all families: typed zones/resources, immutable physical-copy movement, structured pending instruction, legal choices, and atomic costs. Add reducer tests for no partial payment on rejected actions.
+1. Continue transaction and choice primitives shared by all families: typed zones/resources, immutable physical-copy movement, structured pending instruction, legal choices, and atomic costs. Add reducer tests for no partial payment on rejected actions. Aether Channel and Theurgy Charge now cover two narrow resource patterns and their explicit turn locks; the general primitives remain incomplete.
 2. Implement static target and condition evaluators over exact card definitions/subtype sets. Keep “untransformed,” “Party Member,” “current HP,” “printed ATK,” franchise count, and exact instance identity distinct.
 3. Add general resource and hand operations, then top-of-deck look/reveal/selection/reorder. These are relatively composable and enable the user's desired combo construction.
 4. Add generic Menu interruption/partial negation, then event collection and delayed resolution. Do not silently skip independent instructions when only one target portion is negated.
@@ -41,7 +41,7 @@ These are candidates for implementation mapping only. The engine must compare ev
 ## Counted observations
 
 - Canonical distribution: 180 Characters, 100 Equipment, 110 Abilities, 70 Speed Abilities, 40 Finishers.
-- Current explicit effect programs: 2 of 500 (`CS1-281` and `CS1-433`); every other effect remains blocked.
+- Current explicit effect programs: 4 of 500 (`CS1-281`, `CS1-316`, `CS1-319`, and `CS1-433`); 496 effects remain blocked.
 - A literal keyword scan of the 498 unsupported effect texts finds: 261 with a timing/event phrase, 54 with top-deck/reveal/search wording, 35 with draw/hand-add wording, 40 with discard/hand-send wording, 58 with resource wording, 47 with negation/cancel wording, 45 with movement/Equipment/Party wording, 116 with damage wording, 113 with heal wording, and 151 with Chain/Guard/cross-franchise wording. These categories overlap and include conditional/complex clauses; they are not counts of cards that can be implemented by a one-line template.
 - There is a large stat-text surface (172 records mention ATK/HP), but that does not justify prioritizing stat-only support. Search/hand/resource/response and chain families should anchor the early expansion to match the user's design direction.
 
