@@ -172,6 +172,7 @@ function startNextTurn(state, cardIndex) {
     for (const instance of Object.values(state.instances)) instance.usage.nameLimits = {};
   }
   const player = currentPlayer(state);
+  for (const instance of Object.values(state.instances)) if ((instance.characterSpecialsSuppressedUntilTurn ?? Infinity) <= state.turnNumber) delete instance.characterSpecialsSuppressedUntilTurn;
   player.resources.momentum += 5;
   player.resources.light += 1;
   player.resources.darkness += 1;
@@ -339,6 +340,26 @@ function resolveMenu(state, cardIndex) {
         state.players[select.playerId].resources.momentum += program.gain.momentum;
         state.players[select.playerId].turn.finisherDisabled = true;
         addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: card.id, resource: 'momentum', amount: program.gain.momentum });
+      }
+      if (instance && program?.kind === 'blade-awakening') {
+        const player = state.players[select.playerId];
+        const blade = state.instances[select.bladeInstanceId];
+        const bladeCard = blade && cardIndex.get(blade.cardId);
+        if (blade?.zone === 'pending' && bladeCard?.type === 'Character' && !bladeCard.transformation && (bladeCard.subtypes ?? []).includes('Blade')) {
+          const partyIndex = emptyPartyIndex(player);
+          if (partyIndex >= 0) {
+            blade.zone = 'party';
+            blade.controllerId = player.id;
+            blade.battlefield = { currentHp: bladeCard.statistics.hp, maxHp: bladeCard.statistics.hp, position: `party-${partyIndex}` };
+            blade.characterSpecialsSuppressedUntilTurn = state.turnNumber + 2;
+            player.party[partyIndex] = blade.instanceId;
+            addLog(state, { type: 'CHARACTER_ADDED', playerId: player.id, instanceId: blade.instanceId, cardId: blade.cardId, byCardId: card.id, standardAddUsed: false, characterSpecialsSuppressedUntilTurn: blade.characterSpecialsSuppressedUntilTurn });
+          } else {
+            blade.zone = 'hand';
+            player.zones.hand.push(blade.instanceId);
+            addLog(state, { type: 'CARD_RETURNED_TO_HAND', playerId: player.id, instanceId: blade.instanceId, reason: 'No Party Zone remained available.' });
+          }
+        }
       }
       if (instance && card?.type !== 'Character') {
         instance.zone = 'continue';
@@ -712,6 +733,21 @@ export function dispatch(stateInput, action, cards) {
       if (selected.some((x) => !x?.battlefield || x.controllerId !== player.id) || cardIndex.get(selected[0]?.cardId)?.name === cardIndex.get(selected[1]?.cardId)?.name
         || !program.requires.every((tag) => selected.some((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes(tag)))) fail('REQUIREMENT_FAILED', 'Choose a Mage and a differently named Warrior you control.');
       if (!program.resourceChoices.includes(action.resourceChoice)) fail('ILLEGAL_RESOURCE_CHOICE', 'Choose Light or Darkness.');
+    } else if (program.kind === 'blade-awakening') {
+      const blade = state.instances[action.bladeInstanceId];
+      const bladeCard = blade && cardIndex.get(blade.cardId);
+      const discard = state.instances[action.activationCostInstanceId];
+      const discardCard = discard && cardIndex.get(discard.cardId);
+      if (!hasControlledSubtype(state, player.id, 'Driver', cardIndex) || hasControlledSubtype(state, player.id, 'Blade', cardIndex)) fail('REQUIREMENT_FAILED', 'Blade Awakening requires a Driver and no controlled Blade.');
+      if (emptyPartyIndex(player) < 0) fail('PARTY_ZONE_FULL', 'Blade Awakening needs an empty Party Zone.');
+      if (!blade || blade.zone !== 'hand' || blade.ownerId !== player.id || bladeCard?.type !== 'Character' || bladeCard.transformation || !(bladeCard.subtypes ?? []).includes('Blade')) fail('ILLEGAL_REVEAL', 'Reveal an untransformed Blade Character from your hand.');
+      if (!discard || discard.instanceId === instance.instanceId || discard.instanceId === blade.instanceId || !player.zones.hand.includes(discard.instanceId) || discardCard?.type !== 'Ability') fail('ACTIVATION_COST_REQUIRED', 'Discard one other Ability card from your hand as the activation cost.');
+      player.zones.hand = player.zones.hand.filter((id) => id !== discard.instanceId && id !== blade.instanceId);
+      discard.zone = 'continue';
+      player.zones.continue.push(discard.instanceId);
+      blade.zone = 'pending';
+      addLog(state, { type: 'CARD_REVEALED', playerId: player.id, sourceCardId: card.id, instanceId: blade.instanceId, cardId: blade.cardId });
+      addLog(state, { type: 'ACTIVATION_COST_PAID', playerId: player.id, sourceCardId: card.id, cost: 'discard-ability', instanceId: discard.instanceId });
     } else if (program.kind !== 'theurgy-charge') {
       if (!action.targets?.[0]) fail('TARGET_REQUIRED', `${card.name} requires a Character target.`);
       const target = state.instances[action.targets[0]];
@@ -730,7 +766,7 @@ export function dispatch(stateInput, action, cards) {
     for (const key of ['momentum', 'light', 'darkness']) player.resources[key] -= card.cost?.[key] ?? 0;
     player.turn.nameLimits[card.name] = true;
     player.zones.hand.splice(player.zones.hand.indexOf(instance.instanceId), 1); instance.zone = 'pending';
-    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [], resourceChoice: action.resourceChoice, requirementInstanceIds });
+    openMenu(state, player.id, { id: `S${state.log.length + 1}`, kind: 'CARD_EFFECT', playerId: player.id, instanceId: instance.instanceId, cardId: card.id, targets: action.targets ?? [], resourceChoice: action.resourceChoice, requirementInstanceIds, bladeInstanceId: action.bladeInstanceId });
     return state;
   }
   if (action.type === 'DECLARE_ATTACK') {
@@ -834,6 +870,12 @@ export function getLegalActions(state, playerId, cards) {
           }
         } else if (program.kind === 'theurgy-charge') {
           if (controlsDifferentNamedSubtypes(state, playerId, 'Persona User', 'Persona User', cardIndex)) for (const costId of player.zones.hand) if (costId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, activationCostInstanceId: costId });
+        } else if (program.kind === 'blade-awakening') {
+          if (hasControlledSubtype(state, playerId, 'Driver', cardIndex) && !hasControlledSubtype(state, playerId, 'Blade', cardIndex) && emptyPartyIndex(player) >= 0) {
+            const blades = player.zones.hand.filter((handId) => { const c = cardIndex.get(state.instances[handId].cardId); return c?.type === 'Character' && !c.transformation && (c.subtypes ?? []).includes('Blade'); });
+            const discards = player.zones.hand.filter((handId) => handId !== id && cardIndex.get(state.instances[handId].cardId)?.type === 'Ability');
+            for (const bladeInstanceId of blades) for (const activationCostInstanceId of discards) if (bladeInstanceId !== activationCostInstanceId) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, bladeInstanceId, activationCostInstanceId });
+          }
         } else actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, targetOptions: [player.center, ...player.party].filter(Boolean) });
       }
       if (card?.type === 'Speed Ability' && program?.timing === 'main' && !player.turn.nameLimits[card.name]) actions.push({ type: 'ACTIVATE_SPEED', instanceId: id });

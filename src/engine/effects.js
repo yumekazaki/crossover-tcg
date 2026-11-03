@@ -15,6 +15,11 @@ const programs = {
   'CS1-319': {
     kind: 'theurgy-charge', timing: 'main', requires: ['Persona User', 'Persona User'], differentNames: true,
     cost: { handToMainDeckBottom: 1 }, gain: { momentum: 2 }, locksFinisher: true, perNamePerTurn: true
+  },
+  'CS1-339': {
+    kind: 'blade-awakening', timing: 'main', requires: ['Driver'], excludes: ['Blade'],
+    revealSubtype: 'Blade', discardType: 'Ability', addTo: 'party', suppressSpecialsUntilOwnerTurn: true,
+    ignoresStandardAddAllowance: true, perNamePerTurn: true
   }
 };
 

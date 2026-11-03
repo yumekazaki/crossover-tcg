@@ -1,6 +1,6 @@
 # Effect coverage implementation plan
 
-Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js`, updated 2026-11-02. This is an implementation map, not a rewrite of card text or a claim of broad mechanical validation. Four effect programs are implemented (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-433`); 496 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
+Audit of the canonical `data/cards.json` (500 records) against the current executable programs in `src/engine/effects.js`, updated 2026-11-02. This is an implementation map, not a rewrite of card text or a claim of broad mechanical validation. Five effect programs are implemented (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, `CS1-433`); 495 records are not executable yet. Keyword counts below overlap because one card can use several mechanisms.
 
 The source data and recent card revisions are explicitly not balance-reviewed or playtested. Preserve each card's exact printed conditions, timing, costs, targets, once-per-name restrictions, and post-resolution clauses. The player preference in the project history favors combo lines, response interaction, deck/hand movement, and Light/Darkness/Momentum generation over standalone numerical stat boosts; use that as a selection priority, not permission to alter card text.
 
@@ -31,7 +31,7 @@ The source data and recent card revisions are explicitly not balance-reviewed or
 
 Recommended candidates because they express deck identity and interaction, not just stat tuning:
 
-- **Deck building / selection:** `CS1-004`, `CS1-014`, `CS1-024`, `CS1-285`, `CS1-287`, `CS1-290`, `CS1-320`, `CS1-339`, `CS1-387`.
+- **Deck building / selection:** `CS1-004`, `CS1-014`, `CS1-024`, `CS1-285`, `CS1-287`, `CS1-290`, `CS1-320`, `CS1-339`, `CS1-387`. `CS1-339` now has a narrow reviewed hand-to-Party program; search, revealed deck choice, and the other candidates remain unsupported.
 - **Resources and cross-franchise chain setup:** `CS1-001`, `CS1-023`, `CS1-289`, `CS1-298`, `CS1-311`, `CS1-312`, `CS1-316`, `CS1-318`, `CS1-319`, `CS1-344`.
 - **Open-Menu interaction:** `CS1-323`, `CS1-392`, `CS1-395`, `CS1-400`, `CS1-410`, `CS1-418`, `CS1-425`, `CS1-428`, `CS1-438`, `CS1-440`, `CS1-447`, `CS1-456`.
 - **Finisher patterns after trigger and combat substrate:** `CS1-463`, `CS1-464`, `CS1-465`, `CS1-468`, `CS1-472`, `CS1-474`, `CS1-478`, `CS1-482`.
@@ -41,7 +41,7 @@ These are candidates for implementation mapping only. The engine must compare ev
 ## Counted observations
 
 - Canonical distribution: 180 Characters, 100 Equipment, 110 Abilities, 70 Speed Abilities, 40 Finishers.
-- Current explicit effect programs: 4 of 500 (`CS1-281`, `CS1-316`, `CS1-319`, and `CS1-433`); 496 effects remain blocked.
+- Current explicit effect programs: 5 of 500 (`CS1-281`, `CS1-316`, `CS1-319`, `CS1-339`, and `CS1-433`); 495 effects remain blocked.
 - A literal keyword scan of the 498 unsupported effect texts finds: 261 with a timing/event phrase, 54 with top-deck/reveal/search wording, 35 with draw/hand-add wording, 40 with discard/hand-send wording, 58 with resource wording, 47 with negation/cancel wording, 45 with movement/Equipment/Party wording, 116 with damage wording, 113 with heal wording, and 151 with Chain/Guard/cross-franchise wording. These categories overlap and include conditional/complex clauses; they are not counts of cards that can be implemented by a one-line template.
 - There is a large stat-text surface (172 records mention ATK/HP), but that does not justify prioritizing stat-only support. Search/hand/resource/response and chain families should anchor the early expansion to match the user's design direction.
 

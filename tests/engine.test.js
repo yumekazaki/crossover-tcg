@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-433'];
+  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-433'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -221,6 +221,31 @@ test('Theurgy Charge bottoms a hand card as an upfront cost, then grants Momentu
   for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
   assert.equal(s.activePlayerId, 'p2');
   assert.equal(s.players.p1.turn.finisherDisabled, false);
+  assertStateInvariants(s, cards);
+});
+
+test('Blade Awakening converts a Driver hand cost into a suppressed Blade without using standard Add', () => {
+  let s = start(game('CS1-089'));
+  const bladeId = moveCardToHand(s, 'p1', 'CS1-090');
+  const costId = moveCardToHand(s, 'p1', 'CS1-316');
+  const abilityId = moveCardToHand(s, 'p1', 'CS1-339');
+  const legal = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === abilityId && action.bladeInstanceId === bladeId && action.activationCostInstanceId === costId);
+  assert.ok(legal);
+  assert.equal(s.players.p1.turn.standardAddUsed, false);
+  s = dispatch(s, { ...legal, playerId: 'p1' }, cards);
+  assert.equal(s.instances[bladeId].zone, 'pending');
+  assert.equal(s.instances[costId].zone, 'continue');
+  s = passMenu(s);
+  assert.equal(s.instances[bladeId].zone, 'party');
+  assert.equal(s.instances[bladeId].battlefield.currentHp, cards.find((card) => card.id === 'CS1-090').statistics.hp);
+  assert.equal(s.instances[bladeId].characterSpecialsSuppressedUntilTurn, 3);
+  assert.equal(s.players.p1.turn.standardAddUsed, false);
+  assert.equal(s.instances[abilityId].zone, 'continue');
+  s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1'); s = advancePhase(s, 'p1');
+  assert.equal(s.instances[bladeId].characterSpecialsSuppressedUntilTurn, 3);
+  s = advancePhase(s, 'p2'); s = advancePhase(s, 'p2'); s = advancePhase(s, 'p2');
+  assert.equal(s.activePlayerId, 'p1');
+  assert.equal(s.instances[bladeId].characterSpecialsSuppressedUntilTurn, undefined);
   assertStateInvariants(s, cards);
 });
 
