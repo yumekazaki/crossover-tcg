@@ -21,6 +21,10 @@ const programs = {
     revealSubtype: 'Blade', discardType: 'Ability', addTo: 'party', suppressSpecialsUntilOwnerTurn: true,
     ignoresStandardAddAllowance: true, perNamePerTurn: true
   },
+  'CS1-311': {
+    kind: 'armiger-preparation', timing: 'main', requires: ['Sword Wielder'],
+    minimumAttachedEquipment: 3, gain: { light: 1, darkness: 1 }, suppressNextEquipmentAbilities: true, perNamePerTurn: true
+  },
   'CS1-394': {
     kind: 'curaga-response', timing: 'opponent-attack-response', targetCount: 2,
     requires: ['Healer'], amount: 2500, opponentSpeedReward: { resource: 'momentum', amount: 1 }, perNamePerTurn: true

@@ -6,11 +6,13 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 **Transformation update:** All eight canonical transformation IDs now have explicit entry-condition programs. The engine supports paid Main Phase activation, exact-base checks, Main reserve search/shuffle, legal Equipment transfer, full-HP form entry, and transformed Main and Party defeat handling. Printed form abilities, voluntary reversion, and trigger interactions remain unverified or unsupported.
 
-**Phase-window update:** Empty phase windows now require two consecutive passes, with the second player receiving priority and phase changes rejected through the old single-click action. The queue blocks advancement if pending triggers exist; trigger collection and resolution are still not implemented.
+**Phase-window update:** Empty phase windows require two consecutive passes. Combat defeat collection and the narrow Mickey trigger path are implemented; the queue blocks advancement while pending triggers remain. Broad trigger families, trigger choice/order and combat pre-damage checkpoints remain open.
 
 **Movement update:** `SWITCH_CENTER` now opens a standard response Menu, consumes the once-per-own-turn allowance on activation, rejects transformed Characters, exchanges the Center/Party positions, and applies the ±13,000 current/max HP adjustments. `PARTY_SWAP` requires 6 Momentum up front, selects one or two untransformed Party instances, returns legal portions through fresh hand instances, and refunds each returned Equipment's printed Light/Darkness components using the D004 rounding rule. Both actions are exposed to the local practice UI and covered by automated tests. Trigger collection for Party Swap remains unavailable because the event scheduler is not implemented; this limitation is tracked rather than silently treated as complete.
 
 **Combo resource update:** `CS1-316` Aether Channel and `CS1-319` Theurgy Charge now have explicit Main Phase programs. They validate the required differently named subtype team, resolve gains through their Menu, and apply the printed attachment/Finisher lock until the next turn. Theurgy's chosen card is moved to the Main Deck bottom as an activation cost before the Menu opens. General Finisher execution remains unsupported, so its turn lock is stored but cannot yet gate an executable Finisher action.
+
+**Equipment resource update:** `CS1-311` Armiger Preparation is implemented for a Sword Wielder with at least three attached Equipment. It grants one Light and one Darkness, then suppresses abilities on the next Equipment successfully attached that turn until its controller's next turn begins. The duration, resource gain and attachment selection are covered by a focused test. Equipment effect activation remains otherwise unsupported.
 
 **Hand-to-Party combo update:** `CS1-339` Blade Awakening now reveals a hand Blade, pays an Ability discard cost to Continue?, then Adds the Blade to an empty Party Zone at full HP through its resolving Menu Select. It bypasses the standard Add counter and stores Character Special suppression until that player's next turn begins. Deck-search/reveal choices and trigger-driven placement remain separate unsupported families.
 
@@ -40,4 +42,4 @@ Audit basis: current `src/engine/game.js`, `tests/engine.test.js`, `data/source/
 
 ## Recommended next implementation slice
 
-Extend trigger support to the remaining event families, especially pre-damage combat checkpoints and simultaneous controller ordering choices; then add voluntary unequip and continue search/response card-effect coverage. Keep broad trigger/suspension rules marked incomplete.
+Build a generic resolving-choice and deck-reveal pipeline to support the user's requested deck placement and combo setup. Preserve hidden information until the relevant player must choose, model exact revealed instances, and return unrecovered reveals to the Main Deck bottom in a player-selected order. Keep broad trigger/suspension rules marked incomplete until their event families and lifecycle semantics are implemented.

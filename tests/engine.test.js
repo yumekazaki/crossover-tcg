@@ -8,7 +8,7 @@ await loadCards();
 const cards = allCards();
 const ids = new Set(cards.map((card) => card.id));
 function deck(starter, duplicateStarter = false, transformationId = null) {
-  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
+  const required = [starter, 'CS1-059', 'CS1-060', 'CS1-090', 'CS1-281', 'CS1-282', 'CS1-311', 'CS1-316', 'CS1-319', 'CS1-339', 'CS1-394', 'CS1-433', 'CS1-436'];
   const extras = cards.filter((card) => card.type === 'Character' && !card.transformation).map((card) => card.id);
   const mainIds = [...new Set([...required, ...extras])].slice(0, 40);
   if (duplicateStarter) mainIds.splice(1, 0, starter);
@@ -199,6 +199,49 @@ test('Aether Channel chooses a Light or Darkness burst for a Mage/Warrior pair a
   assert.throws(() => dispatch(s, { type: 'ATTACH_EQUIPMENT', playerId: 'p1', equipmentInstanceId: gearId, hostInstanceId: soraId }, cards), (error) => error.code === 'ATTACHMENT_LOCKED');
   for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
   assert.deepEqual(s.players.p1.turn.equipmentLockedInstanceIds, []);
+  assertStateInvariants(s, cards);
+});
+
+test('Armiger Preparation turns a geared Sword Wielder into both resource colors and suppresses the next attachment', () => {
+  let s = start(game('CS1-001'));
+  const player = s.players.p1, hostId = player.center;
+  player.resources.light = 100;
+  player.resources.darkness = 100;
+  const compatible = (equipment) => {
+    const character = cards.find((card) => card.id === s.instances[hostId].cardId);
+    const tags = new Set([...character.subtypes, ...character.combat_subtypes, ...character.franchise_subtypes, ...character.species_nature]);
+    const req = equipment.requirements ?? { all: [], any: [] };
+    return (req.all ?? []).every((tag) => tags.has(tag)) && (req.any ?? []).every((group) => (Array.isArray(group) ? group.some((tag) => tags.has(tag)) : tags.has(group)));
+  };
+  const attachOne = () => {
+    const action = getLegalActions(s, 'p1', cards).find((candidate) => candidate.type === 'ATTACH_EQUIPMENT' && candidate.hostInstanceId === hostId && compatible(cards.find((card) => card.id === s.instances[candidate.equipmentInstanceId].cardId)));
+    assert.ok(action, 'expected another compatible Equipment attachment');
+    const id = action.equipmentInstanceId;
+    s = dispatch(s, { ...action, playerId: 'p1' }, cards);
+    s = passMenu(s);
+    return id;
+  };
+  attachOne(); attachOne(); attachOne();
+  assert.ok(getLegalActions(s, 'p1', cards).some((action) => action.type === 'ACTIVATE_ABILITY' && action.abilityKind === 'armiger-preparation'));
+  const armigerId = moveCardToHand(s, 'p1', 'CS1-311');
+  const before = { light: s.players.p1.resources.light, darkness: s.players.p1.resources.darkness };
+  const activation = getLegalActions(s, 'p1', cards).find((action) => action.type === 'ACTIVATE_ABILITY' && action.instanceId === armigerId);
+  assert.ok(activation);
+  s = dispatch(s, { ...activation, playerId: 'p1' }, cards);
+  s = passMenu(s);
+  assert.equal(s.players.p1.resources.light, before.light + 1);
+  assert.equal(s.players.p1.resources.darkness, before.darkness + 1);
+  assert.equal(s.players.p1.turn.suppressNextEquipmentAbilities, true);
+  const fourthGearId = attachOne();
+  const fourthGear = s.instances[fourthGearId];
+  assert.equal(fourthGear.abilitiesSuppressedUntilTurn, s.turnNumber + 2);
+  assert.equal(s.players.p1.turn.suppressNextEquipmentAbilities, false);
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p1');
+  assert.equal(s.turnNumber, 2);
+  assert.ok(fourthGear.abilitiesSuppressedUntilTurn > s.turnNumber, 'suppression remains during the opponent turn');
+  for (let i = 0; i < 3; i += 1) s = advancePhase(s, 'p2');
+  assert.equal(s.turnNumber, 3);
+  assert.ok(!(s.instances[fourthGearId].abilitiesSuppressedUntilTurn > s.turnNumber), 'suppression expires when its controller’s next turn begins');
   assertStateInvariants(s, cards);
 });
 

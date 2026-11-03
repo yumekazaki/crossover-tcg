@@ -111,7 +111,7 @@ export function createInitialState({ players, firstPlayerId, chooserId, seed = 1
       center: starter,
       party: Array(6).fill(null),
       registration: { mainCount: player.deck.mainIds.length, equipmentIds: [...player.deck.equipmentIds] },
-      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], nameLimits: {} }
+      turn: { standardAddUsed: false, freeCenterSwitchUsed: false, freeMainAttackUsed: false, freePartyAttackUsed: false, finisherCombatUsed: false, finisherDisabled: false, equipmentLockedInstanceIds: [], suppressNextEquipmentAbilities: false, nameLimits: {} }
     };
   }
   const opponentId = ids.find((id) => id !== firstPlayerId);
@@ -172,6 +172,7 @@ function startNextTurn(state, cardIndex) {
     player.turn.finisherCombatUsed = false;
     player.turn.finisherDisabled = false;
     player.turn.equipmentLockedInstanceIds = [];
+    player.turn.suppressNextEquipmentAbilities = false;
     player.turn.nameLimits = {};
     for (const instance of Object.values(state.instances)) instance.usage.nameLimits = {};
   }
@@ -337,7 +338,12 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
         continue;
       }
       gear.zone = 'attached'; gear.attachedTo = host.instanceId; gear.controllerId = host.controllerId;
-      addLog(state, { type: 'EQUIPMENT_ATTACHED', playerId: player.id, equipmentId: gear.instanceId, hostId: host.instanceId });
+      const suppressAbilitiesUntilTurn = player.turn.suppressNextEquipmentAbilities ? state.turnNumber + 2 : null;
+      if (suppressAbilitiesUntilTurn) {
+        gear.abilitiesSuppressedUntilTurn = suppressAbilitiesUntilTurn;
+        player.turn.suppressNextEquipmentAbilities = false;
+      }
+      addLog(state, { type: 'EQUIPMENT_ATTACHED', playerId: player.id, equipmentId: gear.instanceId, hostId: host.instanceId, abilitiesSuppressedUntilTurn: suppressAbilitiesUntilTurn });
     } else if (select.kind === 'TRANSFORM') {
       const player = state.players[select.playerId];
       const base = state.instances[select.baseInstanceId];
@@ -477,6 +483,15 @@ function continueMenuResolution(state, cardIndex, selections, menuId, originalSe
         state.players[select.playerId].turn.finisherDisabled = true;
         addLog(state, { type: 'RESOURCE_GAINED', playerId: select.playerId, sourceCardId: card.id, resource: 'momentum', amount: program.gain.momentum });
       }
+      if (instance && program?.kind === 'armiger-preparation') {
+        const player = state.players[select.playerId];
+        player.resources.light += program.gain.light;
+        player.resources.darkness += program.gain.darkness;
+        player.turn.suppressNextEquipmentAbilities = true;
+        addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: card.id, resource: 'light', amount: program.gain.light });
+        addLog(state, { type: 'RESOURCE_GAINED', playerId: player.id, sourceCardId: card.id, resource: 'darkness', amount: program.gain.darkness });
+        addLog(state, { type: 'EQUIPMENT_ABILITY_SUPPRESSION_ARMED', playerId: player.id, sourceCardId: card.id, untilNextTurn: true });
+      }
       if (instance && program?.kind === 'blade-awakening') {
         const player = state.players[select.playerId];
         const blade = state.instances[select.bladeInstanceId];
@@ -536,9 +551,18 @@ function controlsDifferentNamedSubtypes(state, playerId, firstTag, secondTag, ca
       && (cardIndex.get(second.cardId)?.subtypes ?? []).includes(secondTag)));
 }
 
+function armigerRequirementMet(state, playerId, cardIndex, minimum = 3) {
+  return [state.players[playerId].center, ...state.players[playerId].party].filter(Boolean).some((hostId) => {
+    const host = state.instances[hostId];
+    if (!host?.battlefield || !(cardIndex.get(host.cardId)?.subtypes ?? []).includes('Sword Wielder')) return false;
+    return Object.values(state.instances).filter((gear) => gear.zone === 'attached' && gear.attachedTo === hostId && gear.controllerId === playerId).length >= minimum;
+  });
+}
+
 function passiveEquipmentAttackBonus(state, hostId, cardIndex) {
   let bonus = 0;
   for (const gear of Object.values(state.instances).filter((x) => x.zone === 'attached' && x.attachedTo === hostId)) {
+    if ((gear.abilitiesSuppressedUntilTurn ?? 0) > state.turnNumber) continue;
     const program = getEquipmentProgram(gear.cardId);
     const host = state.instances[hostId];
     if (program?.passiveAttackBonus && (!program.requiresDamage || host.battlefield.currentHp < host.battlefield.maxHp)) bonus += program.passiveAttackBonus;
@@ -928,6 +952,8 @@ export function dispatch(stateInput, action, cards) {
       if (selected.some((x) => !x?.battlefield || x.controllerId !== player.id) || cardIndex.get(selected[0]?.cardId)?.name === cardIndex.get(selected[1]?.cardId)?.name
         || !program.requires.every((tag) => selected.some((x) => (cardIndex.get(x.cardId)?.subtypes ?? []).includes(tag)))) fail('REQUIREMENT_FAILED', 'Choose a Mage and a differently named Warrior you control.');
       if (!program.resourceChoices.includes(action.resourceChoice)) fail('ILLEGAL_RESOURCE_CHOICE', 'Choose Light or Darkness.');
+    } else if (program.kind === 'armiger-preparation') {
+      if (!armigerRequirementMet(state, player.id, cardIndex, program.minimumAttachedEquipment)) fail('REQUIREMENT_FAILED', 'Armiger Preparation requires a Sword Wielder you control with at least three attached Equipment.');
     } else if (program.kind === 'blade-awakening') {
       const blade = state.instances[action.bladeInstanceId];
       const bladeCard = blade && cardIndex.get(blade.cardId);
@@ -1084,6 +1110,8 @@ export function getLegalActions(state, playerId, cards) {
           }
         } else if (program.kind === 'theurgy-charge') {
           if (controlsDifferentNamedSubtypes(state, playerId, 'Persona User', 'Persona User', cardIndex)) for (const costId of player.zones.hand) if (costId !== id) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, activationCostInstanceId: costId });
+        } else if (program.kind === 'armiger-preparation') {
+          if (armigerRequirementMet(state, playerId, cardIndex, program.minimumAttachedEquipment)) actions.push({ type: 'ACTIVATE_ABILITY', instanceId: id, abilityKind: program.kind });
         } else if (program.kind === 'blade-awakening') {
           if (hasControlledSubtype(state, playerId, 'Driver', cardIndex) && !hasControlledSubtype(state, playerId, 'Blade', cardIndex) && emptyPartyIndex(player) >= 0) {
             const blades = player.zones.hand.filter((handId) => { const c = cardIndex.get(state.instances[handId].cardId); return c?.type === 'Character' && !c.transformation && (c.subtypes ?? []).includes('Blade'); });
