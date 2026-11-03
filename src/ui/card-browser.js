@@ -1,5 +1,5 @@
 /** Card-library panel. Data and legality stay with the calling application. */
-import { getArtwork } from '../data/cards.js';
+import { getArtwork } from '../data/cards.js?v=20261103-artworkfix4';
 
 export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {}) {
   let records = Array.isArray(cards) ? cards.slice() : [];
