@@ -71,10 +71,16 @@ export async function loadCards() {
       nextIndex.set(card.id, card);
     }
     // A source citation, attached status, or downloaded original is never permission.
+    // A single local image must also belong to exactly one card.
+    const candidates = [];
     await Promise.all(data.filter(c => approved(c.artwork)).map(async card => {
       const url = localArtworkURL(card.artwork);
-      if (url && await existingLocalImage(url)) verifiedArtwork.set(card.id, { artwork: card.artwork, url: url.href });
+      if (url && await existingLocalImage(url)) candidates.push({ card, artwork: card.artwork, url: url.href });
     }));
+    const assetCounts = new Map();
+    candidates.forEach(({ url }) => assetCounts.set(url, (assetCounts.get(url) || 0) + 1));
+    candidates.filter(({ url }) => assetCounts.get(url) === 1)
+      .forEach(({ card, artwork, url }) => verifiedArtwork.set(card.id, { artwork, url }));
     records = data.map(freeze);
     index = nextIndex;
     loaded = true;

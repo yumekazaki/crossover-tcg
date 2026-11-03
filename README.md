@@ -20,4 +20,6 @@ The current engine executes a limited set of explicit effects and Specials, incl
 
 ## Artwork
 
-Card image source records are imported for provenance. The local app displays placeholders unless a file has approved redistribution rights; the imported artwork sources do not establish those rights.
+The browser playtest now renders card art in library tiles, card details and the local-match card dialog. It displays an image only when all of these are true: the card explicitly records redistribution approval, the image is stored inside `public/`, the local file exists and is an image, and no other card points at that same file. Remote links and source citations are provenance only; they are never used as display images.
+
+There are currently **0 approved image files** in the repository. The imported manifest has 163 attached source records, but none documents permission to redistribute its image, and those local files are not present here. Those entries therefore remain visible as labeled placeholders. Add licensed, commissioned, public-domain or otherwise explicitly cleared images under `public/artwork/`, then set that card's `artwork.local_asset_path` and `artwork.redistribution_approved` fields and record the creator, license/permission, and credit in `data/source/artwork-manifest.json`. Every card needs its own image; do not reuse organization group shots or a single image across cards. See [the artwork pipeline](docs/artwork-pipeline.md).

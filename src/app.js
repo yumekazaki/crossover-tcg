@@ -130,9 +130,21 @@ function showCard(card) {
   content.append(create('p', 'eyebrow', `${card.id} · ${card.franchise} · ${card.game}`));
   content.append(create('h2', '', card.name));
   content.append(create('p', 'dialog-meta', `${card.type} · ${card.rarity} · ${card.subtypes.join(' / ') || 'No subtypes'}`));
+  const artFrame = create('div', `dialog-art${art.src ? ' has-image' : ''}`);
+  if (art.src) {
+    const image = create('img', '', undefined);
+    image.src = art.src; image.alt = art.label; image.loading = 'lazy'; image.decoding = 'async';
+    artFrame.append(image);
+  } else {
+    artFrame.setAttribute('role', 'img'); artFrame.setAttribute('aria-label', `No approved artwork for ${card.name}.`);
+    artFrame.append(create('span', 'dialog-art-mark', card.type === 'Character' ? '◇' : card.type === 'Equipment' ? '⚔' : card.type === 'Finisher' ? '✦' : '✧'));
+    artFrame.append(create('strong', '', card.name), create('small', '', 'Artwork pending approval'));
+  }
+  content.append(artFrame);
   content.append(create('p', 'dialog-effect', card.effect_text));
   content.append(create('p', '', `Cost: ${card.cost.light} Light · ${card.cost.darkness} Darkness · ${card.cost.momentum} Momentum`));
-  content.append(create('p', '', art.placeholder ? `${art.label}. The image source is recorded, but use rights are not approved for this application.` : art.credit));
+  content.append(create('p', 'dialog-art-credit', art.placeholder
+    ? `${art.label}. No locally attached image has approved display rights.` : `Artwork credit: ${art.credit || 'not recorded'}`));
   const supportedForm = supportedTransformationIds().includes(card.id);
   const effectStatus = implementedEffectIds().includes(card.id) ? 'implemented effect template'
     : supportedForm ? 'transformation entry and base requirements are supported; printed form effects are still pending'

@@ -1,4 +1,6 @@
 /** Card-library panel. Data and legality stay with the calling application. */
+import { getArtwork } from '../data/cards.js';
+
 export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {}) {
   let records = Array.isArray(cards) ? cards.slice() : [];
   let currentDeck = deck || {};
@@ -159,6 +161,7 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
       inspect.dataset.inspectId = card.id;
       inspect.setAttribute('aria-label', `Inspect ${card.name}, ${card.type}, ${card.id}`);
       inspect.setAttribute('aria-pressed', String(card.id === selectedId));
+      inspect.append(renderArtwork(card, 'ctcg-browser__tile-art'));
       const meta = el('div', 'ctcg-browser__card-meta');
       meta.append(el('span', 'ctcg-browser__type', card.type), el('span', 'ctcg-browser__rarity', card.rarity || 'Unrated'));
       inspect.append(meta, el('h4', '', card.name), el('p', 'ctcg-browser__franchise', card.franchise || 'Unspecified franchise'));
@@ -181,9 +184,7 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     detail.replaceChildren();
     const card = lookup().get(selectedId);
     if (!card) { detail.append(el('h3', '', 'A closer look'), el('p', 'ctcg-browser__muted', 'Select a card to read its full effect and requirements.')); return; }
-    const art = el('div', `ctcg-browser__art ctcg-browser__card--${typeClass(card.type)}`);
-    art.setAttribute('role', 'img'); art.setAttribute('aria-label', 'Artwork placeholder. No approved redistribution image is displayed.');
-    art.append(el('span', 'ctcg-browser__art-mark', typeMark(card.type)), el('strong', '', 'Artwork placeholder'), el('span', '', 'Awaiting approved local artwork'));
+    const art = renderArtwork(card, 'ctcg-browser__art');
     detail.append(el('p', 'ctcg-browser__eyebrow', `${card.id} · ${card.rarity || 'Unrated'}`), art, el('h3', 'ctcg-browser__detail-name', card.name));
     detail.append(el('p', 'ctcg-browser__muted', `${card.franchise || 'Unspecified franchise'}${card.game ? ` · ${card.game}` : ''}`));
     const tags = el('div', 'ctcg-browser__tags');
@@ -205,7 +206,30 @@ export function createCardBrowser({ cards = [], deck = {}, onAdd, onRemove } = {
     const remove = button('Remove one', 'ctcg-browser__quiet', () => act(card.id, 'remove')); remove.disabled = typeof onRemove !== 'function' || !copyCount(card) || pending.has(card.id);
     remove.dataset.focusKey = `detail-remove:${card.id}`;
     actions.append(add, remove); detail.append(actions);
-    detail.append(el('p', 'ctcg-browser__rights-note', 'Artwork is intentionally withheld until a local asset has explicit redistribution approval.'));
+    detail.append(el('p', 'ctcg-browser__rights-note', getArtwork(card).placeholder
+      ? 'This card has no locally attached image cleared for display. Source credits alone do not grant image reuse rights.'
+      : `Artwork credit: ${getArtwork(card).credit || 'credit not recorded'}`));
+  }
+
+  function renderArtwork(card, className) {
+    const artwork = getArtwork(card);
+    const frame = el('div', `${className} ctcg-browser__card--${typeClass(card.type)}`);
+    if (artwork.src) {
+      const image = el('img', 'ctcg-browser__art-image');
+      image.src = artwork.src;
+      image.alt = artwork.label;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      frame.append(image);
+      frame.setAttribute('role', 'img');
+      frame.setAttribute('aria-label', artwork.label);
+    } else {
+      frame.setAttribute('role', 'img');
+      frame.setAttribute('aria-label', `No approved artwork for ${card.name}.`);
+      frame.append(el('span', 'ctcg-browser__art-mark', typeMark(card.type)),
+        el('strong', '', card.name), el('span', '', 'Artwork pending approval'));
+    }
+    return frame;
   }
 
   function renderDeck() {
